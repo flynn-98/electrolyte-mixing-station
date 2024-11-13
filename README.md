@@ -1,1 +1,5 @@
-# electrolyte-mixing-station
+# Electrolyte Mixing Station
+
+## Setting up Dependencies
+
+
