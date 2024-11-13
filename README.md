@@ -1,5 +1,15 @@
 # Electrolyte Mixing Station
 
-## Setting up Dependencies
+## Installing Dependencies
 
+Run the following in the root directory:
 
+```
+pip install .
+```
+
+or possibly:
+
+```
+python3 -m pip install .
+```

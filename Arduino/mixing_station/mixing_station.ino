@@ -41,7 +41,7 @@ const int home[3] = {1.5, 2.5, -1.0};
 // Joint Limits (mm)
 const float jointLimits[2][3] = {
     {0, 0, 0}, 
-    {90.0, 90.0, -44.0}
+    {200.0, 200.0, -44.0}
 };
 
 float x = 0;
