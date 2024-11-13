@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "electrolyte-mixing-station"
+authors = [
+    {name = "Flynn Marshall", email = "flyma@dtu.dk"}
+]
+
+description = "Python package to run electroyte mixing experiments using the mixing station, which utilises a disc pump for aspirating and dispensing operations."
+version = "0.0.1"
+readme = "README.md"
+requires-python = ">=3.7"
+dependencies = [
+    "requests > 2.26.0",
+    "pandas",
+    "numpy",
+    "pyserial"
+]
+
+[project.urls]
+repository = "https://github.com/flynn-98/electrolyte-mixing-station"
