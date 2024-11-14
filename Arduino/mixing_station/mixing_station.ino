@@ -144,11 +144,11 @@ void robotHome() {
     X_MOTOR.setCurrentPosition(0);
     Y_MOTOR.setCurrentPosition(0);
     Z_MOTOR.setCurrentPosition(0);
-
-    Serial.println("Homing Complete");
 };
 
 void robotMove(float x, float y, float z, float pump) {
+    unsigned long StartTime = ceil( millis() / 1000 );
+
     // check if requested angle is with in hardcoded limits
     if (x < jointLimits[0][0]) {
         x = jointLimits[0][0];
@@ -189,7 +189,10 @@ void robotMove(float x, float y, float z, float pump) {
         PUMP_MOTOR.run();
     }
 
-    Serial.println("Move Complete");
+    unsigned long CurrentTime = ceil( millis() / 1000 );
+    unsigned long ElapsedTime = CurrentTime - StartTime;
+
+    Serial.println("Move Complete in " + String(ElapsedTime) + "s");
 };
 
 

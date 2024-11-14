@@ -16,19 +16,21 @@ class gantry:
 
             logging.info("Attempting to open gantry serial port..")
 
-            try:
-                self.ser.open()
-            except: 
-                self.ser.close()
+            if self.ser.isOpen() == False:
                 self.ser.open()
 
-            logging.info("Serial connection to gantry established.")
+            if self.get_data == "Controller Ready":
+                logging.info("Serial connection to gantry established.")
+            else:
+                logging.error("Failed to establish serial connection to gantry.")
+                exit()
+
         else:
             logging.info("No serial connection to gantry established.")
 
-    def ifReady(self):
+    def get_data(self):
         while self.ser.in_waiting:
-            return True
+            return self.ser.readline().decode().strip()
 
     def close_ser(self):
         logging.info("Closing serial connection to gantry..")
@@ -38,7 +40,6 @@ class gantry:
         if self.sim == False:
             self.ser.write(f"{x},{y},{z},{p};".encode())
 
-        # To add wait until complete here
-
-    def close(self):
-        self.ser.close()
+            # Wait for response but do nothing with data
+            data = self.get_data()
+            logging.info("Response from gantry: " + data)
