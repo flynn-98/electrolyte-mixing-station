@@ -1,3 +1,4 @@
 /dist
 /build
-/robot_controller/__pycache__
+**/__pycache__
+**/electrolyte_mixing_station.egg-info
