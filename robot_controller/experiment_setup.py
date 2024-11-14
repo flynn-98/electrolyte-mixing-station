@@ -16,16 +16,16 @@ class experiment:
         #pipette = pipette_controller.pipette(PIPETTE_COM) <- TODO
 
         # Pot locations 1 -> 10
-        self.pot_locations = [[10, 10], [20, 20], 
-                              [10, 20], [20, 10], 
-                              [30, 30], [20, 30], 
-                              [30, 20], [40, 10], 
-                              [30, 40], [50, 50]
-                              ]
+        self.pot_locations = [[7, 21], [7, 55], 
+                              [41, 21], [41, 55], 
+                              [75, 21], [75, 55], 
+                              [109, 21], [109, 55], 
+                              [143, 21], [143, 55]
+                            ]
         
-        self.pot_base_height = 50
-        self.pot_diameter = 30
-        self.chamber_location = [100, 10]
+        self.pot_base_height = -74
+        self.pot_diameter = 27.8
+        self.chamber_location = [7, 116]
 
         # Open CSV as dataframe
         logging.info("Reading CSV file..")
