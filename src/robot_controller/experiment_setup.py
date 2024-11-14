@@ -34,6 +34,7 @@ class experiment:
         self.df = pd.read_csv(CSV_PATH, names=self.column_names)
         display(self.df)
 
+        logging.info(f'Experiment will result in a total electrolyte volume of {self.df[self.column_names[1]].sum()/1000}ml')
         logging.info("Experiment ready to begin.")
 
     def run(self):

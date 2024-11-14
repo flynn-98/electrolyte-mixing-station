@@ -8,7 +8,7 @@ Run the following in the root directory:
 pip install .
 ```
 
-or possibly:
+Or possibly:
 
 ```
 python3 -m pip install .
