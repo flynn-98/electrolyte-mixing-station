@@ -7,14 +7,14 @@ from IPython.display import display
 import logging
 logging.basicConfig(level = logging.INFO)
 
-from robot_controller import gantry_controller
+from robot_controller import gantry_controller, pipette_controller
 
 class experiment:
     def __init__(self, CSV_PATH, GANTRY_COM, PIPETTE_COM, SIM=False):
 
         # Establish serial connections
         self.gantry = gantry_controller.gantry(GANTRY_COM, SIM)
-        #self.pipette = pipette_controller.pipette(PIPETTE_COM) <- TODO
+        self.pipette = pipette_controller.pipette(PIPETTE_COM, SIM)
 
         # Pot locations 1 -> 10
         self.pot_locations = [[7, 21], [7, 55], 
