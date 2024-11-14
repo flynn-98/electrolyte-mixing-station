@@ -2,6 +2,7 @@ import math
 import pandas as pd
 import numpy as np
 import time
+from IPython.display import display
 
 import logging
 logging.basicConfig(level = logging.INFO)
@@ -9,11 +10,11 @@ logging.basicConfig(level = logging.INFO)
 from robot_controller import gantry_controller
 
 class experiment:
-    def __init__(self, CSV_PATH, GANTRY_COM, PIPETTE_COM):
+    def __init__(self, CSV_PATH, GANTRY_COM, PIPETTE_COM, SIM=False):
 
         # Establish serial connections
-        #gantry = gantry_controller.gantry(GANTRY_COM)
-        #pipette = pipette_controller.pipette(PIPETTE_COM) <- TODO
+        self.gantry = gantry_controller.gantry(GANTRY_COM, SIM)
+        #self.pipette = pipette_controller.pipette(PIPETTE_COM) <- TODO
 
         # Pot locations 1 -> 10
         self.pot_locations = [[7, 21], [7, 55], 
@@ -23,19 +24,58 @@ class experiment:
                               [143, 21], [143, 55]
                             ]
         
-        self.pot_base_height = -74
+        self.pot_base_height = -74 - 0.5 # CAD value minus tunable value to ensure submersion
         self.pot_diameter = 27.8
         self.chamber_location = [7, 116]
 
         # Open CSV as dataframe
         logging.info("Reading CSV file..")
-        self.df = pd.read_csv(CSV_PATH)
-        print(self.df)
+        self.column_names = ["Name", "Volume (uL)", "Starting Volume (mL)", "Aspirate Speed (W/s)", "Aspirate Constant (mbar/ml)"]
+        self.df = pd.read_csv(CSV_PATH, names=self.column_names)
+        display(self.df)
 
         logging.info("Experiment ready to begin.")
 
     def run(self):
-        pass
+        non_zero = self.df[self.df[self.column_names[1]] > 0]
+        pot_area = math.pi * self.pot_diameter**2 / 4
 
+        # Loop through all non zero constituents
+        for i in non_zero.index.to_numpy(dtype=int):
+            # Get pot locations
+            x = self.pot_locations[i][0]
+            y = self.pot_locations[i][1]
+            z = 0
 
+            # Extract relevant data
+            name = non_zero[non_zero.index == i][self.column_names[0]].values[0]
+            starting_volume = non_zero[non_zero.index == i][self.column_names[1]].values[0]
 
+            # Move above pot
+            logging.info("Moving to " + name + "..")
+            self.gantry.write(x, y, z, 0)
+
+            # Charge pipette
+            logging.info("Pipette charged.")
+
+            # Drop into fluid (based on starting volume)
+            logging.info("Dropping Pipette into " + name + "..")
+            z = self.pot_base_height + starting_volume / pot_area
+            self.gantry.write(x, y, z, 0)
+
+            # Aspirate pipette
+            logging.info("Aspiration complete.")
+
+            # Move out of fluid
+            logging.info("Moving Pipette out of " + name + "..")
+            z = 0
+            self.gantry.write(x, y, z, 0)
+
+            # Move to mixing chamber
+            logging.info("Moving to Mixing Chamber..")
+            x = self.chamber_location[0]
+            y = self.chamber_location[1]
+            self.gantry.write(x, y, z, 0)
+
+            # Dispense pipette
+            logging.info("Dispense complete.")
