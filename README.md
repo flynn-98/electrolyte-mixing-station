@@ -1,6 +1,9 @@
 # Electrolyte Mixing Station
 
 ## Introduction
+![image](data/images/CAD.png)
+
+### Jump to the [Workspace Notebook](Workspace.ipynb) for instructions on how to use the mixing station!
 
 ## Installing Dependencies
 
