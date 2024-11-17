@@ -4,8 +4,17 @@ import numpy as np
 import time
 from IPython.display import display
 
+from datetime import datetime
+
 import logging
-logging.basicConfig(level = logging.INFO)
+stdout_handler = logging.basicConfig(level=logging.INFO)
+
+# save to file
+# file_handler = logging.basicConfig(filename="experiment_log.txt",
+#                     filemode='a',
+#                     format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
+#                     datefmt='%H:%M:%S',
+#                     level=logging.INFO)
 
 from robot_controller import gantry_controller, pipette_controller
 
@@ -35,7 +44,9 @@ class experiment:
         display(self.df)
 
         logging.info(f'Experiment will result in a total electrolyte volume of {self.df[self.column_names[1]].sum()/1000}ml')
-        logging.info("Experiment ready to begin.")
+        
+        now = datetime.now()
+        logging.info("Experiment ready to begin: " + now.strftime("%d/%m/%Y %H:%M:%S"))
 
     def run(self):
         non_zero = self.df[self.df[self.column_names[1]] > 0]

@@ -17,7 +17,8 @@ dependencies = [
     "pandas",
     "numpy",
     "pyserial",
-    "ipython"
+    "ipython",
+    "datetime"
 ]
 
 [project.urls]
