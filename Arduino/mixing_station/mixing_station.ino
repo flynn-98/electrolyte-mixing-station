@@ -15,9 +15,11 @@ const int Z_DIR = 8;
 const int P_STEP = 1;
 const int P_DIR = 0;
 
-const long STAGE_SPEED = 3000; //microsteps/s
-const long PUMP_SPEED = 3000; //microsteps/s
-const long HOMING_SPEED = 1500; //microsteps/s
+const long STAGE_SPEED = 800; //microsteps/s
+const long PUMP_SPEED = 400; //microsteps/s
+const long HOMING_SPEED = 400; //microsteps/s
+
+const long MAX_SPEED = 1000; //microsteps/s
 const long MAX_ACCEL = 1000; //microsteps/s2
 
 const float MICROSTEPS = 4.0;
@@ -47,7 +49,14 @@ const float jointLimits[2][3] = {
 float x = 0;
 float y = 0;
 float z = 0;
-float pump = 0;
+float vol = 0;
+float duration = 0;
+
+unsigned long StartTime;
+unsigned long CurrentTime;
+unsigned long ElapsedTime;
+
+String action;
 
 void setup() {
   // put your setup code here, to run once:
@@ -63,16 +72,16 @@ void setup() {
 
   mixer.attach(SERVO_PIN);
 
-  X_MOTOR.setMaxSpeed(STAGE_SPEED);
+  X_MOTOR.setMaxSpeed(MAX_SPEED);
   X_MOTOR.setAcceleration(MAX_ACCEL);
 
-  Y_MOTOR.setMaxSpeed(STAGE_SPEED);
+  Y_MOTOR.setMaxSpeed(MAX_SPEED);
   Y_MOTOR.setAcceleration(MAX_ACCEL);
 
-  Z_MOTOR.setMaxSpeed(STAGE_SPEED);
+  Z_MOTOR.setMaxSpeed(MAX_SPEED);
   Z_MOTOR.setAcceleration(MAX_ACCEL);
 
-  PUMP_MOTOR.setMaxSpeed(PUMP_SPEED);
+  PUMP_MOTOR.setMaxSpeed(MAX_SPEED);
   PUMP_MOTOR.setAcceleration(MAX_ACCEL);
 
   X_MOTOR.setSpeed(HOMING_SPEED);
@@ -80,7 +89,7 @@ void setup() {
   Z_MOTOR.setSpeed(HOMING_SPEED);
 
   Serial.begin(9600);
-  robotHome();
+  gantryHome();
 
   X_MOTOR.setSpeed(STAGE_SPEED);
   Y_MOTOR.setSpeed(STAGE_SPEED);
@@ -91,33 +100,53 @@ void setup() {
 };
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  if (Serial.available() > 0) {
-    // data structure to receive = x,y,z,pump;
-      x = Serial.readStringUntil(',').toFloat();
-      y = Serial.readStringUntil(',').toFloat();
-      z = Serial.readStringUntil(',').toFloat();
-      pump = Serial.readStringUntil(';').toFloat();
+    // put your main code here, to run repeatedly:
+    if (Serial.available() > 0) {
+        // data structure to receive = action(var1, var2..)
 
-      robotMove(x, y, z, pump);
-  }
+        action = Serial.readStringUntil('(');
+
+        if (action == "move") {
+            x = Serial.readStringUntil(',').toFloat();
+            y = Serial.readStringUntil(',').toFloat();
+            z = Serial.readStringUntil(')').toFloat();
+
+            gantryMove(x, y, z);
+        }
+        else if (action == "pump") {
+            vol = Serial.readStringUntil(')').toFloat();
+
+            gantryPump(vol);
+        }
+        else if (action == "mix") {
+            duration = Serial.readStringUntil(')').toFloat();
+
+            // gantryMix(duration);
+        }
+        else { 
+            Serial.println("Unknown command");
+        }
+        // TODO SERVO / MIXING
+    }
 };
 
 long mmToSteps(float milli, bool horizontal, bool pump) {
     if (pump == true) {
-        return MICROSTEPS * STEPS_REV * milli * 2 * PI / ML_REV;
+        return floor(MICROSTEPS * STEPS_REV * milli * 2 * PI / ML_REV);
     }
     else {
         if (horizontal == true) {
-            return MICROSTEPS * STEPS_REV * milli / (2 * PI * PULLEY_RADIUS);
+            // XY Motion
+            return floor(MICROSTEPS * STEPS_REV * milli / (2 * PI * PULLEY_RADIUS));
         }
         else {
-            return MICROSTEPS * STEPS_REV * milli / ROD_PITCH;
+            // Z Motion
+            return floor(MICROSTEPS * STEPS_REV * milli / ROD_PITCH);
         }
     }
 };
 
-void robotHome() {
+void gantryHome() {
     // Move towards hard stop
     X_MOTOR.move(-1 * mmToSteps(jointLimits[1][0], true, false));
     Y_MOTOR.move(-1 * mmToSteps(jointLimits[1][1], true, false));
@@ -146,8 +175,8 @@ void robotHome() {
     Z_MOTOR.setCurrentPosition(0);
 };
 
-void robotMove(float x, float y, float z, float pump) {
-    unsigned long StartTime = ceil( millis() / 1000 );
+void gantryMove(float x, float y, float z) {
+    StartTime = ceil( millis() / 1000 );
 
     // check if requested angle is with in hardcoded limits
     if (x < jointLimits[0][0]) {
@@ -178,21 +207,35 @@ void robotMove(float x, float y, float z, float pump) {
 
     Z_MOTOR.moveTo(mmToSteps(z, false, false));
 
-    // No limits for Pump
-    PUMP_MOTOR.moveTo(mmToSteps(pump, false, true));
-
     // Run until complete
-    while ((X_MOTOR.distanceToGo() != 0) && (Y_MOTOR.distanceToGo() != 0) && (Z_MOTOR.distanceToGo() != 0) && (PUMP_MOTOR.distanceToGo() != 0)) {
+    while ((X_MOTOR.distanceToGo() != 0) && (Y_MOTOR.distanceToGo() != 0) && (Z_MOTOR.distanceToGo() != 0)) {
         X_MOTOR.run();
         Y_MOTOR.run();
         Z_MOTOR.run();
+    }
+
+    CurrentTime = ceil( millis() / 1000 );
+    ElapsedTime = CurrentTime - StartTime;
+
+    Serial.println("Move complete in " + String(ElapsedTime) + "s");
+};
+
+void gantryPump(float vol) {
+    StartTime = ceil( millis() / 1000 );
+
+    // No limits for Pump
+    PUMP_MOTOR.moveTo(mmToSteps(vol, false, true));
+
+    // Run until complete
+    while (PUMP_MOTOR.distanceToGo() != 0) {
         PUMP_MOTOR.run();
     }
 
-    unsigned long CurrentTime = ceil( millis() / 1000 );
-    unsigned long ElapsedTime = CurrentTime - StartTime;
+    CurrentTime = ceil( millis() / 1000 );
+    ElapsedTime = CurrentTime - StartTime;
 
-    Serial.println("Move Complete in " + String(ElapsedTime) + "s");
+    Serial.println("Pump complete in " + String(ElapsedTime) + "s");
 };
+
 
 

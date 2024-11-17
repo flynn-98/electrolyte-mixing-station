@@ -54,7 +54,7 @@ class experiment:
 
             # Move above pot
             logging.info("Moving to " + name + "..")
-            self.gantry.write(x, y, z, 0)
+            self.gantry.move(x, y, z)
 
             # Charge pipette
             logging.info("Pipette charged.")
@@ -62,7 +62,7 @@ class experiment:
             # Drop into fluid (based on starting volume)
             logging.info("Dropping Pipette into " + name + "..")
             z = self.pot_base_height + starting_volume / pot_area
-            self.gantry.write(x, y, z, 0)
+            self.gantry.move(x, y, z)
 
             # Aspirate pipette
             logging.info("Aspiration complete.")
@@ -70,13 +70,13 @@ class experiment:
             # Move out of fluid
             logging.info("Moving Pipette out of " + name + "..")
             z = 0
-            self.gantry.write(x, y, z, 0)
+            self.gantry.move(x, y, z)
 
             # Move to mixing chamber
             logging.info("Moving to Mixing Chamber..")
             x = self.chamber_location[0]
             y = self.chamber_location[1]
-            self.gantry.write(x, y, z, 0)
+            self.gantry.move(x, y, z)
 
             # Dispense pipette
             logging.info("Dispense complete.")

@@ -31,15 +31,31 @@ class gantry:
     def get_data(self):
         while self.ser.in_waiting:
             return self.ser.readline().decode().strip()
+        
+    def get_response(self):
+        data = self.get_data()
+        # Wait for response and check that command was understood
+        if data == "Unknown command":
+            logging.error("Gantry failed to recognise command.")
+            exit()
+        else:
+            logging.info("Response from gantry: " + data)
 
     def close_ser(self):
         logging.info("Closing serial connection to gantry..")
         self.ser.close()
 
-    def write(self, x, y, z, p):
+    def move(self, x, y, z):
         if self.sim == False:
-            self.ser.write(f"{x},{y},{z},{p};".encode())
+            self.ser.write(f"move({x},{y},{z})".encode())
+            self.get_response()
 
-            # Wait for response but do nothing with data
-            data = self.get_data()
-            logging.info("Response from gantry: " + data)
+    def pump(self, vol):
+        if self.sim == False:
+            self.ser.write(f"pump({vol})".encode())
+            self.get_response()
+
+    def mix(self, duration):
+        if self.sim == False:
+            self.ser.write(f"mix({duration})".encode())
+            self.get_response()
