@@ -15,14 +15,14 @@ const int Z_DIR = 8;
 const int P_STEP = 1;
 const int P_DIR = 0;
 
-const long STAGE_SPEED = 800; //microsteps/s
-const long PUMP_SPEED = 400; //microsteps/s
-const long HOMING_SPEED = 400; //microsteps/s
+const float STAGE_SPEED = 200.0; //microsteps/s
+const float PUMP_SPEED = 50; //microsteps/s
+const float HOMING_SPEED = 50; //microsteps/s
 
-const long MAX_SPEED = 1000; //microsteps/s
-const long MAX_ACCEL = 1000; //microsteps/s2
+const float MAX_SPEED = 200.0; //microsteps/s
+const float MAX_ACCEL = 200.0; //microsteps/s2
 
-const float MICROSTEPS = 4.0;
+const float MICROSTEPS = 1.0;
 const float PULLEY_RADIUS = 6.0; //mm
 const float ROD_PITCH = 2.0; //mm
 const float STEPS_REV = 200.0;
@@ -41,10 +41,14 @@ Servo mixer;
 const int home[3] = {1.5, 2.5, -1.0};
 
 // Joint Limits (mm)
-const float jointLimits[2][3] = {
+const float jointLimit[2][3] = {
     {0, 0, 0}, 
     {160.4, 144.0, -45.0}
 };
+
+// Joint direction coefficients: 1 or -1
+// X = 0, Y = 1, Z = 2
+const float motorDir[3] = {1, 1, 1};
 
 float x = 0;
 float y = 0;
@@ -55,6 +59,8 @@ float duration = 0;
 unsigned long StartTime;
 unsigned long CurrentTime;
 unsigned long ElapsedTime;
+
+long steps;
 
 String action;
 
@@ -83,10 +89,6 @@ void setup() {
 
   PUMP_MOTOR.setMaxSpeed(MAX_SPEED);
   PUMP_MOTOR.setAcceleration(MAX_ACCEL);
-
-  X_MOTOR.setSpeed(HOMING_SPEED);
-  Y_MOTOR.setSpeed(HOMING_SPEED);
-  Z_MOTOR.setSpeed(HOMING_SPEED);
 
   Serial.begin(9600);
   gantryHome();
@@ -130,27 +132,33 @@ void loop() {
     }
 };
 
-long mmToSteps(float milli, bool horizontal, bool pump) {
+long mmToSteps(float milli, bool horizontal, bool pump, int motor) {
     if (pump == true) {
-        return floor(MICROSTEPS * STEPS_REV * milli * 2 * PI / ML_REV);
+        steps = floor(MICROSTEPS * STEPS_REV * milli * 2 * PI / ML_REV);
     }
     else {
         if (horizontal == true) {
             // XY Motion
-            return floor(MICROSTEPS * STEPS_REV * milli / (2 * PI * PULLEY_RADIUS));
+            steps = floor(motorDir[motor] * MICROSTEPS * STEPS_REV * milli / (2 * PI * PULLEY_RADIUS));
         }
         else {
             // Z Motion
-            return floor(MICROSTEPS * STEPS_REV * milli / ROD_PITCH);
+            steps = floor(motorDir[motor] * MICROSTEPS * STEPS_REV * milli / ROD_PITCH);
         }
     }
+    return steps
 };
 
 void gantryHome() {
+    // Slow down motors for required homing collision
+    X_MOTOR.setSpeed(HOMING_SPEED);
+    Y_MOTOR.setSpeed(HOMING_SPEED);
+    Z_MOTOR.setSpeed(HOMING_SPEED);
+
     // Move towards hard stop
-    X_MOTOR.move(-1 * mmToSteps(jointLimits[1][0], true, false));
-    Y_MOTOR.move(-1 * mmToSteps(jointLimits[1][1], true, false));
-    Z_MOTOR.move(-1 * mmToSteps(-jointLimits[1][2], false, false));
+    X_MOTOR.move(-1 * mmToSteps(jointLimit[1][0], true, false, 0));
+    Y_MOTOR.move(-1 * mmToSteps(jointLimit[1][1], true, false, 1));
+    Z_MOTOR.move(-1 * mmToSteps(-jointLimit[1][2], false, false, 2));
 
     while ((X_MOTOR.distanceToGo() != 0) && (Y_MOTOR.distanceToGo() != 0) && (Z_MOTOR.distanceToGo() != 0)) {
         X_MOTOR.run();
@@ -159,9 +167,9 @@ void gantryHome() {
     }
 
     // Move towards home position
-    X_MOTOR.move(mmToSteps(home[0], true, false));
-    Y_MOTOR.move(mmToSteps(home[1], true, false));
-    Z_MOTOR.move(mmToSteps(home[2], false, false));
+    X_MOTOR.move(mmToSteps(home[0], true, false, 0));
+    Y_MOTOR.move(mmToSteps(home[1], true, false, 1));
+    Z_MOTOR.move(mmToSteps(home[2], false, false, 2));
 
     while ((X_MOTOR.distanceToGo() != 0) && (Y_MOTOR.distanceToGo() != 0) && (Z_MOTOR.distanceToGo() != 0)) {
         X_MOTOR.run();
@@ -179,33 +187,33 @@ void gantryMove(float x, float y, float z) {
     StartTime = ceil( millis() / 1000 );
 
     // check if requested angle is with in hardcoded limits
-    if (x < jointLimits[0][0]) {
-        x = jointLimits[0][0];
+    if (x < jointLimit[0][0]) {
+        x = jointLimit[0][0];
     }
-    else if (x > jointLimits[1][0]) {
-        x = jointLimits[1][0];
+    else if (x > jointLimit[1][0]) {
+        x = jointLimit[1][0];
     }
 
     // add steps
-    X_MOTOR.moveTo(mmToSteps(x, true, false));
+    X_MOTOR.moveTo(mmToSteps(x, true, false, 0));
 
-    if (y < jointLimits[0][1]) {
-        y = jointLimits[0][1];
+    if (y < jointLimit[0][1]) {
+        y = jointLimit[0][1];
     }
-    else if (y > jointLimits[1][1]) {
-        y = jointLimits[1][1];
-    }
-
-    Y_MOTOR.moveTo(mmToSteps(y, true, false));
-
-    if (z < jointLimits[0][2]) {
-        z = jointLimits[0][2];
-    }
-    else if (z > jointLimits[1][2]) {
-        z = jointLimits[1][2];
+    else if (y > jointLimit[1][1]) {
+        y = jointLimit[1][1];
     }
 
-    Z_MOTOR.moveTo(mmToSteps(z, false, false));
+    Y_MOTOR.moveTo(mmToSteps(y, true, false, 1));
+
+    if (z < jointLimit[0][2]) {
+        z = jointLimit[0][2];
+    }
+    else if (z > jointLimit[1][2]) {
+        z = jointLimit[1][2];
+    }
+
+    Z_MOTOR.moveTo(mmToSteps(z, false, false, 2));
 
     // Run until complete
     while ((X_MOTOR.distanceToGo() != 0) && (Y_MOTOR.distanceToGo() != 0) && (Z_MOTOR.distanceToGo() != 0)) {
@@ -224,7 +232,7 @@ void gantryPump(float vol) {
     StartTime = ceil( millis() / 1000 );
 
     // No limits for Pump
-    PUMP_MOTOR.moveTo(mmToSteps(vol, false, true));
+    PUMP_MOTOR.moveTo(mmToSteps(vol, false, true, 0));
 
     // Run until complete
     while (PUMP_MOTOR.distanceToGo() != 0) {
