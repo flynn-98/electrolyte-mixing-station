@@ -2,19 +2,22 @@ import math
 import pandas as pd
 import numpy as np
 import time
+import sys
 from IPython.display import display
 
 from datetime import datetime
 
 import logging
-stdout_handler = logging.basicConfig(level=logging.INFO)
 
-# save to file
-# file_handler = logging.basicConfig(filename="experiment_log.txt",
-#                     filemode='a',
-#                     format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
-#                     datefmt='%H:%M:%S',
-#                     level=logging.INFO)
+# Save logs to file
+file_handler = logging.basicConfig(filename="experiment_log.txt",
+                    filemode='a',
+                    format='%(asctime)s: %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S',
+                    level=logging.INFO)
+
+# Also output to stdout
+logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
 from robot_controller import gantry_controller, pipette_controller
 
