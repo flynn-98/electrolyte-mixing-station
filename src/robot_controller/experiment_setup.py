@@ -22,7 +22,7 @@ logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 from robot_controller import gantry_controller, pipette_controller
 
 class experiment:
-    def __init__(self, CSV_PATH, GANTRY_COM, PIPETTE_COM, SIM=False):
+    def __init__(self, GANTRY_COM, PIPETTE_COM, SIM=False):
 
         # Establish serial connections
         self.gantry = gantry_controller.gantry(GANTRY_COM, SIM)
@@ -40,6 +40,11 @@ class experiment:
         self.pot_area = math.pi * 2.78**2 / 4 #cm2
         self.chamber_location = [7, 116]
 
+        # Declare variables for CSV read
+        self.column_names = None
+        self.df = None
+
+    def read_csv(self, CSV_PATH):
         # Open CSV as dataframe
         logging.info("Reading CSV file..")
         self.column_names = ["Name", "Volume (uL)", "Starting Volume (mL)", "Aspirate Speed (mbar/s)", "Aspirate Constant (mbar/ml)"]
