@@ -12,7 +12,7 @@ import logging
 # Save logs to file
 file_handler = logging.basicConfig(filename="experiment_log.txt",
                     filemode='a',
-                    format='%(asctime)s: %(message)s',
+                    format='%(asctime)s %(levelname)s: %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S',
                     level=logging.INFO)
 
