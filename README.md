@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The Electrolyte Mixing Station is a customisable tool, primarily designed to select and mix microlitres of different electrolytes, using a volume control module and pipette system that can be configured to deal with low and high viscosities.
+The Electrolyte Mixing Station is a customisable tool, designed to select and mix microlitres of different electrolytes, using a volume control module and pipette system that can be configured to deal with low and high viscosities.
 
 ![image](data/images/CAD.png)
 

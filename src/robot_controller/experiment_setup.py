@@ -1,9 +1,12 @@
 import math
 import pandas as pd
 import numpy as np
-import time
 import sys
+import time
+import random
+
 from IPython.display import display
+import matplotlib.pyplot as plt
 
 from datetime import datetime
 
@@ -23,12 +26,13 @@ from robot_controller import gantry_controller, pipette_controller
 
 class experiment:
     def __init__(self, GANTRY_COM, PIPETTE_COM, SIM=False):
+        self.SIM = SIM
 
         # Establish serial connections
-        self.gantry = gantry_controller.gantry(GANTRY_COM, SIM)
-        self.pipette = pipette_controller.pipette(PIPETTE_COM, SIM)
+        self.gantry = gantry_controller.gantry(GANTRY_COM, self.SIM)
+        self.pipette = pipette_controller.pipette(PIPETTE_COM, self.SIM)
 
-        # Pot locations 1 -> 10
+        # Pot locations 1 -> 10 (mm)
         self.pot_locations = [[7, 21], [7, 55], 
                               [41, 21], [41, 55], 
                               [75, 21], [75, 55], 
@@ -38,7 +42,10 @@ class experiment:
         
         self.pot_base_height = -74 - 0.5 # CAD value minus tunable value to ensure submersion
         self.pot_area = math.pi * 2.78**2 / 4 #cm2
-        self.chamber_location = [7, 116]
+
+        self.chamber_location = [7, 116] # mm
+        self.mass_balance_location = [7, 116] # mm
+        self.dispense_height = -20 #mm
 
         # Declare variables for CSV read
         self.column_names = None
@@ -47,22 +54,75 @@ class experiment:
     def read_csv(self, CSV_PATH):
         # Open CSV as dataframe
         logging.info("Reading CSV file..")
-        self.column_names = ["Name", "Volume (uL)", "Starting Volume (mL)", "Aspirate Speed (mbar/s)", "Aspirate Constant (mbar/ml)"]
+        self.column_names = ["Name", "Volume (uL)", "Starting Volume (mL)", "Density (g/mL)", "Aspirate Constant (mbar/mL)", "Aspirate Speed (uL/s)"]
         # Using dictionary to convert specific columns
         convert_dict = {'Name': str,
                         'Volume (uL)': float,
                         'Starting Volume (mL)': float,
-                        'Aspirate Speed (mbar/s)': float,
-                        'Aspirate Constant (mbar/ml)': float,
+                        'Density (g/mL)': float,
+                        'Aspirate Constant (mbar/mL)': float,
+                        'Aspirate Speed (uL/s)': float,
                         }
         
         self.df = pd.read_csv(CSV_PATH, names=self.column_names).astype(convert_dict)
         display(self.df)
 
-        logging.info(f'Experiment will result in a total electrolyte volume of {self.df[self.column_names[1]].sum()/1000}ml')
+        logging.info(f'Recipe will result in a total electrolyte volume of {self.df[self.column_names[1]].sum()/1000}mL')
         
         now = datetime.now()
         logging.info("Experiment ready to begin: " + now.strftime("%d/%m/%Y %H:%M:%S"))
+
+    def move_to_container(self, x, y, z):
+        self.gantry.move(x, y, 0)
+        self.gantry.move(x, y, z)
+
+    def aspirate(self, aspirate_volume, starting_volume, name, x, y, aspirate_constant, aspirate_speed, charge_pressure=50, N=20):
+        new_volume = starting_volume - aspirate_volume * 1e-3 #ml
+
+        # Move above pot
+        logging.info("Moving to " + name + "..")
+        self.gantry.move(x, y, 0)
+
+        # Charge pipette
+        self.pipette.set_pressure(charge_pressure)
+        logging.info("Pipette charged.")
+
+        # Drop into fluid (based on starting volume)
+        logging.info("Dropping Pipette into " + name + "..")
+        z = self.pot_base_height + 10 * new_volume / self.pot_area
+        self.move_to_container(x, y, z)
+
+        # Aspirate pipette
+        diff = round(aspirate_constant * aspirate_volume, 3)
+        aspirate_pressure = diff + charge_pressure # Pressure diff is from charge pressure
+        rise_time = round(aspirate_volume / aspirate_speed, 3) # Seconds
+
+        logging.info(f"Rising to aspiration pressure of {aspirate_pressure}mbar in {rise_time}s, from charged pressure of {charge_pressure}mbar.")
+        dT = rise_time / (N-1)
+
+        for set_point in np.round(np.linspace(charge_pressure, aspirate_pressure, N), 3):
+            self.pipette.set_pressure(set_point)
+            time.sleep(dT)
+
+        logging.info("Aspiration complete.")
+        logging.info(f"{aspirate_volume}uL extracted, {new_volume}mL remaining..")
+
+        # Delay to let system settle
+        time.sleep(2)
+
+        # Move out of fluid
+        logging.info("Moving Pipette out of " + name + "..")
+        self.gantry.move(x, y, 0)
+        
+        return new_volume
+    
+    def dispense(self, name, x, y):
+        logging.info("Moving to " + name + "..")
+        self.move_to_container(x, y, self.dispense_height)
+
+        # Dispense pipette
+        self.pipette.set_pressure(0) # To dispense as quickly as possible to remove all liquid
+        logging.info("Dispense complete.")
 
     def run(self, N=1):
         for n in range(0, N):
@@ -71,53 +131,62 @@ class experiment:
 
             # Loop through all non zero constituents
             for i in non_zero.index.to_numpy(dtype=int):
-                # Get pot locations
-                x = self.pot_locations[i][0]
-                y = self.pot_locations[i][1]
-                z = 0
-
-                # Extract relevant data
+    
+                # Extract relevant df row
                 relevant_row = non_zero.loc[i]
-                name = relevant_row["Name"]
-                aspirate_volume = relevant_row["Volume (uL)"]
-                starting_volume = relevant_row["Starting Volume (mL)"]
 
-                new_volume = starting_volume - aspirate_volume * 1e-3 #ml
+                # Aspirate using data from relevant df row, increment pot co ordinates
+                new_volume = self.aspirate(relevant_row["Volume (uL)"], relevant_row["Starting Volume (mL)"], relevant_row["Name"], self.pot_locations[i][0], self.pot_locations[i][1], relevant_row["Aspirate Constant (mbar/mL)"], relevant_row["Aspirate Speed (uL/s)"])
 
                 # Set new starting volume for next repeat
                 self.df.loc[i, "Starting Volume (mL)"] = new_volume
 
-                # Move above pot
-                logging.info("Moving to " + name + "..")
-                self.gantry.move(x, y, z)
-
-                # Charge pipette
-                logging.info("Pipette charged.")
-
-                # Drop into fluid (based on starting volume)
-                logging.info("Dropping Pipette into " + name + "..")
-                z = self.pot_base_height + 10 * new_volume / self.pot_area
-                self.gantry.move(x, y, z)
-
-                # Aspirate pipette
-                logging.info("Aspiration complete.")
-                logging.info(f"{aspirate_volume}ul extracted, {new_volume}ml remaining..")
-
-                # Move out of fluid
-                logging.info("Moving Pipette out of " + name + "..")
-                z = 0
-                self.gantry.move(x, y, z)
-
                 # Move to mixing chamber
-                logging.info("Moving to Mixing Chamber..")
-                x = self.chamber_location[0]
-                y = self.chamber_location[1]
-                self.gantry.move(x, y, z)
-
-                # Dispense pipette
-                logging.info("Dispense complete.")
+                self.dispense("Mixing Chamber", self.chamber_location[0], self.chamber_location[1])
 
         logging.info(f"Experiment complete after {N} repeat(s).")
 
         logging.info("Remaining volumes..")
         display(self.df)
+
+    def plot_aspiration_variables(self, name, results, speeds, constants):
+        plt.title('Tuning of Aspiration Variables: ' + name)
+
+        for n in range(0, len(speeds)):
+            plt.plot(constants, results[n,:], label = f"{speeds[n]}uL/s")
+    
+        plt.legend()
+        plt.xlabel("Aspirate Constant mbar/mL")
+        plt.ylabel("Error ml")
+        plt.grid(visible=True, which="both", axis="both")
+        plt.show()
+
+    def tune(self, name, pot_number=1, aspirate_volume=10, starting_volume=50, density=1, asp_const_range=[1, 1], asp_speed_range=[1, 1], N=5):
+        now = datetime.now()
+        logging.info("Tuning of aspiration variables for " + name + ": " + now.strftime("%d/%m/%Y %H:%M:%S"))
+        logging.info(f"Tuning will perform a total of {N*N} aspirations..")
+
+        errors = np.empty((N,N))
+        speeds = np.linspace(asp_speed_range[0], asp_speed_range[1], N)
+        constants = np.linspace(asp_const_range[0], asp_const_range[1], N)
+
+        for i, speed in enumerate(speeds):
+            for j, const in enumerate(constants):
+                logging.info(f"Aspirating using parameters {const}mbar/mL and {speed}uL/s..")
+
+                starting_volume = self.aspirate(aspirate_volume, starting_volume, name, self.pot_locations[pot_number-1][0], self.pot_locations[pot_number-1][1], const, speed)
+                self.dispense("Mass Balance", self.mass_balance_location[0], self.mass_balance_location[1])
+
+                if self.SIM == False:
+                    errors[i, j] = ( 1000 * float(input("Input mass balance data in g: ")) / density ) - aspirate_volume
+                else:
+                    errors[i, j] = random.uniform(-0.2, 0.2)
+
+        self.plot_aspiration_variables(name, errors, speeds, constants)
+
+        # Get minimum error variables
+        i_min, j_min = np.unravel_index(np.absolute(errors).argmin(), errors.shape)
+        logging.info(f"RESULT: Minimum error of {errors[i_min, j_min]}uL for " + name + f" using {constants[j_min]}mbar/mL and {speeds[i_min]}uL/s.")
+        
+
+

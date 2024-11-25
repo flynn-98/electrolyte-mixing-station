@@ -54,8 +54,13 @@ class pipette:
                 logging.error("Disc pump PID configuration failed..")
                 exit()
 
+            self.gauge = self.register_read("R39") #mbar
+
         else:
             logging.info("No serial connection to pipette established.")
+            self.gauge = 1000 #mbar
+
+        logging.info(f"Disc pump gauge pressure set as {self.gauge}mbar.")
 
     def get_data(self):
         while self.ser.in_waiting:
@@ -63,7 +68,14 @@ class pipette:
         
     def set_pressure(self, VALUE):
         # R/W register 23 for set point
-        return self.register_write(23, VALUE)
+        # mbar is default unit
+        VALUE = round(VALUE + self.gauge, 3) # Increment by gauge pressure such that set_pressure(0) turns pump off 
+
+        if self.register_write(23, VALUE) == True:
+            logging.info(f"Pipette pressure set to {VALUE}mbar.")
+        else:
+            logging.error(f"Failed to set pipette pressure to {VALUE}mbar.")
+            exit()
         
     def register_write(self, REGISTER_NUMBER, VALUE):
         # The PCB responds to “write” commands by echoing the command back. 
@@ -72,12 +84,15 @@ class pipette:
         # or is not received at all, the PCB does not respond. 
 
         msg = f"#W<{REGISTER_NUMBER}>,<{VALUE}>\n"
-        self.ser.write(msg)
+        if self.sim == False:
+            self.ser.write(msg)
 
-        if (self.get_data() == msg):
-            return True
+            if (self.get_data() == msg):
+                return True
+            else:
+                return False
         else:
-            return False
+            return True
         
     def register_read(self, REGISTER_NUMBER):
         # R3 = Drive voltage
@@ -87,20 +102,15 @@ class pipette:
         # R39 = Pressure reading
 
         msg = f"#R<{REGISTER_NUMBER}>\n"
-        self.ser.write(msg)
+        if self.sim == False:
+            self.ser.write(msg)
 
-        data = self.get_data()
+            data = self.get_data()
 
-        return float(data.split(",")[1])
+            return float(data.split(",")[1])
+        else:
+            return 1.0
 
     def close_ser(self):
         logging.info("Closing serial connection to pipette..")
         self.ser.close()
-
-    def write(self, x, y, z, p):
-        if self.sim == False:
-            self.ser.write(f"{x},{y},{z},{p};".encode())
-
-            # Wait for response but do nothing with data
-            data = self.get_data()
-            logging.info("Response from pipette: " + data)

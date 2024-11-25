@@ -18,7 +18,8 @@ dependencies = [
     "numpy",
     "pyserial",
     "ipython",
-    "datetime"
+    "datetime",
+    "matplotlib",
 ]
 
 [project.urls]
