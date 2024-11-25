@@ -93,14 +93,14 @@ class experiment:
         self.move_to_container(x, y, z)
 
         # Aspirate pipette
-        diff = round(aspirate_constant * aspirate_volume, 3)
+        diff = aspirate_constant * aspirate_volume
         aspirate_pressure = diff + charge_pressure # Pressure diff is from charge pressure
-        rise_time = round(aspirate_volume / aspirate_speed, 3) # Seconds
+        rise_time = aspirate_volume / aspirate_speed # Seconds
 
         logging.info(f"Rising to aspiration pressure of {aspirate_pressure}mbar in {rise_time}s, from charged pressure of {charge_pressure}mbar.")
         dT = rise_time / (N-1)
 
-        for set_point in np.round(np.linspace(charge_pressure, aspirate_pressure, N), 3):
+        for set_point in np.linspace(charge_pressure, aspirate_pressure, N):
             self.pipette.set_pressure(set_point)
             time.sleep(dT)
 
@@ -109,6 +109,14 @@ class experiment:
 
         # Delay to let system settle
         time.sleep(2)
+
+        # Report final reading (charge + aspirate)
+        reading = self.pipette.get_pressure()
+        error = reading - aspirate_pressure
+        if abs(error) > 0.5:
+            logging.error(f"Aspriate pressure off target by {error}mbar for requested {aspirate_pressure}mbar.")
+        else:
+            logging.info(f"Pressure reading of {reading}mbar achieved for requested {aspirate_pressure}mbar.")
 
         # Move out of fluid
         logging.info("Moving Pipette out of " + name + "..")
@@ -127,7 +135,12 @@ class experiment:
     def run(self, N=1):
         for n in range(0, N):
             logging.info(f"Creating electrolyte mixture #{n}..")
-            non_zero = self.df[self.df["Volume (uL)"] > 0]
+
+            try:
+                non_zero = self.df[self.df["Volume (uL)"] > 0]
+            except:
+                logging.error(f"No CSV loaded.")
+                exit()
 
             # Loop through all non zero constituents
             for i in non_zero.index.to_numpy(dtype=int):

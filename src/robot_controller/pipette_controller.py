@@ -54,7 +54,7 @@ class pipette:
                 logging.error("Disc pump PID configuration failed..")
                 exit()
 
-            self.gauge = self.register_read("R39") #mbar
+            self.gauge = self.get_pressure() #mbar
 
         else:
             logging.info("No serial connection to pipette established.")
@@ -76,6 +76,9 @@ class pipette:
         else:
             logging.error(f"Failed to set pipette pressure to {VALUE}mbar.")
             exit()
+
+    def get_pressure(self):
+        return self.register_read("R39") - self.gauge
         
     def register_write(self, REGISTER_NUMBER, VALUE):
         # The PCB responds to “write” commands by echoing the command back. 
@@ -109,7 +112,7 @@ class pipette:
 
             return float(data.split(",")[1])
         else:
-            return 1.0
+            return self.gauge
 
     def close_ser(self):
         logging.info("Closing serial connection to pipette..")
