@@ -76,7 +76,7 @@ class experiment:
         self.gantry.move(x, y, 0)
         self.gantry.move(x, y, z)
 
-    def aspirate(self, aspirate_volume, starting_volume, name, x, y, aspirate_constant, aspirate_speed, charge_pressure=50, N=20):
+    def aspirate(self, aspirate_volume, starting_volume, name, x, y, aspirate_constant, aspirate_speed, charge_pressure=50):
         new_volume = starting_volume - aspirate_volume * 1e-3 #ml
 
         # Move above pot
@@ -98,6 +98,7 @@ class experiment:
         rise_time = aspirate_volume / aspirate_speed # Seconds
 
         logging.info(f"Rising to aspiration pressure of {aspirate_pressure}mbar in {rise_time}s, from charged pressure of {charge_pressure}mbar.")
+        N = math.ceil(diff)
         dT = rise_time / (N-1)
 
         for set_point in np.linspace(charge_pressure, aspirate_pressure, N):
