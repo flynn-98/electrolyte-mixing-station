@@ -76,6 +76,21 @@ class experiment:
         self.gantry.move(x, y, 0)
         self.gantry.move(x, y, z)
 
+    def aspirate_at_speed(self, charge_pressure, aspirate_volume, aspirate_constant, aspirate_speed, pressure_resolution=0.415):
+        diff = aspirate_constant * aspirate_volume
+        aspirate_pressure = diff + charge_pressure # Pressure diff is from charge pressure
+        rise_time = aspirate_volume / aspirate_speed # Seconds
+
+        logging.info(f"Rising to aspiration pressure of {aspirate_pressure}mbar in {rise_time}s, from charged pressure of {charge_pressure}mbar.")
+        N = math.floor(diff / pressure_resolution) + 2 # Ideal resolution of sensor (1.7bar range with 12bit value), N >= 2
+        dT = rise_time / (N-1)
+
+        for set_point in np.linspace(charge_pressure, aspirate_pressure, N):
+            self.pipette.set_pressure(set_point)
+            time.sleep(dT)
+
+        return aspirate_pressure
+
     def aspirate(self, aspirate_volume, starting_volume, name, x, y, aspirate_constant, aspirate_speed, charge_pressure=50):
         new_volume = starting_volume - aspirate_volume * 1e-3 #ml
 
@@ -89,21 +104,10 @@ class experiment:
 
         # Drop into fluid (based on starting volume)
         logging.info("Dropping Pipette into " + name + "..")
-        z = self.pot_base_height + 10 * new_volume / self.pot_area
-        self.move_to_container(x, y, z)
+        self.move_to_container(x, y, self.pot_base_height + 10 * new_volume / self.pot_area)
 
         # Aspirate pipette
-        diff = aspirate_constant * aspirate_volume
-        aspirate_pressure = diff + charge_pressure # Pressure diff is from charge pressure
-        rise_time = aspirate_volume / aspirate_speed # Seconds
-
-        logging.info(f"Rising to aspiration pressure of {aspirate_pressure}mbar in {rise_time}s, from charged pressure of {charge_pressure}mbar.")
-        N = math.ceil(diff)
-        dT = rise_time / (N-1)
-
-        for set_point in np.linspace(charge_pressure, aspirate_pressure, N):
-            self.pipette.set_pressure(set_point)
-            time.sleep(dT)
+        aspirate_pressure = self.aspirate_at_speed(charge_pressure, aspirate_volume, aspirate_constant, aspirate_speed)
 
         logging.info("Aspiration complete.")
         logging.info(f"{aspirate_volume}uL extracted, {new_volume}mL remaining..")
