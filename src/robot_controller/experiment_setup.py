@@ -76,7 +76,20 @@ class experiment:
         self.gantry.move(x, y, 0)
         self.gantry.move(x, y, z)
 
-    def aspirate_at_speed(self, charge_pressure, aspirate_volume, aspirate_constant, aspirate_speed, pressure_resolution=0.415):
+    def get_poly_equation(self, xi, xf, T, N):
+        time = np.linspace(0, T, N)
+        diff = xf - xi
+
+        # polynomial coefficients
+        C_0 = xi
+        C_1 = 0
+        C_3 = diff * 10 / pow(T, 3)
+        C_4 = diff * -15 / pow(T, 4)
+        C_5 = diff * 6 / pow(T, 5)
+
+        return C_0 + C_3 * np.power(time, 3) + C_4 * np.power(time, 4) + C_5 * np.power(time, 5)
+
+    def aspirate_at_speed(self, charge_pressure, aspirate_volume, aspirate_constant, aspirate_speed, pressure_resolution, poly=False):
         diff = aspirate_constant * aspirate_volume
         aspirate_pressure = diff + charge_pressure # Pressure diff is from charge pressure
         rise_time = aspirate_volume / aspirate_speed # Seconds
@@ -85,13 +98,18 @@ class experiment:
         N = math.floor(diff / pressure_resolution) + 2 # Ideal resolution of sensor (1.7bar range with 12bit value), N >= 2
         dT = rise_time / (N-1)
 
-        for set_point in np.linspace(charge_pressure, aspirate_pressure, N):
+        if poly==False:
+            path = np.linspace(charge_pressure, aspirate_pressure, N)
+        else:
+            path = self.get_poly_equation(charge_pressure, aspirate_pressure, rise_time, N)
+
+        for set_point in path:
             self.pipette.set_pressure(set_point)
             time.sleep(dT)
 
         return aspirate_pressure
 
-    def aspirate(self, aspirate_volume, starting_volume, name, x, y, aspirate_constant, aspirate_speed, charge_pressure=50, error_tol=0.5):
+    def aspirate(self, aspirate_volume, starting_volume, name, x, y, aspirate_constant, aspirate_speed, charge_pressure=50, pressure_resolution=0.415):
         new_volume = starting_volume - aspirate_volume * 1e-3 #ml
 
         # Move above pot
@@ -107,7 +125,7 @@ class experiment:
         self.move_to_container(x, y, self.pot_base_height + 10 * new_volume / self.pot_area)
 
         # Aspirate pipette
-        aspirate_pressure = self.aspirate_at_speed(charge_pressure, aspirate_volume, aspirate_constant, aspirate_speed)
+        aspirate_pressure = self.aspirate_at_speed(charge_pressure, aspirate_volume, aspirate_constant, aspirate_speed, pressure_resolution)
 
         logging.info("Aspiration complete.")
         logging.info(f"{aspirate_volume}uL extracted, {new_volume}mL remaining..")
@@ -118,7 +136,7 @@ class experiment:
         # Report final readings (charge + aspirate)
         reading = self.pipette.get_pressure()
         error = reading - aspirate_pressure
-        if abs(error) > error_tol:
+        if abs(error) > 1.5 * pressure_resolution:
             logging.error(f"Aspriate pressure off target by {error}mbar for requested {aspirate_pressure}mbar.")
         else:
             logging.info(f"Pressure reading of {reading}mbar achieved for requested {aspirate_pressure}mbar.")
