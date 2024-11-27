@@ -79,6 +79,9 @@ class pipette:
 
     def get_pressure(self):
         return self.register_read("R39") - self.gauge
+    
+    def get_power(self):
+        return self.register_read("R5")
         
     def register_write(self, REGISTER_NUMBER, VALUE):
         # The PCB responds to “write” commands by echoing the command back. 

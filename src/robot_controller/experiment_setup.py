@@ -91,7 +91,7 @@ class experiment:
 
         return aspirate_pressure
 
-    def aspirate(self, aspirate_volume, starting_volume, name, x, y, aspirate_constant, aspirate_speed, charge_pressure=50):
+    def aspirate(self, aspirate_volume, starting_volume, name, x, y, aspirate_constant, aspirate_speed, charge_pressure=50, error_tol=0.5):
         new_volume = starting_volume - aspirate_volume * 1e-3 #ml
 
         # Move above pot
@@ -115,13 +115,14 @@ class experiment:
         # Delay to let system settle
         time.sleep(2)
 
-        # Report final reading (charge + aspirate)
+        # Report final readings (charge + aspirate)
         reading = self.pipette.get_pressure()
         error = reading - aspirate_pressure
-        if abs(error) > 0.5:
+        if abs(error) > error_tol:
             logging.error(f"Aspriate pressure off target by {error}mbar for requested {aspirate_pressure}mbar.")
         else:
             logging.info(f"Pressure reading of {reading}mbar achieved for requested {aspirate_pressure}mbar.")
+        logging.info(f"Pump power at {self.pipette.get_power()}mW.")
 
         # Move out of fluid
         logging.info("Moving Pipette out of " + name + "..")

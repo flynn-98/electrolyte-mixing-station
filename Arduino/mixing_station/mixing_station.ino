@@ -104,7 +104,7 @@ void setup() {
 void loop() {
     // put your main code here, to run repeatedly:
     if (Serial.available() > 0) {
-        // data structure to receive = action(var1, var2..)
+        // data structure to receive = action(var1, var2)
 
         action = Serial.readStringUntil('(');
 
@@ -112,7 +112,7 @@ void loop() {
             x = Serial.readStringUntil(',').toFloat();
             y = Serial.readStringUntil(',').toFloat();
             z = Serial.readStringUntil(')').toFloat();
-
+            
             gantryMove(x, y, z);
         }
         else if (action == "pump") {
@@ -125,9 +125,10 @@ void loop() {
 
             // gantryMix(duration);
         }
-        else { 
+        else {
             Serial.println("Unknown command");
         }
+
         // TODO SERVO / MIXING
     }
 };
@@ -146,7 +147,18 @@ long mmToSteps(float milli, bool horizontal, bool pump, int motor) {
             steps = floor(motorDir[motor] * MICROSTEPS * STEPS_REV * milli / ROD_PITCH);
         }
     }
-    return steps
+    return steps;
+};
+
+void motorsRun() {
+    // Run until complete
+    while (Z_MOTOR.distanceToGo() != 0) {
+      Z_MOTOR.run();
+    }
+    while ((X_MOTOR.distanceToGo() != 0) && (Y_MOTOR.distanceToGo() != 0)) {
+        X_MOTOR.run();
+        Y_MOTOR.run();
+    }
 };
 
 void gantryHome() {
@@ -160,22 +172,14 @@ void gantryHome() {
     Y_MOTOR.move(-1 * mmToSteps(jointLimit[1][1], true, false, 1));
     Z_MOTOR.move(-1 * mmToSteps(-jointLimit[1][2], false, false, 2));
 
-    while ((X_MOTOR.distanceToGo() != 0) && (Y_MOTOR.distanceToGo() != 0) && (Z_MOTOR.distanceToGo() != 0)) {
-        X_MOTOR.run();
-        Y_MOTOR.run();
-        Z_MOTOR.run();
-    }
+    motorsRun();
 
     // Move towards home position
     X_MOTOR.move(mmToSteps(home[0], true, false, 0));
     Y_MOTOR.move(mmToSteps(home[1], true, false, 1));
     Z_MOTOR.move(mmToSteps(home[2], false, false, 2));
 
-    while ((X_MOTOR.distanceToGo() != 0) && (Y_MOTOR.distanceToGo() != 0) && (Z_MOTOR.distanceToGo() != 0)) {
-        X_MOTOR.run();
-        Y_MOTOR.run();
-        Z_MOTOR.run();
-    }
+    motorsRun();
 
     // Set positions to Zero
     X_MOTOR.setCurrentPosition(0);
@@ -215,12 +219,7 @@ void gantryMove(float x, float y, float z) {
 
     Z_MOTOR.moveTo(mmToSteps(z, false, false, 2));
 
-    // Run until complete
-    while ((X_MOTOR.distanceToGo() != 0) && (Y_MOTOR.distanceToGo() != 0) && (Z_MOTOR.distanceToGo() != 0)) {
-        X_MOTOR.run();
-        Y_MOTOR.run();
-        Z_MOTOR.run();
-    }
+    motorsRun();
 
     CurrentTime = ceil( millis() / 1000 );
     ElapsedTime = CurrentTime - StartTime;
