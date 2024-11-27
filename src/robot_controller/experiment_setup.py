@@ -76,9 +76,8 @@ class experiment:
         self.gantry.move(x, y, 0)
         self.gantry.move(x, y, z)
 
-    def get_poly_equation(self, xi, xf, T, N):
+    def get_poly_equation(self, xi, diff, T, N):
         time = np.linspace(0, T, N)
-        diff = xf - xi
 
         # polynomial coefficients
         C_0 = xi
@@ -101,7 +100,7 @@ class experiment:
         if poly==False:
             path = np.linspace(charge_pressure, aspirate_pressure, N)
         else:
-            path = self.get_poly_equation(charge_pressure, aspirate_pressure, rise_time, N)
+            path = self.get_poly_equation(charge_pressure, diff, rise_time, N)
 
         for set_point in path:
             self.pipette.set_pressure(set_point)
