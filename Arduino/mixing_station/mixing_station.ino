@@ -15,14 +15,15 @@ const int Z_DIR = 8;
 const int P_STEP = 1;
 const int P_DIR = 0;
 
-const float STAGE_SPEED = 200.0; //microsteps/s
-const float PUMP_SPEED = 50; //microsteps/s
-const float HOMING_SPEED = 50; //microsteps/s
+const float MICROSTEPS = 4.0;
 
-const float MAX_SPEED = 200.0; //microsteps/s
-const float MAX_ACCEL = 200.0; //microsteps/s2
+const float STAGE_SPEED = 300.0 * MICROSTEPS ; //microsteps/s
+const float PUMP_SPEED = 50 * MICROSTEPS; //microsteps/s
+const float HOMING_SPEED = 50 * MICROSTEPS; //microsteps/s
+const float Z_HOMING_SPEED = 150 * MICROSTEPS; //microsteps/s
 
-const float MICROSTEPS = 1.0;
+const float MAX_ACCEL = 100.0; //microsteps/s2
+
 const float PULLEY_RADIUS = 6.0; //mm
 const float ROD_PITCH = 2.0; //mm
 const float STEPS_REV = 200.0;
@@ -38,7 +39,7 @@ AccelStepper PUMP_MOTOR(AccelStepper::DRIVER, P_STEP, P_DIR);
 Servo mixer;
 
 // Joint Home Positions (mm)
-const int home[3] = {1.5, 2.5, -1.0};
+const int home[3] = {-158.9, 2.5, -1.0};
 
 // Joint Limits (mm)
 const float jointLimit[2][3] = {
@@ -48,7 +49,7 @@ const float jointLimit[2][3] = {
 
 // Joint direction coefficients: 1 or -1
 // X = 0, Y = 1, Z = 2
-const float motorDir[3] = {1, 1, 1};
+const float motorDir[3] = {1, 1, -1};
 
 float x = 0;
 float y = 0;
@@ -78,25 +79,19 @@ void setup() {
 
   mixer.attach(SERVO_PIN);
 
-  X_MOTOR.setMaxSpeed(MAX_SPEED);
   X_MOTOR.setAcceleration(MAX_ACCEL);
-
-  Y_MOTOR.setMaxSpeed(MAX_SPEED);
   Y_MOTOR.setAcceleration(MAX_ACCEL);
-
-  Z_MOTOR.setMaxSpeed(MAX_SPEED);
   Z_MOTOR.setAcceleration(MAX_ACCEL);
 
-  PUMP_MOTOR.setMaxSpeed(MAX_SPEED);
+  PUMP_MOTOR.setMaxSpeed(PUMP_SPEED);
   PUMP_MOTOR.setAcceleration(MAX_ACCEL);
 
   Serial.begin(9600);
   gantryHome();
 
-  X_MOTOR.setSpeed(STAGE_SPEED);
-  Y_MOTOR.setSpeed(STAGE_SPEED);
-  Z_MOTOR.setSpeed(STAGE_SPEED);
-  PUMP_MOTOR.setSpeed(PUMP_SPEED);
+  X_MOTOR.setMaxSpeed(STAGE_SPEED);
+  Y_MOTOR.setMaxSpeed(STAGE_SPEED);
+  Z_MOTOR.setMaxSpeed(STAGE_SPEED);
 
   Serial.println("Controller Ready");
 };
@@ -152,25 +147,25 @@ long mmToSteps(float milli, bool horizontal, bool pump, int motor) {
 
 void motorsRun() {
     // Run until complete
-    while (Z_MOTOR.distanceToGo() != 0) {
-      Z_MOTOR.run();
-    }
-    while ((X_MOTOR.distanceToGo() != 0) && (Y_MOTOR.distanceToGo() != 0)) {
-        X_MOTOR.run();
-        Y_MOTOR.run();
-    }
+    Z_MOTOR.runToPosition();
+    Y_MOTOR.runToPosition();
+    X_MOTOR.runToPosition();
+
+    //while (Z_MOTOR.distanceToGo() != 0) {
+    //    Z_MOTOR.run();
+    //}
 };
 
 void gantryHome() {
     // Slow down motors for required homing collision
-    X_MOTOR.setSpeed(HOMING_SPEED);
-    Y_MOTOR.setSpeed(HOMING_SPEED);
-    Z_MOTOR.setSpeed(HOMING_SPEED);
+    X_MOTOR.setMaxSpeed(HOMING_SPEED);
+    Y_MOTOR.setMaxSpeed(HOMING_SPEED);
+    Z_MOTOR.setMaxSpeed(Z_HOMING_SPEED);
 
     // Move towards hard stop
-    X_MOTOR.move(-1 * mmToSteps(jointLimit[1][0], true, false, 0));
-    Y_MOTOR.move(-1 * mmToSteps(jointLimit[1][1], true, false, 1));
-    Z_MOTOR.move(-1 * mmToSteps(-jointLimit[1][2], false, false, 2));
+    X_MOTOR.move(mmToSteps(jointLimit[1][0], true, false, 0)); // X motor homes at max X value
+    Y_MOTOR.move(-1 * mmToSteps(jointLimit[1][1], true, false, 1)); // Y motor homes at zero
+    Z_MOTOR.move(-1 * mmToSteps(jointLimit[1][2], false, false, 2)); // Z motor homes at zero
 
     motorsRun();
 
@@ -210,11 +205,11 @@ void gantryMove(float x, float y, float z) {
 
     Y_MOTOR.moveTo(mmToSteps(y, true, false, 1));
 
-    if (z < jointLimit[0][2]) {
-        z = jointLimit[0][2];
-    }
-    else if (z > jointLimit[1][2]) {
+    if (z < jointLimit[1][2]) {
         z = jointLimit[1][2];
+    }
+    else if (z > jointLimit[0][2]) {
+        z = jointLimit[0][2];
     }
 
     Z_MOTOR.moveTo(mmToSteps(z, false, false, 2));
