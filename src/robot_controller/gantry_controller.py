@@ -19,7 +19,7 @@ class gantry:
             if self.ser.isOpen() == False:
                 self.ser.open()
 
-            if self.get_data == "Controller Ready":
+            if self.get_data == "Gantry Homed":
                 logging.info("Serial connection to gantry established.")
             else:
                 logging.error("Failed to establish serial connection to gantry.")
@@ -48,6 +48,16 @@ class gantry:
     def move(self, x, y, z):
         if self.sim == False:
             self.ser.write(f"move({x},{y},{z})".encode())
+            self.get_response()
+
+    def softHome(self):
+        if self.sim == False:
+            self.ser.write("softHome()".encode())
+            self.get_response()
+
+    def hardHome(self):
+        if self.sim == False:
+            self.ser.write("hardHome()".encode())
             self.get_response()
 
     def pump(self, vol):

@@ -64,7 +64,6 @@ unsigned long CurrentTime;
 unsigned long ElapsedTime;
 
 long steps;
-float drift = 10; //mm (for first soft home)
 
 String action;
 
@@ -109,9 +108,9 @@ void loop() {
             gantryMove(x, y, z);
         }
         else if (action == "softHome") {
-            drift = Serial.readStringUntil(')').toFloat();
+            x = Serial.readStringUntil(')').toFloat();
             
-            gantrySoftHome(drift);
+            gantrySoftHome();
         }
         else if (action == "hardHome") {
             x = Serial.readStringUntil(')').toFloat();
@@ -198,6 +197,8 @@ void gantryHardHome() {
 };
 
 void gantrySoftHome(float drift) {
+    float drift = 2; //mm
+
     // Slow down motors for required homing collision
     X_MOTOR.setMaxSpeed(HOMING_SPEED);
     Y_MOTOR.setMaxSpeed(HOMING_SPEED);

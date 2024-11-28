@@ -185,6 +185,8 @@ class experiment:
         logging.info("Remaining volumes..")
         display(self.df)
 
+        self.gantry.softHome()
+
     def plot_aspiration_variables(self, name, results, speeds, constants):
         plt.title('Tuning of Aspiration Variables: ' + name)
 
@@ -223,6 +225,8 @@ class experiment:
         # Get minimum error variables
         i_min, j_min = np.unravel_index(np.absolute(errors).argmin(), errors.shape)
         logging.info(f"RESULT: Minimum error of {errors[i_min, j_min]}uL for " + name + f" using {constants[j_min]}mbar/mL and {speeds[i_min]}uL/s.")
+
+        self.gantry.softHome()
         
 
 
