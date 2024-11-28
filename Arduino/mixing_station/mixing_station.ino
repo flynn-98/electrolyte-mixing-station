@@ -39,8 +39,8 @@ AccelStepper PUMP_MOTOR(AccelStepper::DRIVER, P_STEP, P_DIR);
 Servo mixer;
 
 // Joint Home Positions (mm)
-const float pad_thickness = 2.0: //mm 
-const float x_shift = 6; //mm to avoid clash between VCM and X carriage
+const float pad_thickness = 2.0; //mm 
+const float x_shift = 6.0; //mm to avoid clash between VCM and X carriage
 const float home[3] = {-167.9 + pad_thickness + x_shift, 2.9 - pad_thickness, -1.0}; // Taken from CAD
 
 // Joint Limits (mm) also from CAD
@@ -89,7 +89,7 @@ void setup() {
   PUMP_MOTOR.setAcceleration(MAX_ACCEL);
 
   Serial.begin(9600);
-  gantrySoftHome(drift);
+  gantrySoftHome();
 
 };
 
@@ -196,7 +196,7 @@ void gantryHardHome() {
     Serial.println("Gantry Homed");
 };
 
-void gantrySoftHome(float drift) {
+void gantrySoftHome() {
     float drift = 2; //mm
 
     // Slow down motors for required homing collision
