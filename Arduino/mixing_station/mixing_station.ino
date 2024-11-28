@@ -39,12 +39,14 @@ AccelStepper PUMP_MOTOR(AccelStepper::DRIVER, P_STEP, P_DIR);
 Servo mixer;
 
 // Joint Home Positions (mm)
-const int home[3] = {-158.9, 2.5, -1.0};
+const float pad_thickness = 2.0: //mm 
+const float x_shift = 6; //mm to avoid clash between VCM and X carriage
+const float home[3] = {-167.9 + pad_thickness + x_shift, 2.9 - pad_thickness, -1.0}; // Taken from CAD
 
-// Joint Limits (mm)
+// Joint Limits (mm) also from CAD
 const float jointLimit[2][3] = {
     {0, 0, 0}, 
-    {160.4, 144.0, -45.0}
+    {165.0 - x_shift, 144.0, -44.0}
 };
 
 // Joint direction coefficients: 1 or -1
@@ -62,6 +64,7 @@ unsigned long CurrentTime;
 unsigned long ElapsedTime;
 
 long steps;
+float drift = 10; //mm (for first soft home)
 
 String action;
 
@@ -87,13 +90,8 @@ void setup() {
   PUMP_MOTOR.setAcceleration(MAX_ACCEL);
 
   Serial.begin(9600);
-  gantryHome();
+  gantrySoftHome(drift);
 
-  X_MOTOR.setMaxSpeed(STAGE_SPEED);
-  Y_MOTOR.setMaxSpeed(STAGE_SPEED);
-  Z_MOTOR.setMaxSpeed(STAGE_SPEED);
-
-  Serial.println("Controller Ready");
 };
 
 void loop() {
@@ -109,6 +107,16 @@ void loop() {
             z = Serial.readStringUntil(')').toFloat();
             
             gantryMove(x, y, z);
+        }
+        else if (action == "softHome") {
+            drift = Serial.readStringUntil(')').toFloat();
+            
+            gantrySoftHome(drift);
+        }
+        else if (action == "hardHome") {
+            x = Serial.readStringUntil(')').toFloat();
+            
+            gantryHardHome();
         }
         else if (action == "pump") {
             vol = Serial.readStringUntil(')').toFloat();
@@ -156,20 +164,20 @@ void motorsRun() {
     //}
 };
 
-void gantryHome() {
+void gantryHardHome() {
     // Slow down motors for required homing collision
     X_MOTOR.setMaxSpeed(HOMING_SPEED);
     Y_MOTOR.setMaxSpeed(HOMING_SPEED);
     Z_MOTOR.setMaxSpeed(Z_HOMING_SPEED);
 
-    // Move towards hard stop
+    // Move towards hard pads
     X_MOTOR.move(mmToSteps(jointLimit[1][0], true, false, 0)); // X motor homes at max X value
     Y_MOTOR.move(-1 * mmToSteps(jointLimit[1][1], true, false, 1)); // Y motor homes at zero
     Z_MOTOR.move(-1 * mmToSteps(jointLimit[1][2], false, false, 2)); // Z motor homes at zero
 
     motorsRun();
 
-    // Move towards home position
+    // Move to home position
     X_MOTOR.move(mmToSteps(home[0], true, false, 0));
     Y_MOTOR.move(mmToSteps(home[1], true, false, 1));
     Z_MOTOR.move(mmToSteps(home[2], false, false, 2));
@@ -180,6 +188,44 @@ void gantryHome() {
     X_MOTOR.setCurrentPosition(0);
     Y_MOTOR.setCurrentPosition(0);
     Z_MOTOR.setCurrentPosition(0);
+
+    // Return to usual speeds
+    X_MOTOR.setMaxSpeed(STAGE_SPEED);
+    Y_MOTOR.setMaxSpeed(STAGE_SPEED);
+    Z_MOTOR.setMaxSpeed(STAGE_SPEED);
+};
+
+void gantrySoftHome(float drift) {
+    // Slow down motors for required homing collision
+    X_MOTOR.setMaxSpeed(HOMING_SPEED);
+    Y_MOTOR.setMaxSpeed(HOMING_SPEED);
+    Z_MOTOR.setMaxSpeed(Z_HOMING_SPEED);
+
+    // Send to home pads plus small distance to remove any drift
+    X_MOTOR.moveTo(mmToSteps(jointLimit[1][0] + drift, true, false, 0));
+    Y_MOTOR.moveTo(mmToSteps(-1 * drift, true, false, 1));
+    Z_MOTOR.moveTo(mmToSteps(-1 * drift, false, false, 2));
+
+    motorsRun();
+
+    // Move to home position
+    X_MOTOR.move(mmToSteps(home[0], true, false, 0));
+    Y_MOTOR.move(mmToSteps(home[1], true, false, 1));
+    Z_MOTOR.move(mmToSteps(home[2], false, false, 2));
+
+    motorsRun();
+
+    // Set positions to Zero
+    X_MOTOR.setCurrentPosition(0);
+    Y_MOTOR.setCurrentPosition(0);
+    Z_MOTOR.setCurrentPosition(0);
+
+    // Return to usual speeds
+    X_MOTOR.setMaxSpeed(STAGE_SPEED);
+    Y_MOTOR.setMaxSpeed(STAGE_SPEED);
+    Z_MOTOR.setMaxSpeed(STAGE_SPEED);
+
+    Serial.println("Gantry Homed");
 };
 
 void gantryMove(float x, float y, float z) {
