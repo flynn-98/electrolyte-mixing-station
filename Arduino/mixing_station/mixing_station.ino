@@ -193,6 +193,8 @@ void gantryHardHome() {
     X_MOTOR.setMaxSpeed(STAGE_SPEED);
     Y_MOTOR.setMaxSpeed(STAGE_SPEED);
     Z_MOTOR.setMaxSpeed(STAGE_SPEED);
+
+    Serial.println("Gantry Homed");
 };
 
 void gantrySoftHome(float drift) {
@@ -204,7 +206,7 @@ void gantrySoftHome(float drift) {
     // Send to home pads plus small distance to remove any drift
     X_MOTOR.moveTo(mmToSteps(jointLimit[1][0] + drift, true, false, 0));
     Y_MOTOR.moveTo(mmToSteps(-1 * drift, true, false, 1));
-    Z_MOTOR.moveTo(mmToSteps(-1 * drift, false, false, 2));
+    Z_MOTOR.moveTo(mmToSteps(drift, false, false, 2));
 
     motorsRun();
 
