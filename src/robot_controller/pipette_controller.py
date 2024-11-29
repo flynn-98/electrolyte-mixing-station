@@ -1,4 +1,5 @@
 import serial
+import sys
 import logging
 logging.basicConfig(level = logging.INFO)
 
@@ -28,7 +29,7 @@ class pipette:
                 logging.info("Disc pump successfully initialised.")
             else:
                 logging.error("Disc pump initialisation failed..")
-                exit()
+                sys.exit()
             
             # Configure PID Settings
             # R10 -> 1 = PID mode (0 = manual)
@@ -40,7 +41,7 @@ class pipette:
                 logging.info("Disc pump PID settings succesfully configured.")
             else:
                 logging.error("Disc pump PID configuration failed..")
-                exit()
+                sys.exit()
 
             # Configure PID constants
             # R14 -> var = Kp
@@ -52,7 +53,7 @@ class pipette:
                 logging.info("Disc pump PID settings succesfully configured.")
             else:
                 logging.error("Disc pump PID configuration failed..")
-                exit()
+                sys.exit()
 
             self.gauge = self.get_pressure() #mbar
 
@@ -75,7 +76,7 @@ class pipette:
             logging.info(f"Pipette pressure set to {VALUE}mbar.")
         else:
             logging.error(f"Failed to set pipette pressure to {VALUE}mbar.")
-            exit()
+            sys.exit()
 
     def get_pressure(self):
         return self.register_read("R39") - self.gauge

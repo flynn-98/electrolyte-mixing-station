@@ -1,4 +1,5 @@
 import serial
+import sys
 import logging
 logging.basicConfig(level = logging.INFO)
 
@@ -23,7 +24,7 @@ class gantry:
                 logging.info("Serial connection to gantry established.")
             else:
                 logging.error("Failed to establish serial connection to gantry.")
-                exit()
+                sys.exit()
 
         else:
             logging.info("No serial connection to gantry established.")
@@ -37,7 +38,7 @@ class gantry:
         # Wait for response and check that command was understood
         if data == "Unknown command":
             logging.error("Gantry failed to recognise command.")
-            exit()
+            sys.exit()
         else:
             logging.info("Response from gantry: " + data)
 

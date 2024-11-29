@@ -25,12 +25,13 @@ logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 from robot_controller import gantry_controller, pipette_controller
 
 class experiment:
-    def __init__(self, GANTRY_COM, PIPETTE_COM, SIM=False):
-        self.SIM = SIM
+    def __init__(self, GANTRY_COM, PIPETTE_COM, GANTRY_SIM=False, PIPETTE_SIM=False):
+        # Only record mass balance readings if Pipette active
+        self.SIM = PIPETTE_SIM
 
         # Establish serial connections
-        self.gantry = gantry_controller.gantry(GANTRY_COM, self.SIM)
-        self.pipette = pipette_controller.pipette(PIPETTE_COM, self.SIM)
+        self.gantry = gantry_controller.gantry(GANTRY_COM, GANTRY_SIM)
+        self.pipette = pipette_controller.pipette(PIPETTE_COM, PIPETTE_SIM)
 
         # Pot locations 1 -> 10 (mm)
         self.pot_locations = [[7, 21], [7, 55], 
@@ -163,7 +164,7 @@ class experiment:
                 non_zero = self.df[self.df["Volume (uL)"] > 0]
             except:
                 logging.error(f"No CSV loaded.")
-                exit()
+                sys.exit()
 
             # Loop through all non zero constituents
             for i in non_zero.index.to_numpy(dtype=int):
