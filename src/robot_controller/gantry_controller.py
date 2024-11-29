@@ -20,7 +20,7 @@ class gantry:
             if self.ser.isOpen() == False:
                 self.ser.open()
 
-            if self.get_data == "Gantry Homed":
+            if self.get_data() == "Gantry Homed":
                 logging.info("Serial connection to gantry established.")
             else:
                 logging.error("Failed to establish serial connection to gantry.")
@@ -30,8 +30,10 @@ class gantry:
             logging.info("No serial connection to gantry established.")
 
     def get_data(self):
-        while self.ser.in_waiting:
-            return self.ser.readline().decode().strip()
+        while self.ser.in_waiting == 0:
+            pass
+
+        return self.ser.readline().decode().rstrip().replace("\x00", "")
         
     def get_response(self):
         data = self.get_data()

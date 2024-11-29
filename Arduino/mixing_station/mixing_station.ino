@@ -17,14 +17,14 @@ const int P_DIR = 0;
 
 const float MICROSTEPS = 4.0;
 
-const float STAGE_SPEED = 400.0 * MICROSTEPS ; //microsteps/s
+const float STAGE_SPEED = 800.0 * MICROSTEPS ; //microsteps/s
 const float PUMP_SPEED = 50 * MICROSTEPS; //microsteps/s
 const float HOMING_SPEED = 50 * MICROSTEPS; //microsteps/s
 const float Z_HOMING_SPEED = 150 * MICROSTEPS; //microsteps/s
 
-const float MAX_ACCEL = 100.0; //microsteps/s2
+const float MAX_ACCEL = 400.0; //microsteps/s2
 
-const float PULLEY_RADIUS = 6.15; //mm
+const float PULLEY_RADIUS = 6.3; //mm
 const float ROD_PITCH = 2.0; //mm
 const float STEPS_REV = 200.0;
 const float ML_REV = 0.2; //ml/rev
