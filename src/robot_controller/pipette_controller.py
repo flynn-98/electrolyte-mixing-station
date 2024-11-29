@@ -62,6 +62,12 @@ class pipette:
             self.gauge = 1000 #mbar
 
         logging.info(f"Disc pump gauge pressure set as {self.gauge}mbar.")
+
+    def get_data(self):
+        while self.ser.in_waiting == 0:
+            pass
+
+        return self.ser.readline().decode().rstrip() #.replace("\x00", "")
         
     def set_pressure(self, VALUE):
         # R/W register 23 for set point

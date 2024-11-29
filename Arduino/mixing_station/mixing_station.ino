@@ -24,7 +24,7 @@ const float Z_HOMING_SPEED = 150 * MICROSTEPS; //microsteps/s
 
 const float MAX_ACCEL = 400.0; //microsteps/s2
 
-const float PULLEY_RADIUS = 6.3; //mm
+const float PULLEY_RADIUS = 6.2; //mm
 const float ROD_PITCH = 2.0; //mm
 const float STEPS_REV = 200.0;
 const float ML_REV = 0.2; //ml/rev
