@@ -17,14 +17,14 @@ const int P_DIR = 0;
 
 const float MICROSTEPS = 4.0;
 
-const float STAGE_SPEED = 300.0 * MICROSTEPS ; //microsteps/s
+const float STAGE_SPEED = 400.0 * MICROSTEPS ; //microsteps/s
 const float PUMP_SPEED = 50 * MICROSTEPS; //microsteps/s
 const float HOMING_SPEED = 50 * MICROSTEPS; //microsteps/s
 const float Z_HOMING_SPEED = 150 * MICROSTEPS; //microsteps/s
 
 const float MAX_ACCEL = 100.0; //microsteps/s2
 
-const float PULLEY_RADIUS = 6.0; //mm
+const float PULLEY_RADIUS = 6.15; //mm
 const float ROD_PITCH = 2.0; //mm
 const float STEPS_REV = 200.0;
 const float ML_REV = 0.2; //ml/rev
@@ -39,8 +39,8 @@ AccelStepper PUMP_MOTOR(AccelStepper::DRIVER, P_STEP, P_DIR);
 Servo mixer;
 
 // Joint Home Positions (mm)
-const float pad_thickness = 2.0; //mm 
-const float x_shift = 6.0; //mm to avoid clash between VCM and X carriage
+const float pad_thickness = 1.0; //mm 
+const float x_shift = 20.0; //mm to avoid clash between VCM and X carriage
 const float home[3] = {-167.9 + pad_thickness + x_shift, 2.9 - pad_thickness, -1.0}; // Taken from CAD
 
 // Joint Limits (mm) also from CAD
@@ -48,6 +48,8 @@ const float jointLimit[2][3] = {
     {0, 0, 0}, 
     {165.0 - x_shift, 144.0, -44.0}
 };
+
+const float drift = 6; //mm
 
 // Joint direction coefficients: 1 or -1
 // X = 0, Y = 1, Z = 2
@@ -87,6 +89,11 @@ void setup() {
 
   PUMP_MOTOR.setMaxSpeed(PUMP_SPEED);
   PUMP_MOTOR.setAcceleration(MAX_ACCEL);
+
+  // Set positions to Zero
+  X_MOTOR.setCurrentPosition(0);
+  Y_MOTOR.setCurrentPosition(0);
+  Z_MOTOR.setCurrentPosition(0);
 
   Serial.begin(9600);
   gantrySoftHome();
@@ -154,13 +161,15 @@ long mmToSteps(float milli, bool horizontal, bool pump, int motor) {
 
 void motorsRun() {
     // Run until complete
-    Z_MOTOR.runToPosition();
-    Y_MOTOR.runToPosition();
-    X_MOTOR.runToPosition();
+    // Z_MOTOR.runToPosition();
+    // Y_MOTOR.runToPosition();
+    // X_MOTOR.runToPosition();
 
-    //while (Z_MOTOR.distanceToGo() != 0) {
-    //    Z_MOTOR.run();
-    //}
+    while ( (X_MOTOR.distanceToGo() != 0) || (Y_MOTOR.distanceToGo() != 0) || (Z_MOTOR.distanceToGo() != 0) ) {
+        Z_MOTOR.run();
+        Y_MOTOR.run();
+        X_MOTOR.run();
+    }
 };
 
 void gantryHardHome() {
@@ -197,8 +206,6 @@ void gantryHardHome() {
 };
 
 void gantrySoftHome() {
-    float drift = 2; //mm
-
     // Slow down motors for required homing collision
     X_MOTOR.setMaxSpeed(HOMING_SPEED);
     Y_MOTOR.setMaxSpeed(HOMING_SPEED);
