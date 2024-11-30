@@ -24,3 +24,6 @@ dependencies = [
 
 [project.urls]
 repository = "https://github.com/flynn-98/electrolyte-mixing-station"
+
+[project.scripts]
+accelerated-life-test = "robot_controller.accelerated_life_test:run_test"
