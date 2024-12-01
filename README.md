@@ -1,4 +1,4 @@
-# Electrolyte Mixing Station
+# Electrolyte Mixing Station (MicroTron)
 
 ## Introduction
 
