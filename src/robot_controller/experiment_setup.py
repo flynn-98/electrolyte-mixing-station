@@ -46,7 +46,7 @@ class experiment:
 
         self.chamber_location = [7, 116] # mm
         self.mass_balance_location = [7, 116] # mm
-        self.dispense_height = -20 #mm
+        self.dispense_height = -30 #mm
 
         # Declare variables for CSV read
         self.column_names = None
@@ -72,10 +72,6 @@ class experiment:
         
         now = datetime.now()
         logging.info("Experiment ready to begin: " + now.strftime("%d/%m/%Y %H:%M:%S"))
-
-    def move_to_container(self, x, y, z):
-        self.gantry.move(x, y, 0)
-        self.gantry.move(x, y, z)
 
     def get_poly_equation(self, xi, diff, T, N):
         time = np.linspace(0, T, N)
@@ -121,8 +117,9 @@ class experiment:
         logging.info("Pipette charged.")
 
         # Drop into fluid (based on starting volume)
-        logging.info("Dropping Pipette into " + name + "..")
-        self.move_to_container(x, y, self.pot_base_height + 10 * new_volume / self.pot_area)
+        z = self.pot_base_height + 10 * new_volume / self.pot_area
+        logging.info(f"Dropping Pipette to {z}mm..")
+        self.gantry.move(x, y, z)
 
         # Aspirate pipette
         aspirate_pressure = self.aspirate_at_speed(charge_pressure, aspirate_volume, aspirate_constant, aspirate_speed, pressure_resolution)
@@ -143,18 +140,24 @@ class experiment:
         logging.info(f"Pump power at {self.pipette.get_power()}mW.")
 
         # Move out of fluid
-        logging.info("Moving Pipette out of " + name + "..")
+        logging.info("Lifting Pipette..")
         self.gantry.move(x, y, 0)
         
         return new_volume
     
     def dispense(self, name, x, y):
-        logging.info("Moving to " + name + "..")
-        self.move_to_container(x, y, self.dispense_height)
+        logging.info("Moving to mixing chamber..")
+        self.gantry.move(x, y, 0)
+        
+        logging.info(f"Dropping Pipette to {self.dispense_height}mm..")
+        self.gantry.move(x, y, self.dispense_height)
 
         # Dispense pipette
         self.pipette.set_pressure(0) # To dispense as quickly as possible to remove all liquid
         logging.info("Dispense complete.")
+
+        logging.info("Lifting Pipette..")
+        self.gantry.move(x, y, 0)
 
     def run(self, N=1):
         for n in range(0, N):
