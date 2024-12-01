@@ -108,7 +108,7 @@ void loop() {
         action = Serial.readStringUntil('(');
 
         if (action == "move") {
-            x = Serial.readStringUntil(',').toFloat();
+            x = Serial.readStringUntil(',').toFloat() - x_shift;
             y = Serial.readStringUntil(',').toFloat();
             z = Serial.readStringUntil(')').toFloat();
             
