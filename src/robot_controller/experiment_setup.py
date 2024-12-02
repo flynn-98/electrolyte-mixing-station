@@ -146,7 +146,7 @@ class experiment:
         return new_volume
     
     def dispense(self, name, x, y):
-        logging.info("Moving to mixing chamber..")
+        logging.info("Moving to " + name + "..")
         self.gantry.move(x, y, 0)
         
         logging.info(f"Dropping Pipette to {self.dispense_height}mm..")
