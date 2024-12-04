@@ -24,7 +24,7 @@ const float Z_HOMING_SPEED = 150 * MICROSTEPS; //microsteps/s
 
 const float MAX_ACCEL = 400.0; //microsteps/s2
 
-const float PULLEY_RADIUS = 6.2; //mm
+const float PULLEY_RADIUS = 6.34; //mm
 const float ROD_PITCH = 2.0; //mm
 const float STEPS_REV = 200.0;
 const float ML_REV = 0.2; //ml/rev
@@ -40,13 +40,13 @@ Servo mixer;
 
 // Joint Home Positions (mm)
 const float pad_thickness = 1.0; //mm 
-const float x_shift = 20.0; //mm to avoid clash between VCM and X carriage
+const float x_shift = 14.0; //mm to avoid clash between VCM and X carriage
 const float home[3] = {-167.9 + pad_thickness + x_shift, 2.9 - pad_thickness, -1.0}; // Taken from CAD
 
 // Joint Limits (mm) also from CAD
 const float jointLimit[2][3] = {
     {0, 0, 0}, 
-    {165.0 - x_shift, 144.0, -44.0}
+    {165.0 - x_shift, 140.0, -44.0}
 };
 
 const float drift = 6; //mm
@@ -161,12 +161,18 @@ long mmToSteps(float milli, bool horizontal, bool pump, int motor) {
 
 void motorsRun() {
     // Run until complete
-    // Z_MOTOR.runToPosition();
-    // Y_MOTOR.runToPosition();
-    // X_MOTOR.runToPosition();
-
     while ( (X_MOTOR.distanceToGo() != 0) || (Y_MOTOR.distanceToGo() != 0) || (Z_MOTOR.distanceToGo() != 0) ) {
         Z_MOTOR.run();
+        Y_MOTOR.run();
+        X_MOTOR.run();
+    }
+};
+
+void motorsHome() {
+    // Run until complete (z first to avoid clashes)
+    Z_MOTOR.runToPosition();
+
+    while ( (X_MOTOR.distanceToGo() != 0) || (Y_MOTOR.distanceToGo() != 0) ) {
         Y_MOTOR.run();
         X_MOTOR.run();
     }
@@ -183,7 +189,7 @@ void gantryHardHome() {
     Y_MOTOR.move(-1 * mmToSteps(jointLimit[1][1], true, false, 1)); // Y motor homes at zero
     Z_MOTOR.move(-1 * mmToSteps(jointLimit[1][2], false, false, 2)); // Z motor homes at zero
 
-    motorsRun();
+    motorsHome();
 
     // Move to home position
     X_MOTOR.move(mmToSteps(home[0], true, false, 0));
@@ -216,7 +222,7 @@ void gantrySoftHome() {
     Y_MOTOR.moveTo(mmToSteps(-1 * drift, true, false, 1));
     Z_MOTOR.moveTo(mmToSteps(drift, false, false, 2));
 
-    motorsRun();
+    motorsHome();
 
     // Move to home position
     X_MOTOR.move(mmToSteps(home[0], true, false, 0));
