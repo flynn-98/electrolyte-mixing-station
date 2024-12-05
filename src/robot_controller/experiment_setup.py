@@ -4,6 +4,7 @@ import numpy as np
 import sys
 import time
 import random
+import json
 
 from IPython.display import display
 import matplotlib.pyplot as plt
@@ -25,13 +26,16 @@ logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 from robot_controller import gantry_controller, pipette_controller
 
 class experiment:
-    def __init__(self, GANTRY_COM, PIPETTE_COM, GANTRY_SIM=False, PIPETTE_SIM=False):
+    def __init__(self, device_name):
+        # Read device data JSON
+        device_data = self.read_json(device_name)
+
         # Only record mass balance readings if Pipette active
-        self.SIM = PIPETTE_SIM
+        self.SIM = device_data["Pipette_Active"]
 
         # Establish serial connections
-        self.gantry = gantry_controller.gantry(GANTRY_COM, GANTRY_SIM)
-        self.pipette = pipette_controller.pipette(PIPETTE_COM, PIPETTE_SIM)
+        self.gantry = gantry_controller.gantry(device_data["Gantry_Address"])
+        self.pipette = pipette_controller.pipette(device_data["Pipette_Address"], self.SIM)
 
         # Pot locations 1 -> 10 (mm)
         self.pot_locations = [[7, 21], [7, 55], 
@@ -51,6 +55,22 @@ class experiment:
         # Declare variables for CSV read
         self.column_names = None
         self.df = None
+
+    def read_json(self, device_name):
+        json_file = 'data/devices/mixing_stations.json'
+
+        with open(json_file) as json_data:
+            device_data = json.load(json_data)
+
+        for i, device in enumerate(device_data["Mixing Stations"]):
+            if device['ID'] == device_name:
+                index = i 
+                logging.info("Located device data for " + device_name + ".")
+
+                return device_data["Mixing Stations"][index]
+
+        logging.error("Device data for " + device_name + " could not be located.")
+        sys.exit()
 
     def read_csv(self, CSV_PATH):
         # Open CSV as dataframe
