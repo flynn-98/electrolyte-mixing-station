@@ -1,14 +1,16 @@
 { "Mixing Stations" : [
         {
             "ID" : "microtron_01",
-            "Gantry_Address" : "/dev/cu.usbmodem1101",
+            "Gantry_Address" : "/dev/ttyACM0",
             "Pipette_Address" : "/dev/cu.usbmodem1101",
+            "Gantry_Active": true,
             "Pipette_Active": false
         },
         {
             "ID" : "microtron_02",
-            "Gantry_Address" : "/dev/cu.usbmodem1301",
+            "Gantry_Address" : "/dev/ttyACM1",
             "Pipette_Address" : "/dev/cu.usbmodem1301",
+            "Gantry_Active": true,
             "Pipette_Active": false
         }
     ]

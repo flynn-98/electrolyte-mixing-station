@@ -31,10 +31,10 @@ class experiment:
         device_data = self.read_json(device_name)
 
         # Only record mass balance readings if Pipette active
-        self.SIM = device_data["Pipette_Active"]
+        self.SIM = not device_data["Pipette_Active"]
 
         # Establish serial connections
-        self.gantry = gantry_controller.gantry(device_data["Gantry_Address"])
+        self.gantry = gantry_controller.gantry(device_data["Gantry_Address"], not device_data["Gantry_Active"])
         self.pipette = pipette_controller.pipette(device_data["Pipette_Address"], self.SIM)
 
         # Pot locations 1 -> 10 (mm)
