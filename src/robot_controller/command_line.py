@@ -3,8 +3,8 @@ from robot_controller import experiment_setup
 
 def accelerated_life_test():
     parser=argparse.ArgumentParser(description="Input variables for Accelerated Life Test")
-    parser.add_argument("--device_name", help="USB address for Gantry")
-    parser.add_argument("--repeats", default=50, help="Number of experiment repeats, defaults to 50.", type=int)
+    parser.add_argument("--device_name", help="Used to locate the device data by matching with Device ID")
+    parser.add_argument("--repeats", default=20, help="Number of experiment repeats, defaults to 20.", type=int)
 
     args=parser.parse_args()
 
@@ -14,7 +14,7 @@ def accelerated_life_test():
 
 def run_experiment():
     parser=argparse.ArgumentParser(description="Input variables for Experiment")
-    parser.add_argument("--device_name", help="USB address for Gantry")
+    parser.add_argument("--device_name", help="Used to locate the device data by matching with Device ID")
     parser.add_argument("--repeats", default=1, help="Number of experiment repeats, defaults to 1.", type=int)
 
     args=parser.parse_args()

@@ -1,8 +1,8 @@
-# Electrolyte Mixing Station (MicroTron)
+# Electrolyte Mixing Station
 
 ## Introduction
 
-The Electrolyte Mixing Station is a customisable tool, designed to select and mix microlitres of different electrolytes, using a volume control module and pipette system that can be configured to deal with low and high viscosities.
+The Electrolyte Mixing Station (or Microtron) is a customisable tool, designed to select and mix microlitres of different electrolytes, using a volume control module and pipette system that can be configured to deal with low and high viscosities.
 
 ![image](data/images/CAD.png)
 
@@ -30,17 +30,27 @@ source .venv/bin/activate
 
 ## Device Data and Configuration
 
-## Accelerated Life Tests
+Information on each device can be found [here](data/devices/mixing_stations.json). To add a new device, simply copy and paste the last device entry, increment the ID and rename the COM port addresses. The easiest was to determine these addresses, is to connect the device and go to [PlatformIO's](https://docs.platformio.org/en/latest/integration/ide/vscode.html) *Devices* tab.
 
-Accelerated life tests can be run using a command line tool, allowing for a single PC to run tests on multiple mixing stations at once. For each device, open a new terminal and run the following command:
+## Run Experiments from Command Line
+
+Experiments can be run using a command line tool, allowing for a single PC to run tests on multiple mixing stations at once. For each device, open a new terminal and run the following command:
 
 ```
-accelerated-life-test --device_name microtron_01 --repeats 50
+run-experiment --device_name microtron_01 --repeats 1
+```
+
+Run `run-experiment --help` for more information. The electrolyte mixing ratios and aspiration variables will be pulled from [here](data/CSVs/electrolyte_recipe.csv).
+
+## Accelerated Life Tests
+
+**Accelerated life tests should be run without any liquids to avoid unsupervised spillages.**
+
+```
+accelerated-life-test --device_name microtron_01 --repeats 20
 ```
 
 Run `accelerated-life-test --help` for more information. 
-
-**Accelerated life tests should be run without any liquids to avoid unsupervised spillages.**
 
 ## References
 1. [Smart Pump Module](https://www.theleeco.com/product/smart-pump-module/#resources)
