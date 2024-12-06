@@ -10,16 +10,22 @@ The Electrolyte Mixing Station is a customisable tool, designed to select and mi
 
 ## Installing Dependencies
 
-Run the following in the root directory:
+Build venv in root directory:
 
 ```
-pip install .
+python3 -m venv .venv
 ```
 
-Or possibly:
+Install dependencies into new venv:
 
 ```
-python3 -m pip install .
+.venv/bin/pip install .
+```
+
+Activate venv:
+
+```
+source .venv/bin/activate
 ```
 
 ## Device Data and Configuration
