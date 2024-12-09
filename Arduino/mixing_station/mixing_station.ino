@@ -1,8 +1,10 @@
 #include <Servo.h>
 #include <AccelStepper.h>
 
+// Define Arduino pins for each function
 const int SERVO_PIN = 3;
 
+// Pins for XYZ stepper motors, see https://learn.sparkfun.com/tutorials/big-easy-driver-hookup-guide/all
 const int X_STEP = 5;
 const int X_DIR = 4;
 
@@ -12,24 +14,29 @@ const int Y_DIR = 6;
 const int Z_STEP = 9;
 const int Z_DIR = 8;
 
+// Pins for future Pump stepper motor
 const int P_STEP = 1;
 const int P_DIR = 0;
 
+// Motor speed and acceleration parameters, stepper motors have 200 steps / revolution.
+// Microsteps (per step) used for increased positional accuracy and smoother stepping
+const float STEPS_REV = 200.0;
 const float MICROSTEPS = 4.0;
 
 const float STAGE_SPEED = 800.0 * MICROSTEPS ; //microsteps/s
-const float PUMP_SPEED = 50 * MICROSTEPS; //microsteps/s
-const float HOMING_SPEED = 50 * MICROSTEPS; //microsteps/s
+const float PUMP_SPEED = 50.0 * MICROSTEPS; //microsteps/s
+const float HOMING_SPEED = 50.0 * MICROSTEPS; //microsteps/s
 const float Z_HOMING_SPEED = 150 * MICROSTEPS; //microsteps/s
 
-const float MAX_ACCEL = 400.0; //microsteps/s2
+const float MAX_ACCEL = 200.0 * MICROSTEPS; //microsteps/s2
 
+// Parameters needed to convert distances (mm) to motor steps
 const float PULLEY_RADIUS = 6.34; //mm
 const float ROD_PITCH = 2.0; //mm
-const float STEPS_REV = 200.0;
+// For future Pump stepper motor
 const float ML_REV = 0.2; //ml/rev
 
-// Define steppers and the pins it will use (STEP, DIR)
+// Define steppers with pins (STEP, DIR)
 AccelStepper X_MOTOR(AccelStepper::DRIVER, X_STEP, X_DIR); 
 AccelStepper Y_MOTOR(AccelStepper::DRIVER, Y_STEP, Y_DIR);
 AccelStepper Z_MOTOR(AccelStepper::DRIVER, Z_STEP, Z_DIR); 
@@ -37,27 +44,32 @@ AccelStepper PUMP_MOTOR(AccelStepper::DRIVER, P_STEP, P_DIR);
 
 // Create servo instance
 Servo mixer;
+mixer.attach(SERVO_PIN);
 
-// Joint Home Positions (mm)
+// Gantry (CNC) Home Positions (mm), values taken from CAD model and adjusted
 const float pad_thickness = 1.0; //mm 
-const float x_shift = 14.0; //mm to avoid clash between VCM and X carriage
-const float home[3] = {-167.9 + pad_thickness + x_shift, 2.9 - pad_thickness, -1.0}; // Taken from CAD
+const float x_shift = 14.0; //mm (home position shift in X direction, to avoid unwanted clash)
 
-// Joint Limits (mm) also from CAD
+const float home[3] = {-167.9 + pad_thickness + x_shift, 2.9 - pad_thickness, -1.0}; 
+
+// Joint Limits (mm), also taken from CAD model
 const float jointLimit[2][3] = {
     {0, 0, 0}, 
     {165.0 - x_shift, 140.0, -44.0}
 };
 
+// Overshoot value used during Homing, any gantry drift less than this value will be corrected (in theory!)
 const float drift = 6; //mm
 
-// Joint direction coefficients: 1 or -1
+// Joint direction coefficients: 1 or -1, for desired motor directions
 // X = 0, Y = 1, Z = 2
 const float motorDir[3] = {1, 1, -1};
 
+// Define variables to change during Loop
 float x = 0;
 float y = 0;
 float z = 0;
+
 float vol = 0;
 float duration = 0;
 
@@ -66,11 +78,12 @@ unsigned long CurrentTime;
 unsigned long ElapsedTime;
 
 long steps;
-
 String action;
 
 void setup() {
-  // put your setup code here, to run once:
+  // Setup code here, will run just once on start-up
+
+  // Setup OUTPUT pins
   pinMode(SERVO_PIN, OUTPUT);
   pinMode(X_STEP, OUTPUT);
   pinMode(X_DIR, OUTPUT);
@@ -81,8 +94,7 @@ void setup() {
   pinMode(P_STEP, OUTPUT);
   pinMode(P_DIR, OUTPUT);
 
-  mixer.attach(SERVO_PIN);
-
+  // Set motor speeds / acceleration, XYZ speeds set before and after homing
   X_MOTOR.setAcceleration(MAX_ACCEL);
   Y_MOTOR.setAcceleration(MAX_ACCEL);
   Z_MOTOR.setAcceleration(MAX_ACCEL);
@@ -101,17 +113,22 @@ void setup() {
 };
 
 void loop() {
-    // put your main code here, to run repeatedly:
-    if (Serial.available() > 0) {
-        // data structure to receive = action(var1, var2)
+    // Main code here, to run repeatedly on a loop
 
+    // Wait until data received from PC, via Serial (USB)
+    if (Serial.available() > 0) {
+        // data structure to receive = action(var1, var2..)
+
+        // Read until open bracket to extract action, continue based on which action was requested
         action = Serial.readStringUntil('(');
 
         if (action == "move") {
+            // Extract variables spaced by commas, then last variable up to closed bracket
             x = Serial.readStringUntil(',').toFloat() - x_shift;
             y = Serial.readStringUntil(',').toFloat();
             z = Serial.readStringUntil(')').toFloat();
             
+            // Call action using received variables
             gantryMove(x, y, z);
         }
         else if (action == "softHome") {
@@ -132,20 +149,21 @@ void loop() {
         else if (action == "mix") {
             duration = Serial.readStringUntil(')').toFloat();
 
-            // gantryMix(duration);
+            // TODO gantryMix(duration);
         }
         else {
+            // Report back to PC if confused
             Serial.println("Unknown command");
         }
-
-        // TODO SERVO / MIXING
     }
 };
 
 long mmToSteps(float milli, bool horizontal, bool pump, int motor) {
+    // If Pump, use ml/rev to convert to steps
     if (pump == true) {
         steps = floor(MICROSTEPS * STEPS_REV * milli * 2 * PI / ML_REV);
     }
+    // Else, check if motors are vertical (Z) or horizontal (XY). Z motor uses threaded rod, XY motors use belts/pulleys
     else {
         if (horizontal == true) {
             // XY Motion
@@ -169,7 +187,7 @@ void motorsRun() {
 };
 
 void motorsHome() {
-    // Run until complete (z first to avoid clashes)
+    // Run until complete (Z motor moves first to avoid clashes)
     Z_MOTOR.runToPosition();
 
     while ( (X_MOTOR.distanceToGo() != 0) || (Y_MOTOR.distanceToGo() != 0) ) {
@@ -208,6 +226,7 @@ void gantryHardHome() {
     Y_MOTOR.setMaxSpeed(STAGE_SPEED);
     Z_MOTOR.setMaxSpeed(STAGE_SPEED);
 
+    // Report back to PC
     Serial.println("Gantry Homed");
 };
 
@@ -241,6 +260,7 @@ void gantrySoftHome() {
     Y_MOTOR.setMaxSpeed(STAGE_SPEED);
     Z_MOTOR.setMaxSpeed(STAGE_SPEED);
 
+    // Report back to PC
     Serial.println("Gantry Homed");
 };
 
@@ -280,7 +300,8 @@ void gantryMove(float x, float y, float z) {
 
     CurrentTime = ceil( millis() / 1000 );
     ElapsedTime = CurrentTime - StartTime;
-
+    
+    // Report back to PC
     Serial.println("Move complete in " + String(ElapsedTime) + "s");
 };
 
@@ -291,13 +312,12 @@ void gantryPump(float vol) {
     PUMP_MOTOR.moveTo(mmToSteps(vol, false, true, 0));
 
     // Run until complete
-    while (PUMP_MOTOR.distanceToGo() != 0) {
-        PUMP_MOTOR.run();
-    }
+    PUMP_MOTOR.runToPosition();
 
     CurrentTime = ceil( millis() / 1000 );
     ElapsedTime = CurrentTime - StartTime;
 
+    // Report back to PC
     Serial.println("Pump complete in " + String(ElapsedTime) + "s");
 };
 
