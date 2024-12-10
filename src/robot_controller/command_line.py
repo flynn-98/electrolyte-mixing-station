@@ -1,5 +1,5 @@
 import argparse
-from robot_controller import experiment_setup
+from robot_controller import experiment_setup, pipette_controller
 
 def accelerated_life_test():
     parser=argparse.ArgumentParser(description="Input variables for Accelerated Life Test")
@@ -22,3 +22,12 @@ def run_experiment():
     experiment = experiment_setup.experiment(device_name=args.device_name)
     experiment.read_csv(CSV_PATH="data/CSVs/electrolye_recipe.csv")
     experiment.run(args.repeats)
+
+def test_pipette():
+    parser=argparse.ArgumentParser(description="Input variables for Pipette Test")
+    parser.add_argument("--device_name", help="Used to locate the device data by matching with Device ID")
+
+    args=parser.parse_args()
+
+    experiment = experiment_setup.experiment(device_name=args.device_name)
+    experiment.aspiration_test()

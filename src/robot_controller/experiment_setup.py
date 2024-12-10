@@ -124,6 +124,61 @@ class experiment:
             time.sleep(dT)
 
         return aspirate_pressure
+    
+    def aspiration_test(self, pressure_resolution=0.415):
+        # Used for testing only => No logging
+
+        try:
+            charge_pressure = float(input("Enter charge pressure (mbar): "))
+        except:
+            charge_pressure = 50 
+            print(f"Charge Pressure set to {charge_pressure}mbar.")
+
+        # Charge pipette
+        self.pipette.set_pressure(charge_pressure)
+        print("Pipette charged.")
+
+        try:
+            aspirate_volume = float(input("Enter Aspirate Volume (uL): "))
+        except:
+            aspirate_volume = 10
+            print(f"Aspirate Volume set to {aspirate_volume}uL.")
+
+        try:
+            aspirate_constant = float(input("Enter Aspirate Constant (mbar/uL): "))
+        except:
+            aspirate_constant = 0.5
+            print(f"Aspirate Constant set to {aspirate_constant}mbar/uL.")
+
+        try:
+            aspirate_speed = float(input("Enter Aspirate Speed (uL/s): "))
+        except:
+            aspirate_speed = 10
+            print(f"Aspirate Speed set to {aspirate_speed}uL/s.")
+
+        # Aspirate pipette
+        aspirate_pressure = self.aspirate_at_speed(charge_pressure, aspirate_volume, aspirate_constant, aspirate_speed, pressure_resolution)
+
+        print("Aspiration complete.")
+        print(f"{aspirate_volume}uL extracted.")
+
+        # Delay to let system settle
+        time.sleep(2)
+
+        # Report final readings (charge + aspirate)
+        reading = self.pipette.get_pressure()
+        error = reading - aspirate_pressure
+        if abs(error) > 1.5 * pressure_resolution:
+            print(f"Aspriate pressure off target by {error}mbar for requested {aspirate_pressure}mbar.")
+        else:
+            print(f"Pressure reading of {reading}mbar achieved for requested {aspirate_pressure}mbar.")
+        print(f"Pump power at {self.pipette.get_power()}mW.")
+
+        _ = input("Press any key to Dispense")
+
+         # Dispense pipette
+        self.pipette.set_pressure(0) # To dispense as quickly as possible to remove all liquid
+        print("Dispense complete.")
 
     def aspirate(self, aspirate_volume, starting_volume, name, x, y, aspirate_constant, aspirate_speed, charge_pressure=50, pressure_resolution=0.415):
         new_volume = starting_volume - aspirate_volume * 1e-3 #ml

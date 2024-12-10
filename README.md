@@ -54,4 +54,4 @@ Run `accelerated-life-test --help` for more information.
 
 ## References
 1. [Smart Pump Module](https://www.theleeco.com/product/smart-pump-module/#resources)
-2. [Atinary - Self Driving Labs](https://scientia.atinary.com/sdlabs/academic/dashboard)
+2. [Atinary Self-Driving Labs](https://scientia.atinary.com/sdlabs/academic/dashboard)
