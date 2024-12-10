@@ -28,7 +28,7 @@ const float PUMP_SPEED = 50.0 * MICROSTEPS; //microsteps/s
 const float HOMING_SPEED = 50.0 * MICROSTEPS; //microsteps/s
 const float Z_HOMING_SPEED = 150 * MICROSTEPS; //microsteps/s
 
-const float MAX_ACCEL = 200.0 * MICROSTEPS; //microsteps/s2
+const float MAX_ACCEL = 300.0 * MICROSTEPS; //microsteps/s2
 
 // Parameters needed to convert distances (mm) to motor steps
 const float PULLEY_RADIUS = 6.34; //mm
