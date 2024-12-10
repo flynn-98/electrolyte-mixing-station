@@ -6,7 +6,7 @@ The Electrolyte Mixing Station (or Microtron) is a customisable tool, designed t
 
 ![image](data/images/CAD.png)
 
-### Jump to the [Workspace Notebook](workspace.ipynb) for instructions on how to use the mixing station!
+### Jump to the [Workspace Notebook](workspace.ipynb) for instructions on how to use the mixing station once you have set up the virtual environment!
 
 ## Installing Dependencies
 
@@ -30,7 +30,7 @@ source .venv/bin/activate
 
 ## Device Data and Configuration
 
-Information on each device can be found [here](data/devices/mixing_stations.json). To add a new device, simply copy and paste the last device entry, increment the ID and rename the COM port addresses. The easiest was to determine these addresses, is to connect the device and go to [PlatformIO's](https://docs.platformio.org/en/latest/integration/ide/vscode.html) *Devices* tab.
+Information on each device can be found [here](data/devices/mixing_stations.json). To add a new device, simply copy and paste the last device entry, increment the ID and rename the COM port addresses. The easiest way to determine these addresses, is to connect the device(s) and go to [PlatformIO's](https://docs.platformio.org/en/latest/integration/ide/vscode.html) *Devices* tab.
 
 ## Run Experiments from Command Line
 
@@ -40,7 +40,7 @@ Experiments can be run using a command line tool, allowing for a single PC to ru
 run-experiment --device_name microtron_01 --repeats 1
 ```
 
-Run `run-experiment --help` for more information. The electrolyte mixing ratios and aspiration variables will be pulled from [here](data/CSVs/electrolyte_recipe.csv).
+Run `run-experiment --help` for more information. The electrolyte mixing ratios and aspiration variables will be pulled from [here](data/CSVs/electrolyte_recipe.csv) (for now).
 
 ## Accelerated Life Tests
 
@@ -54,3 +54,4 @@ Run `accelerated-life-test --help` for more information.
 
 ## References
 1. [Smart Pump Module](https://www.theleeco.com/product/smart-pump-module/#resources)
+2. [Atinary - Self Driving Labs](https://scientia.atinary.com/sdlabs/academic/dashboard)

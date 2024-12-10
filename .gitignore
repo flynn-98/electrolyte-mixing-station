@@ -4,3 +4,4 @@
 **/__pycache__
 **/electrolyte_mixing_station.egg-info
 experiment_log.txt
+.DS_Store
