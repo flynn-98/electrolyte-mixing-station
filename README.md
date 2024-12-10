@@ -6,7 +6,7 @@ The Electrolyte Mixing Station (or Microtron) is a customisable tool, designed t
 
 ![image](data/images/CAD.png)
 
-### Jump to the [Workspace Notebook](workspace.ipynb) for instructions on how to use the mixing station once you have set up the virtual environment!
+### Jump to the [Workspace Notebook](Workspace.ipynb) for instructions on how to use the mixing station once you have set up the virtual environment!
 
 ## Installing Dependencies
 
