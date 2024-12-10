@@ -105,7 +105,7 @@ class experiment:
 
         return C_0 + C_3 * np.power(time, 3) + C_4 * np.power(time, 4) + C_5 * np.power(time, 5)
 
-    def aspirate_at_speed(self, charge_pressure, aspirate_volume, aspirate_constant, aspirate_speed, pressure_resolution, poly=False):
+    def aspirate_at_speed(self, charge_pressure, aspirate_volume, aspirate_constant, aspirate_speed, pressure_resolution, poly=True):
         diff = aspirate_constant * aspirate_volume
         aspirate_pressure = diff + charge_pressure # Pressure diff is from charge pressure
         rise_time = aspirate_volume / aspirate_speed # Seconds
