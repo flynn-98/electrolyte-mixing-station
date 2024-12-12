@@ -34,7 +34,12 @@ const float MAX_ACCEL = 300.0 * MICROSTEPS; //microsteps/s2
 const float PULLEY_RADIUS = 6.34; //mm
 const float ROD_PITCH = 2.0; //mm
 // For future Pump stepper motor
-const float ML_REV = 0.2; //ml/rev
+const float ML_REV = 0.33; //ml/rev
+
+// Parameters for Mixer (Servo)
+const int servoHome = 90;
+const int servoStart = 20; // +Home
+const int servoEnd = 50; // +Home
 
 // Define steppers with pins (STEP, DIR)
 AccelStepper X_MOTOR(AccelStepper::DRIVER, X_STEP, X_DIR); 
@@ -70,7 +75,8 @@ float y = 0;
 float z = 0;
 
 float vol = 0;
-float duration = 0;
+int count = 0;
+int servoDelay = 0;
 
 unsigned long StartTime;
 unsigned long CurrentTime;
@@ -108,6 +114,7 @@ void setup() {
   Z_MOTOR.setCurrentPosition(0);
 
   Serial.begin(9600);
+  mixer.write(servoHome);
   gantrySoftHome();
 
 };
@@ -147,9 +154,10 @@ void loop() {
             gantryPump(vol);
         }
         else if (action == "mix") {
-            duration = Serial.readStringUntil(')').toFloat();
+            count = Serial.readStringUntil(',').toInt();
+            servoDelay = Serial.readStringUntil(')').toInt();
 
-            // TODO gantryMix(duration);
+            gantryMix(count, servoDelay);
         }
         else {
             // Report back to PC if confused
@@ -319,6 +327,25 @@ void gantryPump(float vol) {
 
     // Report back to PC
     Serial.println("Pump complete in " + String(ElapsedTime) + "s");
+};
+
+void gantryMix(int count, int servoDelay) {
+    StartTime = ceil( millis() / 1000 );
+
+    for (int i=0; i<count; i++) {
+        mixer.write(servoHome + servoStart);
+        delay(servoDelay);
+        mixer.write(servoHome + servoEnd);
+        delay(servoDelay);
+    }
+    
+    mixer.write(servoHome);
+
+    CurrentTime = ceil( millis() / 1000 );
+    ElapsedTime = CurrentTime - StartTime;
+
+    // Report back to PC
+    Serial.println("Mix complete in " + String(ElapsedTime) + "s");
 };
 
 

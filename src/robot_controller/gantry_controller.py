@@ -63,12 +63,15 @@ class gantry:
             self.ser.write("hardHome()".encode())
             self.get_response()
 
-    def pump(self, vol):
+    def pump(self, electrolyte_vol, tube_vol=0.1, overpump=1.1):
+        logging.info(f"Pumping {electrolyte_vol}mL of electrolyte to next stage.")
+        vol = overpump * (electrolyte_vol+tube_vol) #ml
         if self.sim == False:
             self.ser.write(f"pump({vol})".encode())
             self.get_response()
 
-    def mix(self, duration):
+    def mix(self, count=20, delay=100):
+        logging.info(f"Mixing electrolyte {count} times with a {delay}ms delay.")
         if self.sim == False:
-            self.ser.write(f"mix({duration})".encode())
+            self.ser.write(f"mix({count}, {delay})".encode())
             self.get_response()

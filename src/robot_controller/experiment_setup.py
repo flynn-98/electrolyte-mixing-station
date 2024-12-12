@@ -88,7 +88,7 @@ class experiment:
         self.df = pd.read_csv(CSV_PATH, names=self.column_names).astype(convert_dict)
         display(self.df)
 
-        logging.info(f'Recipe will result in a total electrolyte volume of {self.df[self.column_names[1]].sum()/1000}mL')
+        logging.info(f'Recipe will result in a total electrolyte volume of {self.df["Volume (uL)"].sum()/1000}mL')
         
         now = datetime.now()
         logging.info("Experiment ready to begin: " + now.strftime("%d/%m/%Y %H:%M:%S"))
@@ -258,6 +258,13 @@ class experiment:
 
                 # Move to mixing chamber
                 self.dispense("Mixing Chamber", self.chamber_location[0], self.chamber_location[1])
+
+            # Trigger servo to mix electrolyte
+            self.gantry.mix()
+
+            # Pump electrolyte to next stage
+            total_vol = self.df["Volume (uL)"].sum()/1000
+            self.gantry.pump(total_vol)
 
         logging.info(f"Experiment complete after {N} repeat(s).")
 
