@@ -48,8 +48,8 @@ class experiment:
         self.pot_base_height = -74 - 0.5 # CAD value minus tunable value to ensure submersion
         self.pot_area = math.pi * 2.78**2 / 4 #cm2
 
-        self.chamber_location = [17, 110] # mm
-        self.mass_balance_location = [17, 110] # mm
+        self.chamber_location = [12, 110] # mm
+        self.mass_balance_location = [12, 110] # mm
         self.dispense_height = -30 #mm
 
         # Declare variables for CSV read

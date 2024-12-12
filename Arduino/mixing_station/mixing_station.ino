@@ -44,7 +44,6 @@ AccelStepper PUMP_MOTOR(AccelStepper::DRIVER, P_STEP, P_DIR);
 
 // Create servo instance
 Servo mixer;
-mixer.attach(SERVO_PIN);
 
 // Gantry (CNC) Home Positions (mm), values taken from CAD model and adjusted
 const float pad_thickness = 1.0; //mm 
@@ -82,6 +81,7 @@ String action;
 
 void setup() {
   // Setup code here, will run just once on start-up
+  mixer.attach(SERVO_PIN);
 
   // Setup OUTPUT pins
   pinMode(SERVO_PIN, OUTPUT);
