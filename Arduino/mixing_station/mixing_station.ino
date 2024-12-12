@@ -169,7 +169,7 @@ void loop() {
 long mmToSteps(float milli, bool horizontal, bool pump, int motor) {
     // If Pump, use ml/rev to convert to steps
     if (pump == true) {
-        steps = floor(MICROSTEPS * STEPS_REV * milli * 2 * PI / ML_REV);
+        steps = floor(MICROSTEPS * STEPS_REV * milli / ML_REV);
     }
     // Else, check if motors are vertical (Z) or horizontal (XY). Z motor uses threaded rod, XY motors use belts/pulleys
     else {
