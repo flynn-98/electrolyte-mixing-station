@@ -38,18 +38,18 @@ class experiment:
         self.pipette = pipette_controller.pipette(device_data["Pipette_Address"], self.SIM)
 
         # Pot locations 1 -> 10 (mm)
-        self.pot_locations = [[7, 21], [7, 55], 
-                              [41, 21], [41, 55], 
-                              [75, 21], [75, 55], 
-                              [109, 21], [109, 55], 
-                              [143, 21], [143, 55]
+        self.pot_locations = [[41, 0], [75, 0], 
+                              [109, 0], [143, 0], 
+                              [58, 34], [92, 34], 
+                              [126, 34], [75,68], 
+                              [109, 68], [143, 68]
                             ]
         
         self.pot_base_height = -74 - 0.5 # CAD value minus tunable value to ensure submersion
         self.pot_area = math.pi * 2.78**2 / 4 #cm2
 
-        self.chamber_location = [7, 116] # mm
-        self.mass_balance_location = [7, 116] # mm
+        self.chamber_location = [17, 110] # mm
+        self.mass_balance_location = [17, 110] # mm
         self.dispense_height = -30 #mm
 
         # Declare variables for CSV read

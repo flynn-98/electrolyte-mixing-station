@@ -50,16 +50,16 @@ mixer.attach(SERVO_PIN);
 const float pad_thickness = 1.0; //mm 
 const float x_shift = 14.0; //mm (home position shift in X direction, to avoid unwanted clash)
 
-const float home[3] = {-167.9 + pad_thickness + x_shift, 2.9 - pad_thickness, -1.0}; 
+const float home[3] = {-167.9 + pad_thickness + x_shift, 2.0 - pad_thickness, -0.5}; 
 
 // Joint Limits (mm), also taken from CAD model
 const float jointLimit[2][3] = {
     {0, 0, 0}, 
-    {165.0 - x_shift, 140.0, -44.0}
+    {165.0 - x_shift, 141.0, -44.5}
 };
 
 // Overshoot value used during Homing, any gantry drift less than this value will be corrected (in theory!)
-const float drift = 6; //mm
+const float drift = 8; //mm
 
 // Joint direction coefficients: 1 or -1, for desired motor directions
 // X = 0, Y = 1, Z = 2
