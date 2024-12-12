@@ -50,7 +50,7 @@ class experiment:
 
         self.chamber_location = [12, 110] # mm
         self.mass_balance_location = [12, 110] # mm
-        self.dispense_height = -30 #mm
+        self.dispense_height = -15 #mm
 
         # Declare variables for CSV read
         self.column_names = None
