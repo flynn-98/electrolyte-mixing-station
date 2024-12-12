@@ -66,6 +66,7 @@ class gantry:
     def pump(self, electrolyte_vol, tube_vol=0.1, overpump=1.1):
         logging.info(f"Pumping {electrolyte_vol}mL of electrolyte to next stage.")
         vol = overpump * (electrolyte_vol+tube_vol) #ml
+        
         if self.sim == False:
             self.ser.write(f"pump({vol})".encode())
             self.get_response()
