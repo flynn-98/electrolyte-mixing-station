@@ -68,14 +68,14 @@ class gantry:
         vol = overpump * (electrolyte_vol+tube_vol) #ml
         
         if self.sim == False:
-            # Move away from mixing chamber first
-            self.move(0, 0, 0)
-
             self.ser.write(f"pump({vol})".encode())
             self.get_response()
 
-    def mix(self, count=20, delay=100):
+    def mix(self, count=25, delay=100):
         logging.info(f"Mixing electrolyte {count} times with a {delay}ms delay.")
         if self.sim == False:
+            # Move away from mixing chamber first
+            self.move(0, 0, 0)
+
             self.ser.write(f"mix({count}, {delay})".encode())
             self.get_response()
