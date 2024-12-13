@@ -201,15 +201,6 @@ long mmToSteps(float milli, bool horizontal, bool pump, int motor) {
 };
 
 void motorsRun() {
-    // Run until complete
-    while ( (X_MOTOR.distanceToGo() != 0) || (Y_MOTOR.distanceToGo() != 0) || (Z_MOTOR.distanceToGo() != 0) ) {
-        Z_MOTOR.run();
-        Y_MOTOR.run();
-        X_MOTOR.run();
-    }
-};
-
-void motorsHome() {
     // Run until complete (Z motor moves first to avoid clashes)
     Z_MOTOR.runToPosition();
 
@@ -230,7 +221,7 @@ void gantryHardHome() {
     Y_MOTOR.move(-1 * mmToSteps(jointLimit[1][1], true, false, 1)); // Y motor homes at zero
     Z_MOTOR.move(-1 * mmToSteps(jointLimit[1][2], false, false, 2)); // Z motor homes at zero
 
-    motorsHome();
+    motorsRun();
 
     // Move to home position
     X_MOTOR.move(mmToSteps(home[0], true, false, 0));
@@ -264,7 +255,7 @@ void gantrySoftHome() {
     Y_MOTOR.moveTo(mmToSteps(-1 * drift, true, false, 1));
     Z_MOTOR.moveTo(mmToSteps(drift, false, false, 2));
 
-    motorsHome();
+    motorsRun();
 
     // Move to home position
     X_MOTOR.move(mmToSteps(home[0], true, false, 0));
