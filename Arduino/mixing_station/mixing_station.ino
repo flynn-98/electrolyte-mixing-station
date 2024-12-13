@@ -171,12 +171,11 @@ void loop() {
         }
     }
     else {
-        // Check how long since last call, softHome if too long
+        // Check how long since last call, move to Home if too long
         CurrentTime = ceil( millis() / 1000 );
         ElapsedTime = CurrentTime - LastCall;
-        Serial.println(ElapsedTime);
         if (ElapsedTime > HomeTime) {
-            gantrySoftHome();
+            gantryMove(0, 0, 0);
             LastCall = CurrentTime;
         }
     }
