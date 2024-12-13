@@ -262,9 +262,12 @@ class experiment:
             # Trigger servo to mix electrolyte
             self.gantry.mix()
 
+            # Let mixture settle
+            time.sleep(2)
+
             # Pump electrolyte to next stage
             total_vol = self.df["Volume (uL)"].sum()/1000
-            # self.gantry.pump(total_vol)
+            self.gantry.pump(total_vol)
 
         logging.info(f"Experiment complete after {N} repeat(s).")
 
