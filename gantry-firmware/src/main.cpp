@@ -90,97 +90,6 @@ unsigned long ElapsedTime;
 long steps;
 String action;
 
-void setup() {
-  // Setup code here, will run just once on start-up
-  mixer.attach(SERVO_PIN);
-
-  // Setup OUTPUT pins
-  pinMode(SERVO_PIN, OUTPUT);
-  pinMode(X_STEP, OUTPUT);
-  pinMode(X_DIR, OUTPUT);
-  pinMode(Y_STEP, OUTPUT);
-  pinMode(Y_DIR, OUTPUT);
-  pinMode(Z_STEP, OUTPUT);
-  pinMode(Z_DIR, OUTPUT);
-  pinMode(P_STEP, OUTPUT);
-  pinMode(P_DIR, OUTPUT);
-
-  // Set motor speeds / acceleration, XYZ speeds set before and after homing
-  X_MOTOR.setAcceleration(MAX_ACCEL);
-  Y_MOTOR.setAcceleration(MAX_ACCEL);
-  Z_MOTOR.setAcceleration(MAX_ACCEL);
-
-  PUMP_MOTOR.setMaxSpeed(PUMP_SPEED);
-  PUMP_MOTOR.setAcceleration(MAX_ACCEL);
-
-  // Set positions to Zero
-  X_MOTOR.setCurrentPosition(0);
-  Y_MOTOR.setCurrentPosition(0);
-  Z_MOTOR.setCurrentPosition(0);
-
-  Serial.begin(9600);
-  mixer.write(servoHome);
-  gantrySoftHome();
-
-};
-
-void loop() {
-    // Main code here, to run repeatedly on a loop 
-
-    // Wait until data received from PC, via Serial (USB)
-    if (Serial.available() > 0) {
-        LastCall = ceil( millis() / 1000 );
-        // data structure to receive = action(var1, var2..)
-
-        // Read until open bracket to extract action, continue based on which action was requested
-        action = Serial.readStringUntil('(');
-
-        if (action == "move") {
-            // Extract variables spaced by commas, then last variable up to closed bracket
-            x = Serial.readStringUntil(',').toFloat() - x_shift;
-            y = Serial.readStringUntil(',').toFloat();
-            z = Serial.readStringUntil(')').toFloat();
-            
-            // Call action using received variables
-            gantryMove(x, y, z);
-        }
-        else if (action == "softHome") {
-            x = Serial.readStringUntil(')').toFloat();
-            
-            gantrySoftHome();
-        }
-        else if (action == "hardHome") {
-            x = Serial.readStringUntil(')').toFloat();
-            
-            gantryHardHome();
-        }
-        else if (action == "pump") {
-            vol = Serial.readStringUntil(')').toFloat();
-
-            gantryPump(vol);
-        }
-        else if (action == "mix") {
-            count = Serial.readStringUntil(',').toInt();
-            servoDelay = Serial.readStringUntil(')').toInt();
-
-            gantryMix(count, servoDelay);
-        }
-        else {
-            // Report back to PC if confused
-            Serial.println("Unknown command");
-        }
-    }
-    else {
-        // Check how long since last call, move to Home if too long
-        CurrentTime = ceil( millis() / 1000 );
-        ElapsedTime = CurrentTime - LastCall;
-        if (ElapsedTime > HomeTime) {
-            gantryMove(0, 0, 0);
-            LastCall = CurrentTime;
-        }
-    }
-};
-
 long mmToSteps(float milli, bool horizontal, bool pump, int motor) {
     // If Pump, use ml/rev to convert to steps
     if (pump == true) {
@@ -354,5 +263,93 @@ void gantryMix(int count, int servoDelay) {
     Serial.println("Mix complete in " + String(ElapsedTime) + "s");
 };
 
+void setup() {
+  // Setup code here, will run just once on start-up
+  mixer.attach(SERVO_PIN);
 
+  // Setup OUTPUT pins
+  pinMode(SERVO_PIN, OUTPUT);
+  pinMode(X_STEP, OUTPUT);
+  pinMode(X_DIR, OUTPUT);
+  pinMode(Y_STEP, OUTPUT);
+  pinMode(Y_DIR, OUTPUT);
+  pinMode(Z_STEP, OUTPUT);
+  pinMode(Z_DIR, OUTPUT);
+  pinMode(P_STEP, OUTPUT);
+  pinMode(P_DIR, OUTPUT);
 
+  // Set motor speeds / acceleration, XYZ speeds set before and after homing
+  X_MOTOR.setAcceleration(MAX_ACCEL);
+  Y_MOTOR.setAcceleration(MAX_ACCEL);
+  Z_MOTOR.setAcceleration(MAX_ACCEL);
+
+  PUMP_MOTOR.setMaxSpeed(PUMP_SPEED);
+  PUMP_MOTOR.setAcceleration(MAX_ACCEL);
+
+  // Set positions to Zero
+  X_MOTOR.setCurrentPosition(0);
+  Y_MOTOR.setCurrentPosition(0);
+  Z_MOTOR.setCurrentPosition(0);
+
+  Serial.begin(9600);
+  mixer.write(servoHome);
+  gantrySoftHome();
+
+};
+
+void loop() {
+    // Main code here, to run repeatedly on a loop 
+
+    // Wait until data received from PC, via Serial (USB)
+    if (Serial.available() > 0) {
+        LastCall = ceil( millis() / 1000 );
+        // data structure to receive = action(var1, var2..)
+
+        // Read until open bracket to extract action, continue based on which action was requested
+        action = Serial.readStringUntil('(');
+
+        if (action == "move") {
+            // Extract variables spaced by commas, then last variable up to closed bracket
+            x = Serial.readStringUntil(',').toFloat() - x_shift;
+            y = Serial.readStringUntil(',').toFloat();
+            z = Serial.readStringUntil(')').toFloat();
+            
+            // Call action using received variables
+            gantryMove(x, y, z);
+        }
+        else if (action == "softHome") {
+            x = Serial.readStringUntil(')').toFloat();
+            
+            gantrySoftHome();
+        }
+        else if (action == "hardHome") {
+            x = Serial.readStringUntil(')').toFloat();
+            
+            gantryHardHome();
+        }
+        else if (action == "pump") {
+            vol = Serial.readStringUntil(')').toFloat();
+
+            gantryPump(vol);
+        }
+        else if (action == "mix") {
+            count = Serial.readStringUntil(',').toInt();
+            servoDelay = Serial.readStringUntil(')').toInt();
+
+            gantryMix(count, servoDelay);
+        }
+        else {
+            // Report back to PC if confused
+            Serial.println("Unknown command");
+        }
+    }
+    else {
+        // Check how long since last call, move to Home if too long
+        CurrentTime = ceil( millis() / 1000 );
+        ElapsedTime = CurrentTime - LastCall;
+        if (ElapsedTime > HomeTime) {
+            gantryMove(0, 0, 0);
+            LastCall = CurrentTime;
+        }
+    }
+};
