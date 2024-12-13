@@ -70,8 +70,8 @@ const float drift = 8; //mm
 // X = 0, Y = 1, Z = 2
 const float motorDir[3] = {1, 1, -1};
 
-// Maximum time in Loop before softHome (ms)
-const unsigned long HomeTime = 60000;
+// Maximum time in Loop before softHome (s)
+const unsigned long HomeTime = 60;
 
 // Define variables to change during Loop
 float x = 0;
@@ -172,9 +172,12 @@ void loop() {
     }
     else {
         // Check how long since last call, softHome if too long
-        ElapsedTime = ceil( millis() / 1000 ) - LastCall;
+        CurrentTime = ceil( millis() / 1000 );
+        ElapsedTime = CurrentTime - LastCall;
+        Serial.println(ElapsedTime);
         if (ElapsedTime > HomeTime) {
             gantrySoftHome();
+            LastCall = CurrentTime;
         }
     }
 };
