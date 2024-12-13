@@ -1,7 +1,9 @@
-/dist
-/build
-/.venv
+dist
+build
+.venv
+.vscode
 **/__pycache__
 **/electrolyte_mixing_station.egg-info
-experiment_log.txt
 .DS_Store
+
+experiment_log.txt
