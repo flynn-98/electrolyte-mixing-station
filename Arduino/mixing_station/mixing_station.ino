@@ -15,16 +15,17 @@ const int Z_STEP = 9;
 const int Z_DIR = 8;
 
 // Pins for future Pump stepper motor
-const int P_STEP = 1;
-const int P_DIR = 0;
+const int P_STEP = 11;
+const int P_DIR = 10;
 
 // Motor speed and acceleration parameters, stepper motors have 200 steps / revolution.
 // Microsteps (per step) used for increased positional accuracy and smoother stepping
 const float STEPS_REV = 200.0;
 const float MICROSTEPS = 4.0;
+const float GEAR_RATIO = 14.0; // Peri-Pump only
 
 const float STAGE_SPEED = 800.0 * MICROSTEPS ; //microsteps/s
-const float PUMP_SPEED = 50.0 * MICROSTEPS; //microsteps/s
+const float PUMP_SPEED = 20.0 * MICROSTEPS * GEAR_RATIO; //microsteps/s
 const float HOMING_SPEED = 50.0 * MICROSTEPS; //microsteps/s
 const float Z_HOMING_SPEED = 150 * MICROSTEPS; //microsteps/s
 
@@ -169,7 +170,7 @@ void loop() {
 long mmToSteps(float milli, bool horizontal, bool pump, int motor) {
     // If Pump, use ml/rev to convert to steps
     if (pump == true) {
-        steps = floor(MICROSTEPS * STEPS_REV * milli / ML_REV);
+        steps = floor(MICROSTEPS * STEPS_REV * milli * GEAR_RATIO / ML_REV);
     }
     // Else, check if motors are vertical (Z) or horizontal (XY). Z motor uses threaded rod, XY motors use belts/pulleys
     else {
@@ -317,7 +318,7 @@ void gantryPump(float vol) {
     StartTime = ceil( millis() / 1000 );
 
     // No limits for Pump
-    PUMP_MOTOR.moveTo(mmToSteps(vol, false, true, 0));
+    PUMP_MOTOR.move(mmToSteps(vol, false, true, 0));
 
     // Run until complete
     PUMP_MOTOR.runToPosition();
