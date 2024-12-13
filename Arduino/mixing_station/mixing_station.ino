@@ -70,6 +70,9 @@ const float drift = 8; //mm
 // X = 0, Y = 1, Z = 2
 const float motorDir[3] = {1, 1, -1};
 
+// Maximum time in Loop before softHome (ms)
+const unsigned long HomeTime = 60000;
+
 // Define variables to change during Loop
 float x = 0;
 float y = 0;
@@ -81,6 +84,7 @@ int servoDelay = 0;
 
 unsigned long StartTime;
 unsigned long CurrentTime;
+unsigned long LastCall = 0;
 unsigned long ElapsedTime;
 
 long steps;
@@ -121,10 +125,11 @@ void setup() {
 };
 
 void loop() {
-    // Main code here, to run repeatedly on a loop
+    // Main code here, to run repeatedly on a loop 
 
     // Wait until data received from PC, via Serial (USB)
     if (Serial.available() > 0) {
+        LastCall = ceil( millis() / 1000 );
         // data structure to receive = action(var1, var2..)
 
         // Read until open bracket to extract action, continue based on which action was requested
@@ -163,6 +168,13 @@ void loop() {
         else {
             // Report back to PC if confused
             Serial.println("Unknown command");
+        }
+    }
+    else {
+        // Check how long since last call, softHome if too long
+        ElapsedTime = ceil( millis() / 1000 ) - LastCall;
+        if (ElapsedTime > HomeTime) {
+            gantrySoftHome();
         }
     }
 };
