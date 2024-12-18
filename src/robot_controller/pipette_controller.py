@@ -21,11 +21,11 @@ class pipette:
                 self.ser.open()
 
             # Configure pump registers
-            # R0 -> 1 = Enable pump
+            # R0 -> 0/1 = Disable/Enable pump
             # R1 -> var = Maximum power (mW)
             # R2 -> 0 = Disable stream mode
 
-            if (self.register_write(0,1) == True) and (self.register_write(1,maximum_power) == True) and (self.register_write(2,0) == True):
+            if (self.register_write(0,0) == True) and (self.register_write(1,maximum_power) == True) and (self.register_write(2,0) == True):
                 logging.info("Disc pump successfully initialised.")
             else:
                 logging.error("Disc pump initialisation failed..")
@@ -40,7 +40,7 @@ class pipette:
             if (self.register_write(10,1) == True) and (self.register_write(12,0) == True) and (self.register_write(13,5) == True) and (self.register_write(33,1) == True):
                 logging.info("Disc pump PID settings succesfully configured.")
             else:
-                logging.error("Disc pump PID configuration failed..")
+                logging.error("Disc pump PID settings configuration failed..")
                 sys.exit()
 
             # Configure PID constants
@@ -50,12 +50,12 @@ class pipette:
             # R17 -> var = Kd
 
             if (self.register_write(14,Kp) == True) and (self.register_write(15,Ki) == True) and (self.register_write(16,maximum_power) == True) and (self.register_write(17,Kd) == True):
-                logging.info("Disc pump PID settings succesfully configured.")
+                logging.info("Disc pump PID constants succesfully configured.")
             else:
-                logging.error("Disc pump PID configuration failed..")
+                logging.error("Disc pump PID constants configuration failed..")
                 sys.exit()
 
-            self.gauge = self.get_pressure() #mbar
+            self.gauge = self.get_gauge() #mbar
 
         else:
             logging.info("No serial connection to pipette established.")
@@ -67,7 +67,7 @@ class pipette:
         while self.ser.in_waiting == 0:
             pass
 
-        return self.ser.readline().decode().rstrip() #.replace("\x00", "")
+        return self.ser.readline().decode()
         
     def set_pressure(self, VALUE):
         # R/W register 23 for set point
@@ -80,11 +80,20 @@ class pipette:
             logging.error(f"Failed to set pipette pressure to {VALUE}mbar.")
             sys.exit()
 
+    def pump_on(self):
+        return self.register_write(0, 1)
+    
+    def pump_off(self):
+        return self.register_write(0, 0)
+    
+    def get_gauge(self):
+        return self.register_read(39)
+    
     def get_pressure(self):
-        return self.register_read("R39") - self.gauge
+        return self.register_read(39) - self.gauge
     
     def get_power(self):
-        return self.register_read("R5")
+        return self.register_read(5)
         
     def register_write(self, REGISTER_NUMBER, VALUE):
         # The PCB responds to “write” commands by echoing the command back. 
@@ -92,9 +101,10 @@ class pipette:
         # that the command has been received correctly. If the command causes an error, 
         # or is not received at all, the PCB does not respond. 
 
-        msg = f"#W<{REGISTER_NUMBER}>,<{VALUE}>\n"
+        msg = f"#W{REGISTER_NUMBER},{VALUE}" + '\n'
+     
         if self.sim == False:
-            self.ser.write(msg.encode())
+            self.ser.write(msg.encode('ascii'))
 
             if (self.get_data() == msg):
                 return True
@@ -110,9 +120,9 @@ class pipette:
         # R6 = Drive frequency
         # R39 = Pressure reading
 
-        msg = f"#R<{REGISTER_NUMBER}>\n"
+        msg = f"#R{REGISTER_NUMBER}" + '\n'
         if self.sim == False:
-            self.ser.write(msg.encode())
+            self.ser.write(msg.encode('ascii'))
 
             data = self.get_data()
 

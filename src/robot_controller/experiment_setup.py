@@ -136,6 +136,7 @@ class experiment:
 
         # Charge pipette
         self.pipette.set_pressure(charge_pressure)
+        self.pipette.pump_on()
         print("Pipette charged.")
 
         try:
@@ -187,8 +188,9 @@ class experiment:
         logging.info("Moving to " + name + "..")
         self.gantry.move(x, y, 0)
 
-        # Charge pipette
+        # Charge pipette (turn ON now, turn off after dispense)
         self.pipette.set_pressure(charge_pressure)
+        self.pipette.pump_on()
         logging.info("Pipette charged.")
 
         # Drop into fluid (based on starting volume)
@@ -229,6 +231,8 @@ class experiment:
 
         # Dispense pipette
         self.pipette.set_pressure(0) # To dispense as quickly as possible to remove all liquid
+        self.pipette.pump_off()
+
         logging.info("Dispense complete.")
 
         logging.info("Lifting Pipette..")
