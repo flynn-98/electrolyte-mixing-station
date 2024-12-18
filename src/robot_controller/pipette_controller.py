@@ -4,7 +4,7 @@ import logging
 logging.basicConfig(level = logging.INFO)
 
 class pipette:
-    def __init__(self, COM, sim=False, maximum_power=300, Kp=1, Ki=1, Kd=0):
+    def __init__(self, COM, sim=False, maximum_power=300, Kp=5, Ki=10, Kd=0):
         self.sim = sim
 
         if self.sim == False:
