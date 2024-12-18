@@ -94,7 +94,7 @@ class pipette:
 
         msg = f"#W<{REGISTER_NUMBER}>,<{VALUE}>\n"
         if self.sim == False:
-            self.ser.write(msg)
+            self.ser.write(msg.encode())
 
             if (self.get_data() == msg):
                 return True
@@ -112,7 +112,7 @@ class pipette:
 
         msg = f"#R<{REGISTER_NUMBER}>\n"
         if self.sim == False:
-            self.ser.write(msg)
+            self.ser.write(msg.encode())
 
             data = self.get_data()
 
