@@ -181,6 +181,8 @@ class experiment:
         self.pipette.set_pressure(0) # To dispense as quickly as possible to remove all liquid
         print("Dispense complete.")
 
+        self.pipette.close_ser()
+
     def aspirate(self, aspirate_volume, starting_volume, name, x, y, aspirate_constant, aspirate_speed, charge_pressure=50, pressure_resolution=0.415):
         new_volume = starting_volume - aspirate_volume * 1e-3 #ml
 
@@ -192,6 +194,7 @@ class experiment:
         self.pipette.set_pressure(charge_pressure)
         self.pipette.pump_on()
         logging.info("Pipette charged.")
+        print(f"Pump power at {self.pipette.get_power()}mW.")
 
         # Drop into fluid (based on starting volume)
         z = self.pot_base_height + 10 * new_volume / self.pot_area
@@ -279,6 +282,8 @@ class experiment:
         display(self.df)
 
         self.gantry.softHome()
+        self.gantry.close_ser()
+        self.pipette.close_ser()
 
     def plot_aspiration_variables(self, name, results, speeds, constants):
         plt.title('Tuning of Aspiration Variables: ' + name)
@@ -320,6 +325,8 @@ class experiment:
         logging.info(f"RESULT: Minimum error of {errors[i_min, j_min]}uL for " + name + f" using {constants[j_min]}mbar/mL and {speeds[i_min]}uL/s.")
 
         self.gantry.softHome()
+        self.gantry.close_ser()
+        self.pipette.close_ser()
         
 
 

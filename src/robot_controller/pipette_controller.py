@@ -4,7 +4,7 @@ import logging
 logging.basicConfig(level = logging.INFO)
 
 class pipette:
-    def __init__(self, COM, sim=False, maximum_power=300, Kp=5, Ki=10, Kd=0):
+    def __init__(self, COM, sim=False, maximum_power=300, Kp=10, Ki=10, Kd=0):
         self.sim = sim
 
         if self.sim == False:
@@ -28,7 +28,7 @@ class pipette:
             if (self.register_write(0,0) == True) and (self.register_write(1,maximum_power) == True) and (self.register_write(2,0) == True):
                 logging.info("Disc pump successfully initialised.")
             else:
-                logging.error("Disc pump initialisation failed..")
+                logging.error("Disc pump initialisation failed!")
                 sys.exit()
             
             # Configure PID Settings
@@ -38,9 +38,9 @@ class pipette:
             # R33 -> 1 = Reset PID on pump enable
 
             if (self.register_write(10,1) == True) and (self.register_write(12,0) == True) and (self.register_write(13,5) == True) and (self.register_write(33,1) == True):
-                logging.info("Disc pump PID settings succesfully configured.")
+                logging.info("Disc pump drive mode succesfully configured.")
             else:
-                logging.error("Disc pump PID settings configuration failed..")
+                logging.error("Disc pump drive mode configuration failed!")
                 sys.exit()
 
             # Configure PID constants
@@ -50,16 +50,16 @@ class pipette:
             # R17 -> var = Kd
 
             if (self.register_write(14,Kp) == True) and (self.register_write(15,Ki) == True) and (self.register_write(16,maximum_power) == True) and (self.register_write(17,Kd) == True):
-                logging.info("Disc pump PID constants succesfully configured.")
+                logging.info("Disc pump PID settings succesfully configured.")
             else:
-                logging.error("Disc pump PID constants configuration failed..")
+                logging.error("Disc pump PID configuration failed!")
                 sys.exit()
 
             self.gauge = self.get_gauge() #mbar
 
         else:
             logging.info("No serial connection to pipette established.")
-            self.gauge = 1000 #mbar
+            self.gauge = 0 #mbar
 
         logging.info(f"Disc pump gauge pressure set as {self.gauge}mbar.")
 
