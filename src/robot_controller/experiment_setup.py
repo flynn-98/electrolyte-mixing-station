@@ -189,7 +189,7 @@ class experiment:
 
     def run(self, N=1):
         for n in range(N):
-            logging.info(f"Creating electrolyte mixture #{n}..")
+            logging.info(f"Creating electrolyte mixture #{n+1}..")
 
             try:
                 non_zero = self.df[self.df["Volume (uL)"] > 0]
@@ -202,8 +202,6 @@ class experiment:
     
                 # Extract relevant df row
                 relevant_row = non_zero.loc[i]
-
-                # Aspirate using data from relevant df row, increment pot co ordinates
                 required_volume = relevant_row["Volume (uL)"]
                 
                 doses = required_volume // self.max_dose + 1
@@ -212,9 +210,12 @@ class experiment:
                 # If larger than maximum required, perform multiple collections and deliveries until entire volume is transferred
                 for i in range(doses):
                     if i == doses:
-                        new_volume = self.collect_volume(last_dose, relevant_row["Starting Volume (mL)"], relevant_row["Name"], self.pot_locations[i][0], self.pot_locations[i][1], relevant_row["Aspirate Constant (mbar/mL)"], relevant_row["Aspirate Speed (uL/s)"])
+                        dose = last_dose
                     else:
-                        new_volume = self.collect_volume(self.max_dose, relevant_row["Starting Volume (mL)"], relevant_row["Name"], self.pot_locations[i][0], self.pot_locations[i][1], relevant_row["Aspirate Constant (mbar/mL)"], relevant_row["Aspirate Speed (uL/s)"])
+                        dose = self.max_dose
+
+                    # Aspirate using data from relevant df row, increment pot co ordinates
+                    new_volume = self.collect_volume(dose, relevant_row["Starting Volume (mL)"], relevant_row["Name"], self.pot_locations[i][0], self.pot_locations[i][1], relevant_row["Aspirate Constant (mbar/mL)"], relevant_row["Aspirate Speed (uL/s)"])
 
                     # Set new starting volume for next repeat
                     self.df.loc[i, "Starting Volume (mL)"] = new_volume
@@ -266,8 +267,17 @@ class experiment:
             for j, const in enumerate(constants):
                 logging.info(f"Aspirating using parameters {const}mbar/mL and {speed}uL/s..")
 
-                starting_volume = self.collect_volume(aspirate_volume, starting_volume, name, self.pot_locations[pot_number-1][0], self.pot_locations[pot_number-1][1], const, speed)
-                self.deliver_volume("Mass Balance", self.mass_balance_location[0], self.mass_balance_location[1])
+                doses = aspirate_volume // self.max_dose + 1
+                last_dose = aspirate_volume % self.max_dose
+
+                for i in range(doses):
+                    if i == doses:
+                        dose = last_dose
+                    else:
+                        dose = self.max_dose
+                        
+                    starting_volume = self.collect_volume(dose, starting_volume, name, self.pot_locations[pot_number-1][0], self.pot_locations[pot_number-1][1], const, speed)
+                    self.deliver_volume("Mass Balance", self.mass_balance_location[0], self.mass_balance_location[1])
 
                 if self.SIM == False:
                     errors[i, j] = ( 1000 * float(input("Input mass balance data in g: ")) / density ) - aspirate_volume
