@@ -56,6 +56,9 @@ class experiment:
         self.column_names = None
         self.df = None
 
+        # Retrieve any requried variables from controllers
+        self.max_dose = self.pipette.get_max_dose()
+
     def read_json(self, device_name):
         json_file = 'data/devices/mixing_stations.json'
 
@@ -151,8 +154,6 @@ class experiment:
         self.pipette.set_pressure(charge_pressure, check=True)
         logging.info("Pipette charged.")
 
-        print(f"Pump power at {self.pipette.get_power()}mW.")
-
         # Drop into fluid (based on starting volume)
         z = self.pot_base_height + 10 * new_volume / self.pot_area
 
@@ -187,7 +188,7 @@ class experiment:
         self.gantry.move(x, y, 0)
 
     def run(self, N=1):
-        for n in range(0, N):
+        for n in range(N):
             logging.info(f"Creating electrolyte mixture #{n}..")
 
             try:
@@ -203,13 +204,23 @@ class experiment:
                 relevant_row = non_zero.loc[i]
 
                 # Aspirate using data from relevant df row, increment pot co ordinates
-                new_volume = self.collect_volume(relevant_row["Volume (uL)"], relevant_row["Starting Volume (mL)"], relevant_row["Name"], self.pot_locations[i][0], self.pot_locations[i][1], relevant_row["Aspirate Constant (mbar/mL)"], relevant_row["Aspirate Speed (uL/s)"])
+                required_volume = relevant_row["Volume (uL)"]
+                
+                doses = required_volume // self.max_dose + 1
+                last_dose = required_volume % self.max_dose
 
-                # Set new starting volume for next repeat
-                self.df.loc[i, "Starting Volume (mL)"] = new_volume
+                # If larger than maximum required, perform multiple collections and deliveries until entire volume is transferred
+                for i in range(doses):
+                    if i == doses:
+                        new_volume = self.collect_volume(last_dose, relevant_row["Starting Volume (mL)"], relevant_row["Name"], self.pot_locations[i][0], self.pot_locations[i][1], relevant_row["Aspirate Constant (mbar/mL)"], relevant_row["Aspirate Speed (uL/s)"])
+                    else:
+                        new_volume = self.collect_volume(self.max_dose, relevant_row["Starting Volume (mL)"], relevant_row["Name"], self.pot_locations[i][0], self.pot_locations[i][1], relevant_row["Aspirate Constant (mbar/mL)"], relevant_row["Aspirate Speed (uL/s)"])
 
-                # Move to mixing chamber
-                self.deliver_volume("Mixing Chamber", self.chamber_location[0], self.chamber_location[1])
+                    # Set new starting volume for next repeat
+                    self.df.loc[i, "Starting Volume (mL)"] = new_volume
+
+                    # Move to mixing chamber
+                    self.deliver_volume("Mixing Chamber", self.chamber_location[0], self.chamber_location[1])
 
             # Trigger servo to mix electrolyte
             self.gantry.mix()
@@ -233,7 +244,7 @@ class experiment:
     def plot_aspiration_variables(self, name, results, speeds, constants):
         plt.title('Tuning of Aspiration Variables: ' + name)
 
-        for n in range(0, len(speeds)):
+        for n in range(len(speeds)):
             plt.plot(constants, results[n,:], label = f"{speeds[n]}uL/s")
     
         plt.legend()

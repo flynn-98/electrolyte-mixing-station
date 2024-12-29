@@ -11,9 +11,15 @@ logging.basicConfig(level = logging.INFO)
 class pipette:
     def __init__(self, COM, sim=False, maximum_power=500, Kp=10, Ki=10, Kd=0):
         self.sim = sim
+
+        self.max_dose = 50 # ul
+        self.max_pressure = 160 # mbar
+
         self.resolution = 0.415 # mbar resolution of sensor (12bit, 160mbar)
-        self.timeout = 5 # Maximum rise/fall time (s)
         self.success_factor = 2 # Multiple of resolution to determine success of pressure control loop
+
+        self.timeout = 5 # Maximum rise/fall time (s)
+        self.time_resolution = 0 # TODO
 
         if self.sim == False:
             logging.info("Configuring pipette serial port..")
@@ -76,6 +82,9 @@ class pipette:
             pass
 
         return self.ser.readline().decode()
+    
+    def get_max_dose(self):
+        return self.max_dose
     
     def register_write(self, REGISTER_NUMBER, VALUE):
         # The PCB responds to “write” commands by echoing the command back. 
@@ -173,6 +182,19 @@ class pipette:
     def set_pressure(self, value, check=False):
         # R/W register 23 for set point
         # mbar is default unit
+        
+        if value > self.max_pressure:
+            logging.error(f"Requested pressure of {value}mbar exceeds maximum.")
+            logging.info(f"Target pressure reduced to maximum of {self.max_pressure}mbar.")
+
+            value = self.max_pressure
+
+        elif value < 0:
+            logging.error(f"Requested pressure of {value}mbar is below zero.")
+            logging.info(f"Target pressure set to 0mbar.")
+
+            value = 0
+
         value = round(value + self.gauge, 3) # Increment by gauge pressure such that set_pressure(0) turns pump off 
 
         if self.register_write(23, value) == True:
@@ -198,6 +220,19 @@ class pipette:
 
     def aspirate(self, aspirate_volume, aspirate_constant, aspirate_speed, poly=False, check=True):
         charge_pressure = self.get_pressure()
+
+        if aspirate_volume > self.max_dose:
+            logging.error(f"Requested dose of {aspirate_volume}uL exceeds maximum.")
+            logging.info(f"Dose reduced to maximum of {self.max_dose}uL.")
+
+            aspirate_volume = self.max_dose
+
+        elif aspirate_volume < 0:
+            logging.error(f"Requested dose of {aspirate_volume}uL is below zero.")
+            logging.info(f"Dose set to 0uL.")
+
+            aspirate_volume = 0
+        
         diff = aspirate_constant * aspirate_volume
         aspirate_pressure = diff + charge_pressure # Pressure diff is from charge pressure
 
