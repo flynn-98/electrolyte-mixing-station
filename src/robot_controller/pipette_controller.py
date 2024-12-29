@@ -166,15 +166,17 @@ class pipette:
                     sys.exit()
 
                 time.sleep(0.02) # 20ms pause to prevent excessive interrupts
-                error = target - self.get_pressure()
+                
+                pressure = self.get_pressure()
+                error = target - pressure
 
             new_time = time.time() - start_time
-            logging.info(f"Pipette successfully reached {target - error}mbar in less than {math.ceil(new_time*1000)}ms.")
+            logging.info(f"Pipette successfully reached {pressure}mbar in less than {math.ceil(new_time*1000)}ms.")
 
             # Delay to let system settle
             time.sleep(2)
 
-            logging.info(f"Final Pump values: {self.get_pressure()}mbar and {self.get_power()}mW.")
+            logging.info(f"Final Pump values: {self.get_pressure()}mbar @ {self.get_power()}mW.")
 
         else:
             logging.info(f"Pipette successfully reached {target}mbar.")
@@ -182,7 +184,7 @@ class pipette:
     def set_pressure(self, value, check=False):
         # R/W register 23 for set point
         # mbar is default unit
-        
+
         if value > self.max_pressure:
             logging.error(f"Requested pressure of {value}mbar exceeds maximum.")
             logging.info(f"Target pressure reduced to maximum of {self.max_pressure}mbar.")
