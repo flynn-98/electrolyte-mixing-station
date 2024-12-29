@@ -145,20 +145,22 @@ class pipette:
     def check_pressure(self, target):
         if self.sim == False:
             start_time = time.time()
-
+            
             error = target - self.get_pressure()
             
             while (error > self.success_factor * self.resolution):
                 new_time = time.time() - start_time
                 if (new_time > self.timeout):
                     logging.error(f"Pipette failed to reach pressure of {target}mbar in {self.timeout}s.")
+                    logging.info(f"Final Pipette pressure is {self.get_pressure()}mbar.")
                     self.pump_off()
                     sys.exit()
 
-                time.sleep(0.2) # 200ms pause to prevent excessive interrupts
+                time.sleep(0.02) # 20ms pause to prevent excessive interrupts
                 error = target - self.get_pressure()
 
-            logging.info(f"Pipette successfully reached {target}mbar in {math.ceil(new_time*1000)}ms.")
+            new_time = time.time() - start_time
+            logging.info(f"Pipette successfully reached {target - error}mbar in less than {math.ceil(new_time*1000)}ms.")
 
             # Delay to let system settle
             time.sleep(2)
@@ -196,25 +198,21 @@ class pipette:
 
     def aspirate(self, aspirate_volume, aspirate_constant, aspirate_speed, poly=False, check=True):
         charge_pressure = self.get_pressure()
-
         diff = aspirate_constant * aspirate_volume
         aspirate_pressure = diff + charge_pressure # Pressure diff is from charge pressure
-        rise_time = aspirate_volume / aspirate_speed # Seconds
 
-        logging.info(f"Rising to aspiration pressure of {aspirate_pressure}mbar in {rise_time}s, from charged pressure of {charge_pressure}mbar.")
-        N = math.floor(diff / self.resolution) + 2 # Ideal resolution of sensor (1.7bar range with 12bit value), N >= 2
-        dT = rise_time / (N-1)
+        if aspirate_speed != 0:
+            rise_time = aspirate_volume / aspirate_speed # Seconds
 
-        if poly==False:
-            path = np.linspace(charge_pressure, aspirate_pressure, N)
-        else:
-            path = self.get_poly_equation(charge_pressure, diff, rise_time, N)
+            logging.info(f"Rising to aspiration pressure of {aspirate_pressure}mbar in {rise_time}s, from charged pressure of {charge_pressure}mbar.")
+            N = math.floor(diff / self.resolution) + 2 # Ideal resolution of sensor (1.7bar range with 12bit value), N >= 2
+            dT = rise_time / (N-1)
 
-        if aspirate_speed == 0:
-            # For liquids requiring no ramp up
-            self.set_pressure(set_point, check)
+            if poly==False:
+                path = np.linspace(charge_pressure, aspirate_pressure, N)
+            else:
+                path = self.get_poly_equation(charge_pressure, diff, rise_time, N)
 
-        else:
             for set_point in path:
                 self.set_pressure(set_point)
                 time.sleep(dT)
@@ -222,6 +220,10 @@ class pipette:
             if check==True:
                 self.check_pressure(aspirate_pressure) # Only check final reading
 
+        else:
+            # Jumpy straight to aspirate pressure if no speed given
+            self.set_pressure(aspirate_pressure, check)
+    
     def dispense(self, check=False):
         self.set_pressure(0) # To dispense as quickly as possible to remove all liquid
         self.pump_off(check=True)

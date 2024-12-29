@@ -146,7 +146,7 @@ class experiment:
         logging.info("Moving to " + name + "..")
         self.gantry.move(x, y, 0)
 
-        # Charge pipette (turn ON now, turn off after dispense)
+        # Charge pipette
         self.pipette.pump_on()
         self.pipette.set_pressure(charge_pressure, check=True)
         logging.info("Pipette charged.")
