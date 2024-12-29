@@ -92,38 +92,6 @@ class experiment:
         
         now = datetime.now()
         logging.info("Experiment ready to begin: " + now.strftime("%d/%m/%Y %H:%M:%S"))
-
-    def get_poly_equation(self, xi, diff, T, N):
-        time = np.linspace(0, T, N)
-
-        # polynomial coefficients
-        C_0 = xi
-        C_1 = 0
-        C_3 = diff * 10 / pow(T, 3)
-        C_4 = diff * -15 / pow(T, 4)
-        C_5 = diff * 6 / pow(T, 5)
-
-        return C_0 + C_3 * np.power(time, 3) + C_4 * np.power(time, 4) + C_5 * np.power(time, 5)
-
-    def aspirate_at_speed(self, charge_pressure, aspirate_volume, aspirate_constant, aspirate_speed, pressure_resolution, poly=True):
-        diff = aspirate_constant * aspirate_volume
-        aspirate_pressure = diff + charge_pressure # Pressure diff is from charge pressure
-        rise_time = aspirate_volume / aspirate_speed # Seconds
-
-        logging.info(f"Rising to aspiration pressure of {aspirate_pressure}mbar in {rise_time}s, from charged pressure of {charge_pressure}mbar.")
-        N = math.floor(diff / pressure_resolution) + 2 # Ideal resolution of sensor (1.7bar range with 12bit value), N >= 2
-        dT = rise_time / (N-1)
-
-        if poly==False:
-            path = np.linspace(charge_pressure, aspirate_pressure, N)
-        else:
-            path = self.get_poly_equation(charge_pressure, diff, rise_time, N)
-
-        for set_point in path:
-            self.pipette.set_pressure(set_point)
-            time.sleep(dT)
-
-        return aspirate_pressure
     
     def aspiration_test(self, pressure_resolution=0.415):
         # Used for testing only => No logging
@@ -135,8 +103,8 @@ class experiment:
             print(f"Charge Pressure set to {charge_pressure}mbar.")
 
         # Charge pipette
-        self.pipette.set_pressure(charge_pressure)
         self.pipette.pump_on()
+        self.pipette.set_pressure(charge_pressure, check=True)
         print("Pipette charged.")
 
         try:
@@ -158,32 +126,20 @@ class experiment:
             print(f"Aspirate Speed set to {aspirate_speed}uL/s.")
 
         # Aspirate pipette
-        aspirate_pressure = self.aspirate_at_speed(charge_pressure, aspirate_volume, aspirate_constant, aspirate_speed, pressure_resolution)
+        self.pipette.aspirate(aspirate_volume, aspirate_constant, aspirate_speed, poly=False, check=True)
 
         print("Aspiration complete.")
         print(f"{aspirate_volume}uL extracted.")
 
-        # Delay to let system settle
-        time.sleep(2)
-
-        # Report final readings (charge + aspirate)
-        reading = self.pipette.get_pressure()
-        error = reading - aspirate_pressure
-        if abs(error) > 1.5 * pressure_resolution:
-            print(f"Aspriate pressure off target by {error}mbar for requested {aspirate_pressure}mbar.")
-        else:
-            print(f"Pressure reading of {reading}mbar achieved for requested {aspirate_pressure}mbar.")
-        print(f"Pump power at {self.pipette.get_power()}mW.")
-
         _ = input("Press any key to Dispense")
 
          # Dispense pipette
-        self.pipette.set_pressure(0) # To dispense as quickly as possible to remove all liquid
+        self.pipette.dispense(check=True)
         print("Dispense complete.")
 
         self.pipette.close_ser()
 
-    def aspirate(self, aspirate_volume, starting_volume, name, x, y, aspirate_constant, aspirate_speed, charge_pressure=50, pressure_resolution=0.415):
+    def collect_volume(self, aspirate_volume, starting_volume, name, x, y, aspirate_constant, aspirate_speed, charge_pressure=50, pressure_resolution=0.415):
         new_volume = starting_volume - aspirate_volume * 1e-3 #ml
 
         # Move above pot
@@ -191,33 +147,23 @@ class experiment:
         self.gantry.move(x, y, 0)
 
         # Charge pipette (turn ON now, turn off after dispense)
-        self.pipette.set_pressure(charge_pressure)
         self.pipette.pump_on()
+        self.pipette.set_pressure(charge_pressure, check=True)
         logging.info("Pipette charged.")
+
         print(f"Pump power at {self.pipette.get_power()}mW.")
 
         # Drop into fluid (based on starting volume)
         z = self.pot_base_height + 10 * new_volume / self.pot_area
+
         logging.info(f"Dropping Pipette to {z}mm..")
         self.gantry.move(x, y, z)
 
         # Aspirate pipette
-        aspirate_pressure = self.aspirate_at_speed(charge_pressure, aspirate_volume, aspirate_constant, aspirate_speed, pressure_resolution)
+        self.pipette.aspirate(aspirate_volume, aspirate_constant, aspirate_speed, poly=False, check=True)
 
         logging.info("Aspiration complete.")
         logging.info(f"{aspirate_volume}uL extracted, {new_volume}mL remaining..")
-
-        # Delay to let system settle
-        time.sleep(2)
-
-        # Report final readings (charge + aspirate)
-        reading = self.pipette.get_pressure()
-        error = reading - aspirate_pressure
-        if abs(error) > 1.5 * pressure_resolution:
-            logging.error(f"Aspriate pressure off target by {error}mbar for requested {aspirate_pressure}mbar.")
-        else:
-            logging.info(f"Pressure reading of {reading}mbar achieved for requested {aspirate_pressure}mbar.")
-        logging.info(f"Pump power at {self.pipette.get_power()}mW.")
 
         # Move out of fluid
         logging.info("Lifting Pipette..")
@@ -225,7 +171,7 @@ class experiment:
         
         return new_volume
     
-    def dispense(self, name, x, y):
+    def deliver_volume(self, name, x, y):
         logging.info("Moving to " + name + "..")
         self.gantry.move(x, y, 0)
         
@@ -233,8 +179,7 @@ class experiment:
         self.gantry.move(x, y, self.dispense_height)
 
         # Dispense pipette
-        self.pipette.set_pressure(0) # To dispense as quickly as possible to remove all liquid
-        self.pipette.pump_off()
+        self.pipette.dispense(check=True)
 
         logging.info("Dispense complete.")
 
@@ -258,13 +203,13 @@ class experiment:
                 relevant_row = non_zero.loc[i]
 
                 # Aspirate using data from relevant df row, increment pot co ordinates
-                new_volume = self.aspirate(relevant_row["Volume (uL)"], relevant_row["Starting Volume (mL)"], relevant_row["Name"], self.pot_locations[i][0], self.pot_locations[i][1], relevant_row["Aspirate Constant (mbar/mL)"], relevant_row["Aspirate Speed (uL/s)"])
+                new_volume = self.collect_volume(relevant_row["Volume (uL)"], relevant_row["Starting Volume (mL)"], relevant_row["Name"], self.pot_locations[i][0], self.pot_locations[i][1], relevant_row["Aspirate Constant (mbar/mL)"], relevant_row["Aspirate Speed (uL/s)"])
 
                 # Set new starting volume for next repeat
                 self.df.loc[i, "Starting Volume (mL)"] = new_volume
 
                 # Move to mixing chamber
-                self.dispense("Mixing Chamber", self.chamber_location[0], self.chamber_location[1])
+                self.deliver_volume("Mixing Chamber", self.chamber_location[0], self.chamber_location[1])
 
             # Trigger servo to mix electrolyte
             self.gantry.mix()
@@ -310,8 +255,8 @@ class experiment:
             for j, const in enumerate(constants):
                 logging.info(f"Aspirating using parameters {const}mbar/mL and {speed}uL/s..")
 
-                starting_volume = self.aspirate(aspirate_volume, starting_volume, name, self.pot_locations[pot_number-1][0], self.pot_locations[pot_number-1][1], const, speed)
-                self.dispense("Mass Balance", self.mass_balance_location[0], self.mass_balance_location[1])
+                starting_volume = self.collect_volume(aspirate_volume, starting_volume, name, self.pot_locations[pot_number-1][0], self.pot_locations[pot_number-1][1], const, speed)
+                self.deliver_volume("Mass Balance", self.mass_balance_location[0], self.mass_balance_location[1])
 
                 if self.SIM == False:
                     errors[i, j] = ( 1000 * float(input("Input mass balance data in g: ")) / density ) - aspirate_volume

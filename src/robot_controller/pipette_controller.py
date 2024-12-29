@@ -1,11 +1,19 @@
 import serial
 import sys
 import logging
+import time
+
+import numpy as np
+import math
+
 logging.basicConfig(level = logging.INFO)
 
 class pipette:
     def __init__(self, COM, sim=False, maximum_power=500, Kp=10, Ki=12, Kd=0):
         self.sim = sim
+        self.resolution = 0.415 # mbar resolution of sensor (12bit, 160mbar)
+        self.timeout = 5 # Maximum rise/fall time (s)
+        self.success_factor = 2 # Multiple of resolution to determine success of pressure control loop
 
         if self.sim == False:
             logging.info("Configuring pipette serial port..")
@@ -68,33 +76,7 @@ class pipette:
             pass
 
         return self.ser.readline().decode()
-        
-    def set_pressure(self, VALUE):
-        # R/W register 23 for set point
-        # mbar is default unit
-        VALUE = round(VALUE + self.gauge, 3) # Increment by gauge pressure such that set_pressure(0) turns pump off 
-
-        if self.register_write(23, VALUE) == True:
-            logging.info(f"Pipette pressure set to {VALUE}mbar.")
-        else:
-            logging.error(f"Failed to set pipette pressure to {VALUE}mbar.")
-            sys.exit()
-
-    def pump_on(self):
-        return self.register_write(0, 1)
     
-    def pump_off(self):
-        return self.register_write(0, 0)
-    
-    def get_gauge(self):
-        return self.register_read(39)
-    
-    def get_pressure(self):
-        return self.register_read(39) - self.gauge
-    
-    def get_power(self):
-        return self.register_read(5)
-        
     def register_write(self, REGISTER_NUMBER, VALUE):
         # The PCB responds to “write” commands by echoing the command back. 
         # This response should be read and checked by the controlling software to confirm 
@@ -133,3 +115,113 @@ class pipette:
     def close_ser(self):
         logging.info("Closing serial connection to pipette..")
         self.ser.close()
+
+    def get_gauge(self):
+        return self.register_read(39)
+    
+    def get_pressure(self):
+        return self.register_read(39)
+    
+    def get_power(self):
+        return self.register_read(5)
+
+    def pump_on(self):
+        if self.register_write(0, 1) == True:
+            logging.info(f"Pipette successfully turned on.")
+        else:
+            logging.error(f"Failed to turn on Pipette.")
+            sys.exit()
+    
+    def pump_off(self, check=False):
+        if self.register_write(0, 0) == True:
+            logging.info(f"Pipette successfully turned off.")
+        else:
+            logging.error(f"Failed to turn off Pipette.")
+            sys.exit()
+
+        if check == True:
+            self.check_pressure(0)
+
+    def check_pressure(self, target):
+        if self.sim == False:
+            start_time = time.time()
+
+            error = target - self.get_pressure()
+            
+            while (error > self.success_factor * self.resolution):
+                new_time = time.time() - start_time
+                if (new_time > self.timeout):
+                    logging.error(f"Pipette failed to reach pressure of {target}mbar in {self.timeout}s.")
+                    self.pump_off()
+                    sys.exit()
+
+                time.sleep(0.2) # 200ms pause to prevent excessive interrupts
+                error = target - self.get_pressure()
+
+            logging.info(f"Pipette successfully reached {target}mbar in {math.ceil(new_time*1000)}ms.")
+
+            # Delay to let system settle
+            time.sleep(2)
+
+            logging.info(f"Final Pump values: {self.get_pressure()}mbar and {self.get_power()}mW.")
+
+        else:
+            logging.info(f"Pipette successfully reached {target}mbar.")
+    
+    def set_pressure(self, value, check=False):
+        # R/W register 23 for set point
+        # mbar is default unit
+        value = round(value + self.gauge, 3) # Increment by gauge pressure such that set_pressure(0) turns pump off 
+
+        if self.register_write(23, value) == True:
+            logging.info(f"Pipette target pressure set to {value}mbar.")
+        else:
+            logging.error(f"Failed to set pipette target pressure to {value}mbar.")
+            sys.exit()
+
+        if check == True:
+            self.check_pressure(value)
+
+    def get_poly_equation(self, xi, diff, T, N):
+        time = np.linspace(0, T, N)
+
+        # polynomial coefficients
+        C_0 = xi
+        C_1 = 0
+        C_3 = diff * 10 / pow(T, 3)
+        C_4 = diff * -15 / pow(T, 4)
+        C_5 = diff * 6 / pow(T, 5)
+
+        return C_0 + C_3 * np.power(time, 3) + C_4 * np.power(time, 4) + C_5 * np.power(time, 5)
+
+    def aspirate(self, aspirate_volume, aspirate_constant, aspirate_speed, poly=False, check=True):
+        charge_pressure = self.get_pressure()
+
+        diff = aspirate_constant * aspirate_volume
+        aspirate_pressure = diff + charge_pressure # Pressure diff is from charge pressure
+        rise_time = aspirate_volume / aspirate_speed # Seconds
+
+        logging.info(f"Rising to aspiration pressure of {aspirate_pressure}mbar in {rise_time}s, from charged pressure of {charge_pressure}mbar.")
+        N = math.floor(diff / self.resolution) + 2 # Ideal resolution of sensor (1.7bar range with 12bit value), N >= 2
+        dT = rise_time / (N-1)
+
+        if poly==False:
+            path = np.linspace(charge_pressure, aspirate_pressure, N)
+        else:
+            path = self.get_poly_equation(charge_pressure, diff, rise_time, N)
+
+        if aspirate_speed == 0:
+            # For liquids requiring no ramp up
+            self.set_pressure(set_point, check)
+
+        else:
+            for set_point in path:
+                self.set_pressure(set_point)
+                time.sleep(dT)
+
+            if check==True:
+                self.check_pressure(aspirate_pressure) # Only check final reading
+
+    def dispense(self, check=False):
+        self.set_pressure(0) # To dispense as quickly as possible to remove all liquid
+        self.pump_off(check=True)
