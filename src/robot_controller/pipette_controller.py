@@ -9,7 +9,7 @@ import math
 logging.basicConfig(level = logging.INFO)
 
 class pipette:
-    def __init__(self, COM, sim=False, maximum_power=500, Kp=10, Ki=12, Kd=0):
+    def __init__(self, COM, sim=False, maximum_power=500, Kp=10, Ki=10, Kd=0):
         self.sim = sim
         self.resolution = 0.415 # mbar resolution of sensor (12bit, 160mbar)
         self.timeout = 5 # Maximum rise/fall time (s)

@@ -99,7 +99,7 @@ class experiment:
         try:
             charge_pressure = float(input("Enter charge pressure (mbar): "))
         except:
-            charge_pressure = 50 
+            charge_pressure = 10 
             print(f"Charge Pressure set to {charge_pressure}mbar.")
 
         # Charge pipette
@@ -139,7 +139,7 @@ class experiment:
 
         self.pipette.close_ser()
 
-    def collect_volume(self, aspirate_volume, starting_volume, name, x, y, aspirate_constant, aspirate_speed, charge_pressure=50, pressure_resolution=0.415):
+    def collect_volume(self, aspirate_volume, starting_volume, name, x, y, aspirate_constant, aspirate_speed, charge_pressure=10, pressure_resolution=0.415):
         new_volume = starting_volume - aspirate_volume * 1e-3 #ml
 
         # Move above pot
