@@ -13,7 +13,7 @@ class pipette:
         self.sim = sim
 
         self.max_dose = 50 # ul
-        self.max_pressure = 100 # mbar
+        self.max_pressure = 160 # mbar
 
         self.pressure_error_criteria = 0.4 # approximate mbar for 1ul
 
@@ -186,6 +186,8 @@ class pipette:
         # R/W register 23 for set point
         # mbar is default unit
 
+        value = round(value + self.gauge, 3) # Increment by gauge pressure such that set_pressure(0) turns pump off
+
         if value > self.max_pressure:
             logging.error(f"Requested pressure of {value}mbar exceeds maximum.")
             logging.info(f"Target pressure reduced to maximum of {self.max_pressure}mbar.")
@@ -198,12 +200,10 @@ class pipette:
 
             value = 0
 
-        value = round(value + self.gauge, 3) # Increment by gauge pressure such that set_pressure(0) turns pump off 
-
         if self.register_write(23, value) == True:
-            logging.info(f"Pipette target pressure set to {value}mbar.")
+            logging.info(f"Pipette target gauge pressure set to {value - self.gauge}mbar.")
         else:
-            logging.error(f"Failed to set pipette target pressure to {value}mbar.")
+            logging.error(f"Failed to set pipette target gauge pressure to {value - self.gauge}mbar.")
             sys.exit()
 
         if check == True:
