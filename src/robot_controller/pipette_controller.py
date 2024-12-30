@@ -17,7 +17,7 @@ class pipette:
 
         self.pressure_error_criteria = 0.4 # approximate mbar for 1ul
 
-        self.timeout = 2 # Maximum rise/fall time (s)
+        self.timeout = 3 # Maximum rise/fall time (s)
         self.time_resolution = 16 # ms
 
         if self.sim == False:
@@ -122,7 +122,8 @@ class pipette:
 
     def close_ser(self):
         logging.info("Closing serial connection to pipette..")
-        self.ser.close()
+        if self.sim == False:
+            self.ser.close()
 
     def get_gauge(self):
         return self.register_read(39)
@@ -153,8 +154,9 @@ class pipette:
     def check_pressure(self, target):
         if self.sim == False:
             start_time = time.time()
-            
-            error = target - self.get_pressure()
+
+            pressure = self.get_pressure()
+            error = target - pressure
             
             while (error > self.pressure_error_criteria):
                 new_time = time.time() - start_time
@@ -164,7 +166,7 @@ class pipette:
                     self.pump_off()
                     sys.exit()
 
-                time.sleep(0.02) # 20ms pause to prevent excessive interrupts
+                time.sleep(0.1) # 100ms pause to prevent excessive interrupts
                 
                 pressure = self.get_pressure()
                 error = target - pressure
@@ -241,7 +243,7 @@ class pipette:
             rise_time = aspirate_volume / aspirate_speed # Seconds
 
             logging.info(f"Rising to aspiration pressure of {aspirate_pressure}mbar in {rise_time}s, from charged pressure of {charge_pressure}mbar.")
-            N = math.ceil(rise_time / (2.3 * self.time_resolution)) + 1 # Nyquist * smallest time step of SPM (no point changing pressure at any higher frequency)
+            N = math.ceil(rise_time / (2.3 * 1000 * self.time_resolution)) + 1 # Nyquist * smallest time step of SPM (no point changing pressure at any higher frequency)
             dT = rise_time / (N-1)
 
             if N > 1:

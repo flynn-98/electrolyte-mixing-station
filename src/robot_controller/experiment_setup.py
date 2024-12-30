@@ -204,7 +204,7 @@ class experiment:
                 relevant_row = non_zero.loc[i]
                 required_volume = relevant_row["Volume (uL)"]
                 
-                doses = required_volume // self.max_dose + 1
+                doses = math.floor(required_volume // self.max_dose) + 1
                 last_dose = required_volume % self.max_dose
 
                 # If larger than maximum required, perform multiple collections and deliveries until entire volume is transferred
@@ -267,7 +267,7 @@ class experiment:
             for j, const in enumerate(constants):
                 logging.info(f"Aspirating using parameters {const}mbar/mL and {speed}uL/s..")
 
-                doses = aspirate_volume // self.max_dose + 1
+                doses = math.floor(aspirate_volume // self.max_dose) + 1
                 last_dose = aspirate_volume % self.max_dose
 
                 for i in range(doses):
