@@ -18,7 +18,7 @@ class pipette:
         self.pressure_error_criteria = 0.4 # approximate mbar for 1ul
 
         self.timeout = 3 # Maximum rise/fall time (s)
-        self.time_resolution = 16 # ms
+        self.time_resolution = 0.016 # s
 
         if self.sim == False:
             logging.info("Configuring pipette serial port..")
@@ -243,7 +243,7 @@ class pipette:
             rise_time = aspirate_volume / aspirate_speed # Seconds
 
             logging.info(f"Rising to aspiration pressure of {aspirate_pressure}mbar in {rise_time}s, from charged pressure of {charge_pressure}mbar.")
-            N = math.ceil(rise_time / (2.3 * 1000 * self.time_resolution)) + 1 # Nyquist * smallest time step of SPM (no point changing pressure at any higher frequency)
+            N = math.ceil(rise_time / (2.3 * self.time_resolution)) + 1 # Nyquist * smallest time step of SPM (no point changing pressure at any higher frequency)
             dT = rise_time / (N-1)
 
             if N > 1:
