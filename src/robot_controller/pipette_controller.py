@@ -166,7 +166,7 @@ class pipette:
                     self.pump_off()
                     sys.exit()
 
-                time.sleep(0.1) # 100ms pause to prevent excessive interrupts
+                time.sleep(10 * self.time_resolution) # pause to prevent excessive interrupts
                 
                 pressure = self.get_pressure()
                 error = target - pressure
