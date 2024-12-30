@@ -207,21 +207,24 @@ class experiment:
                 doses = math.floor(required_volume // self.max_dose) + 1
                 last_dose = required_volume % self.max_dose
 
+                # Extract starting volume in pot
+                pot_volume = relevant_row["Starting Volume (mL)"]
+
                 # If larger than maximum required, perform multiple collections and deliveries until entire volume is transferred
                 for i in range(doses):
-                    if i == doses:
+                    if i == doses-1:
                         dose = last_dose
                     else:
                         dose = self.max_dose
 
                     # Aspirate using data from relevant df row, increment pot co ordinates
-                    new_volume = self.collect_volume(dose, relevant_row["Starting Volume (mL)"], relevant_row["Name"], self.pot_locations[i][0], self.pot_locations[i][1], relevant_row["Aspirate Constant (mbar/mL)"], relevant_row["Aspirate Speed (uL/s)"])
-
-                    # Set new starting volume for next repeat
-                    self.df.loc[i, "Starting Volume (mL)"] = new_volume
+                    pot_volume = self.collect_volume(dose, pot_volume, relevant_row["Name"], self.pot_locations[i][0], self.pot_locations[i][1], relevant_row["Aspirate Constant (mbar/mL)"], relevant_row["Aspirate Speed (uL/s)"])
 
                     # Move to mixing chamber
                     self.deliver_volume("Mixing Chamber", self.chamber_location[0], self.chamber_location[1])
+
+                # Set new starting volume for next repeat
+                self.df.loc[i, "Starting Volume (mL)"] = pot_volume
 
             # Trigger servo to mix electrolyte
             self.gantry.mix()
@@ -271,7 +274,7 @@ class experiment:
                 last_dose = aspirate_volume % self.max_dose
 
                 for i in range(doses):
-                    if i == doses:
+                    if i == doses-1:
                         dose = last_dose
                     else:
                         dose = self.max_dose
