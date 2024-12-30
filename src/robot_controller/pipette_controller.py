@@ -9,17 +9,16 @@ import math
 logging.basicConfig(level = logging.INFO)
 
 class pipette:
-    def __init__(self, COM, sim=False, maximum_power=500, Kp=10, Ki=10, Kd=0):
+    def __init__(self, COM, sim=False, maximum_power=500, Kp=5, Ki=40, Kd=0):
         self.sim = sim
 
         self.max_dose = 50 # ul
-        self.max_pressure = 160 # mbar
+        self.max_pressure = 100 # mbar
 
-        self.resolution = 0.415 # mbar resolution of sensor (12bit, 160mbar)
-        self.success_factor = 2 # Multiple of resolution to determine success of pressure control loop
+        self.pressure_error_criteria = 0.4 # approximate mbar for 1ul
 
-        self.timeout = 5 # Maximum rise/fall time (s)
-        self.time_resolution = 0 # TODO
+        self.timeout = 2 # Maximum rise/fall time (s)
+        self.time_resolution = 16 # ms
 
         if self.sim == False:
             logging.info("Configuring pipette serial port..")
@@ -157,7 +156,7 @@ class pipette:
             
             error = target - self.get_pressure()
             
-            while (error > self.success_factor * self.resolution):
+            while (error > self.pressure_error_criteria):
                 new_time = time.time() - start_time
                 if (new_time > self.timeout):
                     logging.error(f"Pipette failed to reach pressure of {target}mbar in {self.timeout}s.")
@@ -242,23 +241,27 @@ class pipette:
             rise_time = aspirate_volume / aspirate_speed # Seconds
 
             logging.info(f"Rising to aspiration pressure of {aspirate_pressure}mbar in {rise_time}s, from charged pressure of {charge_pressure}mbar.")
-            N = math.floor(diff / self.resolution) + 2 # Ideal resolution of sensor (1.7bar range with 12bit value), N >= 2
+            N = math.ceil(rise_time / (2.3 * self.time_resolution)) + 1 # Nyquist * smallest time step of SPM (no point changing pressure at any higher frequency)
             dT = rise_time / (N-1)
 
-            if poly==False:
-                path = np.linspace(charge_pressure, aspirate_pressure, N)
+            if N > 1:
+                if poly==False:
+                    path = np.linspace(charge_pressure, aspirate_pressure, N)
+                else:
+                    path = self.get_poly_equation(charge_pressure, diff, rise_time, N)
+
+                for set_point in path:
+                    self.set_pressure(set_point)
+                    time.sleep(dT)
+
+                if check==True:
+                    self.check_pressure(aspirate_pressure) # Only check final reading
             else:
-                path = self.get_poly_equation(charge_pressure, diff, rise_time, N)
-
-            for set_point in path:
-                self.set_pressure(set_point)
-                time.sleep(dT)
-
-            if check==True:
-                self.check_pressure(aspirate_pressure) # Only check final reading
+                # Jump straight to aspirate pressure if speed is too high
+                self.set_pressure(aspirate_pressure, check)
 
         else:
-            # Jumpy straight to aspirate pressure if no speed given
+            # Jump straight to aspirate pressure if no speed given
             self.set_pressure(aspirate_pressure, check)
     
     def dispense(self, check=False):
