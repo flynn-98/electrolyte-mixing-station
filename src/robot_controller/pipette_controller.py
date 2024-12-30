@@ -9,11 +9,12 @@ import math
 logging.basicConfig(level = logging.INFO)
 
 class pipette:
-    def __init__(self, COM, sim=False, maximum_power=500, Kp=5, Ki=40, Kd=0):
+    def __init__(self, COM, sim=False, maximum_power=300, Kp=5, Ki=40, Kd=0):
         self.sim = sim
 
-        self.max_dose = 50 # ul
+        self.max_dose = 100 # ul
         self.max_pressure = 160 # mbar
+        self.max_power = maximum_power
 
         self.pressure_error_criteria = 0.4 # approximate mbar for 1ul
 
@@ -38,7 +39,7 @@ class pipette:
             # R1 -> var = Maximum power (mW)
             # R2 -> 0 = Disable stream mode
 
-            if (self.register_write(0,0) == True) and (self.register_write(1,maximum_power) == True) and (self.register_write(2,0) == True):
+            if (self.register_write(0,0) == True) and (self.register_write(1,self.max_power) == True) and (self.register_write(2,0) == True):
                 logging.info("Disc pump successfully initialised.")
             else:
                 logging.error("Disc pump initialisation failed!")
@@ -130,9 +131,6 @@ class pipette:
     
     def get_pressure(self):
         return self.register_read(39)
-    
-    def get_power(self):
-        return self.register_read(5)
 
     def pump_on(self):
         if self.register_write(0, 1) == True:
@@ -150,6 +148,16 @@ class pipette:
 
         if check == True:
             self.check_pressure(0)
+
+    def get_power(self):
+        power = self.register_read(5)
+        
+        if math.ceil(power) >= self.max_power:
+            logging.error(f"Pipette at Maximum Power - Check for air flow restrictions!")
+            self.pump_off()
+            sys.exit()
+        
+        return power
 
     def check_pressure(self, target):
         if self.sim == False:
