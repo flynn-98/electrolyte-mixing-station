@@ -243,10 +243,10 @@ class pipette:
             rise_time = aspirate_volume / aspirate_speed # Seconds
 
             logging.info(f"Rising to aspiration pressure of {aspirate_pressure}mbar in {rise_time}s, from charged pressure of {charge_pressure}mbar.")
-            N = math.ceil(rise_time / (2.3 * self.time_resolution)) + 1 # Nyquist * smallest time step of SPM (no point changing pressure at any higher frequency)
+            N = math.ceil(rise_time / (2.3 * self.time_resolution)) + 2 # Nyquist * smallest time step of SPM (no point changing pressure at any higher frequency)
             dT = rise_time / (N-1)
 
-            if N > 1:
+            if N > 2:
                 if poly==False:
                     path = np.linspace(charge_pressure, aspirate_pressure, N)
                 else:
