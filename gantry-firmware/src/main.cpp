@@ -35,7 +35,7 @@ const float MAX_ACCEL = 300.0 * MICROSTEPS; //microsteps/s2
 const float PULLEY_RADIUS = 6.34; //mm
 const float ROD_PITCH = 2.0; //mm
 // For future Pump stepper motor
-const float ML_REV = 0.33; //ml/rev
+const float ML_REV = 0.14; //ml/rev
 
 // Parameters for Mixer (Servo)
 const int servoHome = 90;

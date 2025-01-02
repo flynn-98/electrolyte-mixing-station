@@ -64,7 +64,7 @@ class gantry:
             self.ser.write("hardHome()".encode())
             self.get_response()
 
-    def pump(self, electrolyte_vol, tube_vol=1.0, overpump=1.1):
+    def pump(self, electrolyte_vol, tube_vol=1.6, overpump=1.1):
         logging.info(f"Pumping {electrolyte_vol}mL of electrolyte to next stage.")
         vol = overpump * (electrolyte_vol+tube_vol) #ml
         
