@@ -96,13 +96,13 @@ class experiment:
         now = datetime.now()
         logging.info("Experiment ready to begin: " + now.strftime("%d/%m/%Y %H:%M:%S"))
     
-    def aspiration_test(self, pressure_resolution=0.415):
+    def aspiration_test(self):
         # Used for testing only => No logging
 
         try:
             charge_pressure = float(input("Enter charge pressure (mbar): "))
         except:
-            charge_pressure = 10 
+            charge_pressure = 20 
             print(f"Charge Pressure set to {charge_pressure}mbar.")
 
         # Charge pipette
@@ -142,7 +142,7 @@ class experiment:
 
         self.pipette.close_ser()
 
-    def collect_volume(self, aspirate_volume, starting_volume, name, x, y, aspirate_constant, aspirate_speed, charge_pressure=10, pressure_resolution=0.415):
+    def collect_volume(self, aspirate_volume, starting_volume, name, x, y, aspirate_constant, aspirate_speed):
         new_volume = starting_volume - aspirate_volume * 1e-3 #ml
 
         # Move above pot
@@ -151,7 +151,7 @@ class experiment:
 
         # Charge pipette
         self.pipette.pump_on()
-        self.pipette.set_pressure(charge_pressure, check=True)
+        self.pipette.charge_pipette()
         logging.info("Pipette charged.")
 
         # Drop into fluid (based on starting volume)

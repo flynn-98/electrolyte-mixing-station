@@ -9,12 +9,13 @@ import math
 logging.basicConfig(level = logging.INFO)
 
 class pipette:
-    def __init__(self, COM, sim=False, maximum_power=300, Kp=5, Ki=40, Kd=0):
+    def __init__(self, COM, sim=False, maximum_power=500, charge_pressure=20, Kp=1, Ki=20, Kd=0):
         self.sim = sim
 
-        self.max_dose = 100 # ul
+        self.max_dose = 30 # ul
         self.max_pressure = 160 # mbar
-        self.max_power = maximum_power
+        self.charge_pressure = charge_pressure # mbar
+        self.max_power = maximum_power #mW
 
         self.pressure_error_criteria = 0.4 # approximate mbar for 1ul
 
@@ -151,7 +152,7 @@ class pipette:
 
     def get_power(self):
         power = self.register_read(5)
-        
+
         if math.ceil(power) >= self.max_power:
             logging.error(f"Pipette at Maximum Power - Check for air flow restrictions!")
             self.pump_off()
@@ -166,7 +167,7 @@ class pipette:
             pressure = self.get_pressure()
             error = target - pressure
             
-            while (error > self.pressure_error_criteria):
+            while (abs(error) > self.pressure_error_criteria):
                 new_time = time.time() - start_time
                 if (new_time > self.timeout):
                     logging.error(f"Pipette failed to reach pressure of {target}mbar in {self.timeout}s.")
@@ -216,6 +217,9 @@ class pipette:
 
         if check == True:
             self.check_pressure(value)
+
+    def charge_pipette(self):
+        self.set_pressure(self.charge_pressure, check=True)
 
     def get_poly_equation(self, xi, diff, T, N):
         time = np.linspace(0, T, N)
