@@ -45,7 +45,7 @@ class experiment:
                               [109, 68], [143, 68]
                             ]
         
-        self.pot_base_height = -74 - 0.5 # CAD value minus tunable value to ensure submersion
+        self.pot_base_height = -70 # CAD value minus tunable value to ensure submersion
         self.pot_area = math.pi * 2.78**2 / 4 #cm2
 
         self.chamber_location = [12, 110] # mm
@@ -211,8 +211,8 @@ class experiment:
                 pot_volume = relevant_row["Starting Volume (mL)"]
 
                 # If larger than maximum required, perform multiple collections and deliveries until entire volume is transferred
-                for i in range(doses):
-                    if i == doses-1:
+                for j in range(doses):
+                    if j == doses-1:
                         dose = last_dose
                     else:
                         dose = self.max_dose
@@ -241,7 +241,6 @@ class experiment:
         logging.info("Remaining volumes..")
         display(self.df)
 
-        self.gantry.softHome()
         self.gantry.close_ser()
         self.pipette.close_ser()
 
@@ -273,8 +272,8 @@ class experiment:
                 doses = math.floor(aspirate_volume // self.max_dose) + 1
                 last_dose = aspirate_volume % self.max_dose
 
-                for i in range(doses):
-                    if i == doses-1:
+                for k in range(doses):
+                    if k == doses-1:
                         dose = last_dose
                     else:
                         dose = self.max_dose
@@ -293,7 +292,6 @@ class experiment:
         i_min, j_min = np.unravel_index(np.absolute(errors).argmin(), errors.shape)
         logging.info(f"RESULT: Minimum error of {errors[i_min, j_min]}uL for " + name + f" using {constants[j_min]}mbar/mL and {speeds[i_min]}uL/s.")
 
-        self.gantry.softHome()
         self.gantry.close_ser()
         self.pipette.close_ser()
         

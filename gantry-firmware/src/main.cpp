@@ -25,7 +25,7 @@ const float MICROSTEPS = 4.0;
 const float GEAR_RATIO = 14.0; // Peri-Pump only
 
 const float STAGE_SPEED = 800.0 * MICROSTEPS ; //microsteps/s
-const float PUMP_SPEED = 20.0 * MICROSTEPS * GEAR_RATIO; //microsteps/s
+const float PUMP_SPEED = 40.0 * MICROSTEPS * GEAR_RATIO; //microsteps/s
 const float HOMING_SPEED = 50.0 * MICROSTEPS; //microsteps/s
 const float Z_HOMING_SPEED = 150 * MICROSTEPS; //microsteps/s
 
@@ -64,7 +64,7 @@ const float jointLimit[2][3] = {
 };
 
 // Overshoot value used during Homing, any gantry drift less than this value will be corrected (in theory!)
-const float drift = 8; //mm
+const float drift = 4; //mm
 
 // Joint direction coefficients: 1 or -1, for desired motor directions
 // X = 0, Y = 1, Z = 2

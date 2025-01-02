@@ -2,15 +2,15 @@
         {
             "ID" : "microtron_01",
             "Gantry_Address" : "/dev/ttyACM0",
-            "Pipette_Address" : "/dev/cu.usbserial-FTCXWC29",
-            "Gantry_Active": false,
+            "Pipette_Address" : "/dev/ttyUSB0",
+            "Gantry_Active": true,
             "Pipette_Active": true
         },
         {
             "ID" : "microtron_02",
             "Gantry_Address" : "/dev/ttyACM1",
-            "Pipette_Address" : "/dev/cu.usbmodem1301",
-            "Gantry_Active": true,
+            "Pipette_Address" : "/dev/ttyUSB1",
+            "Gantry_Active": false,
             "Pipette_Active": false
         }
     ]
