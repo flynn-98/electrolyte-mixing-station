@@ -98,13 +98,22 @@ class experiment:
         self.df = pd.read_csv(self.csv_location, header=0, names=self.column_names).astype(convert_dict)
         display(self.df)
 
-        logging.info(f'Recipe will result in a total electrolyte volume of {self.df["Dose Volume (uL)"].sum()/1000}mL')
+        logging.info(f'Recipe will result in a total electrolyte volume of {self.df["Dose Volume (uL)"].sum()/1000}mL.')
         
         now = datetime.now()
         logging.info("Experiment ready to begin: " + now.strftime("%d/%m/%Y %H:%M:%S"))
 
     def save_csv(self):
+        logging.info("Saving volume changes to CSV.")
         self.df.to_csv(self.csv_location, index=False)
+
+    def update_dose_volumes(self):
+        # Place holder for API integration
+        for i in self.df.index.to_numpy(dtype=int):
+            self.df.loc[i, "Dose Volume (uL)"] = input("Input new Dose Volume (uL) for " + self.df.loc[i, "Name"] + ": ")
+            logging.info(self.df.loc[i, "Name"] + f" Dose Volume updated to {self.df.loc[i, "Dose Volume (uL)"]}uL")
+
+        self.save_csv()
     
     def aspiration_test(self):
         # Used for testing only => No logging
@@ -206,7 +215,7 @@ class experiment:
             except:
                 logging.error(f"No CSV loaded.")
                 sys.exit()
-
+            
             # Loop through all non zero constituents
             for i in non_zero.index.to_numpy(dtype=int):
     

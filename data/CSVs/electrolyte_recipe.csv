@@ -1,6 +1,6 @@
 Name,Dose Volume (uL),Container Volume (mL),Density (g/mL),Aspirate Constant (mbar/mL),Aspirate Speed (uL/s)
 O2,0.0,10.0,1.0,0.5,10.0
-N2,20.0,9.84,1.0,0.5,10.0
+N2,20.0,9.82,1.0,0.5,10.0
 CH4,0.0,10.0,1.0,0.5,10.0
 NH4,50.0,9.6,1.0,0.5,10.0
 CO2,0.0,10.0,1.0,0.5,10.0
