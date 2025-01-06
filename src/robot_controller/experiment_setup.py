@@ -9,7 +9,9 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from IPython.display import HTML, display
+from IPython.display import display
+
+from robot_controller import gantry_controller, pipette_controller
 
 # Save logs to file
 file_handler = logging.basicConfig(filename="experiment_log.txt",
@@ -20,9 +22,6 @@ file_handler = logging.basicConfig(filename="experiment_log.txt",
 
 # Also output to stdout
 logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
-
-from robot_controller import gantry_controller, pipette_controller
-
 
 class experiment:
     def __init__(self, device_name: str, csv_path: str | None = None) -> None:
@@ -123,7 +122,7 @@ class experiment:
 
         try:
             charge_pressure = float(input("Enter charge pressure (mbar): "))
-        except:
+        except Exception:
             charge_pressure = self.charge_pressure
             print(f"Charge Pressure set to {charge_pressure}mbar.")
 
@@ -134,20 +133,23 @@ class experiment:
 
         try:
             aspirate_volume = float(input("Enter Aspirate Volume (uL): "))
-        except:
+        except Exception as ex:
             aspirate_volume = 10
+            print(ex)
             print(f"Aspirate Volume set to {aspirate_volume}uL.")
 
         try:
             aspirate_constant = float(input("Enter Aspirate Constant (mbar/uL): "))
-        except:
+        except Exception as ex:
             aspirate_constant = 0.5
+            print(ex)
             print(f"Aspirate Constant set to {aspirate_constant}mbar/uL.")
 
         try:
             aspirate_speed = float(input("Enter Aspirate Speed (uL/s): "))
-        except:
+        except Exception as ex:
             aspirate_speed = 10
+            print(ex)
             print(f"Aspirate Speed set to {aspirate_speed}uL/s.")
 
         # Aspirate pipette
@@ -215,8 +217,8 @@ class experiment:
 
             try:
                 non_zero = self.df[self.df["Dose Volume (uL)"] > 0]
-            except:
-                logging.error("No CSV loaded.")
+            except Exception as ex:
+                logging.error(ex + ": No CSV loaded.")
                 sys.exit()
             
             # Loop through all non zero constituents

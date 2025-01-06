@@ -50,7 +50,7 @@ class pipette:
             # R10 -> 1 = PID mode (0 = manual)
             # R12 -> 0 = Setpoint source (register val)
             # R13 -> 5 = Input source (pressure sensor)
-            # R33 -> 1 = Reset PID on pump enable
+            # R33 -> 1 = Reset PID on pump enable
 
             if (self.register_write(10,1) is True) and (self.register_write(12,0) is True) and (self.register_write(13,5) is True) and (self.register_write(33,1) is True):
                 logging.info("Disc pump drive mode succesfully configured.")
@@ -224,7 +224,7 @@ class pipette:
     def charge_pipette(self) -> None:
         self.set_pressure(self.charge_pressure, check=True)
 
-    def get_poly_equation(self, xi: float, diff: float, T: float, N: int):
+    def get_poly_equation(self, xi: float, diff: float, T: float, N: int) -> np.ndarray:
         time = np.linspace(0, T, N)
 
         # polynomial coefficients
