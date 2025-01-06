@@ -50,8 +50,7 @@ class experiment:
 
         # Declare variables for CSV read
         self.csv_location = csv_path
-        self.column_names = None
-        self.df = None
+        self.df = pd.DataFrame()
 
         # Retrieve any requried variables from controllers
         self.max_dose = self.pipette.get_max_dose()
@@ -81,7 +80,7 @@ class experiment:
     def read_csv(self) -> None:
         # Open CSV as dataframe
         logging.info("Reading CSV file..")
-        self.column_names = ['#', 'Name', 'Dose Volume (uL)', 'Container Volume (mL)', 'Density (g/mL)', 'Aspirate Constant (mbar/mL)', 'Aspirate Speed (uL/s)']
+        column_names = ['#', 'Name', 'Dose Volume (uL)', 'Container Volume (mL)', 'Density (g/mL)', 'Aspirate Constant (mbar/mL)', 'Aspirate Speed (uL/s)']
 
         # Using dictionary to convert specific columns
         convert_dict = {'#': int,
@@ -93,7 +92,7 @@ class experiment:
                         'Aspirate Speed (uL/s)': float,
                         }
         
-        self.df = pd.read_csv(self.csv_location, header=0, names=self.column_names, index_col=False).astype(convert_dict)
+        self.df = pd.read_csv(self.csv_location, header=0, names=column_names, index_col=False).astype(convert_dict)
         self.df.set_index("#")
         self.show_df()
 
@@ -268,7 +267,7 @@ class experiment:
         self.gantry.close_ser()
         self.pipette.close_ser()
 
-    def plot_aspiration_variables(self, name: str, results: float, speeds: float, constants: float) -> None:
+    def plot_aspiration_variables(self, name: str, results: np.ndarray, speeds: np.ndarray, constants: np.ndarray) -> None:
         plt.title('Tuning of Aspiration Variables: ' + name)
 
         for n in range(len(speeds)):
@@ -280,7 +279,7 @@ class experiment:
         plt.grid(visible=True, which="both", axis="both")
         plt.show()
 
-    def tune(self, name: str, pot_number: int = 1, aspirate_volume: float = 10, container_volume: float = 50, density: float = 1, asp_const_range: float = [1, 1], asp_speed_range: float = [1, 1], N: int = 5) -> None:
+    def tune(self, name: str, pot_number: int = 1, aspirate_volume: float = 10, container_volume: float = 50, density: float = 1, asp_const_range: list[float] = [1.0, 1.0], asp_speed_range: list[float] = [1.0, 1.0], N: int = 5) -> None:
         now = datetime.now()
         logging.info("Tuning of aspiration variables for " + name + ": " + now.strftime("%d/%m/%Y %H:%M:%S"))
         logging.info(f"Tuning will perform a total of {N*N} aspirations..")
