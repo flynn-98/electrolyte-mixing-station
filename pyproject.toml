@@ -9,9 +9,9 @@ authors = [
 ]
 
 description = "Python package to run electroyte mixing experiments using the mixing station, which utilises a disc pump for aspirating and dispensing operations."
-version = "0.1.0"
+version = "1.0.0"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = "==3.13.0"
 dependencies = [
     "requests > 2.26.0",
     "pandas",
@@ -20,6 +20,13 @@ dependencies = [
     "ipython",
     "datetime",
     "matplotlib",
+    "ruff",
+]
+
+[project.optional-dependencies]
+lint = [
+    "ruff == 0.4.4",
+    "mypy == 1.10.0",
 ]
 
 [project.urls]
@@ -29,3 +36,30 @@ repository = "https://github.com/flynn-98/electrolyte-mixing-station"
 accelerated-life-test = "robot_controller.command_line:accelerated_life_test"
 run-experiment = "robot_controller.command_line:run_experiment"
 test-pipette = "robot_controller.command_line:test_pipette"
+
+[tool.ruff]
+line-length = 100
+indent-width = 4
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+
+[tool.ruff.lint]
+select = [
+    "F",   # pyflakes
+    "E",   # pycodestyle
+    "I",   # isort
+    "ANN", # flake8 type annotations
+    "RUF", # ruff-specific rules
+]
+fixable = ["ALL"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.mypy]
+python_version = "3.13.0"
+warn_return_any = true
+disallow_untyped_defs = true

@@ -1,10 +1,10 @@
-import serial
-import sys
 import logging
+import math
+import sys
 import time
 
 import numpy as np
-import math
+import serial
 
 logging.basicConfig(level = logging.INFO)
 
@@ -138,16 +138,16 @@ class pipette:
 
     def pump_on(self):
         if self.register_write(0, 1) == True:
-            logging.info(f"Pipette successfully turned on.")
+            logging.info("Pipette successfully turned on.")
         else:
-            logging.error(f"Failed to turn on Pipette.")
+            logging.error("Failed to turn on Pipette.")
             sys.exit()
     
     def pump_off(self, check=False):
         if self.register_write(0, 0) == True:
-            logging.info(f"Pipette successfully turned off.")
+            logging.info("Pipette successfully turned off.")
         else:
-            logging.error(f"Failed to turn off Pipette.")
+            logging.error("Failed to turn off Pipette.")
             sys.exit()
 
         if check == True:
@@ -157,7 +157,7 @@ class pipette:
         power = self.register_read(5)
 
         if math.ceil(power) >= self.max_power:
-            logging.error(f"Pipette at Maximum Power - Check for air flow restrictions!")
+            logging.error("Pipette at Maximum Power - Check for air flow restrictions!")
             self.pump_off()
             sys.exit()
         
@@ -208,7 +208,7 @@ class pipette:
 
         elif value < 0:
             logging.error(f"Requested pressure of {value}mbar is below zero.")
-            logging.info(f"Target pressure set to 0mbar.")
+            logging.info("Target pressure set to 0mbar.")
 
             value = 0
 
@@ -247,7 +247,7 @@ class pipette:
 
         elif aspirate_volume < 0:
             logging.error(f"Requested dose of {aspirate_volume}uL is below zero.")
-            logging.info(f"Dose set to 0uL.")
+            logging.info("Dose set to 0uL.")
 
             aspirate_volume = 0
         

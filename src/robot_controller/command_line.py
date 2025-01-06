@@ -1,5 +1,7 @@
 import argparse
-from robot_controller import experiment_setup, pipette_controller
+
+from robot_controller import experiment_setup
+
 
 def accelerated_life_test():
     parser=argparse.ArgumentParser(description="Input variables for Accelerated Life Test")

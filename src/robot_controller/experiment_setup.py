@@ -1,17 +1,15 @@
+import json
+import logging
 import math
-import pandas as pd
-import numpy as np
+import random
 import sys
 import time
-import random
-import json
-
-from IPython.display import display, HTML
-import matplotlib.pyplot as plt
-
 from datetime import datetime
 
-import logging
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from IPython.display import HTML, display
 
 # Save logs to file
 file_handler = logging.basicConfig(filename="experiment_log.txt",
@@ -24,6 +22,7 @@ file_handler = logging.basicConfig(filename="experiment_log.txt",
 logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
 from robot_controller import gantry_controller, pipette_controller
+
 
 class experiment:
     def __init__(self, device_name, csv_path=None):
@@ -218,7 +217,7 @@ class experiment:
             try:
                 non_zero = self.df[self.df["Dose Volume (uL)"] > 0]
             except:
-                logging.error(f"No CSV loaded.")
+                logging.error("No CSV loaded.")
                 sys.exit()
             
             # Loop through all non zero constituents

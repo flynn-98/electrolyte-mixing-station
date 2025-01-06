@@ -1,6 +1,8 @@
-import serial
-import sys
 import logging
+import sys
+
+import serial
+
 logging.basicConfig(level = logging.INFO)
 
 class gantry:
