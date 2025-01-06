@@ -26,7 +26,7 @@ logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 from robot_controller import gantry_controller, pipette_controller
 
 class experiment:
-    def __init__(self, device_name):
+    def __init__(self, device_name, csv_path):
         # Read device data JSON
         device_data = self.read_json(device_name)
 
@@ -53,12 +53,17 @@ class experiment:
         self.dispense_height = -15 #mm
 
         # Declare variables for CSV read
+        self.csv_location = csv_path
         self.column_names = None
         self.df = None
 
         # Retrieve any requried variables from controllers
         self.max_dose = self.pipette.get_max_dose()
         self.charge_pressure = self.pipette.get_charge_pressure()
+
+        # Convert CSV file to df
+        if csv_path != None:
+            self.read_csv()
 
     def read_json(self, device_name):
         json_file = 'data/devices/mixing_stations.json'
@@ -76,11 +81,11 @@ class experiment:
         logging.error("Device data for " + device_name + " could not be located.")
         sys.exit()
 
-    def read_csv(self, CSV_PATH):
+    def read_csv(self):
         # Open CSV as dataframe
         logging.info("Reading CSV file..")
         self.column_names = ["Name", "Volume (uL)", "Starting Volume (mL)", "Density (g/mL)", "Aspirate Constant (mbar/mL)", "Aspirate Speed (uL/s)"]
-        
+
         # Using dictionary to convert specific columns
         convert_dict = {'Name': str,
                         'Volume (uL)': float,
@@ -90,13 +95,16 @@ class experiment:
                         'Aspirate Speed (uL/s)': float,
                         }
         
-        self.df = pd.read_csv(CSV_PATH, header=0, names=self.column_names).astype(convert_dict)
+        self.df = pd.read_csv(self.csv_location, header=0, names=self.column_names).astype(convert_dict)
         display(self.df)
 
         logging.info(f'Recipe will result in a total electrolyte volume of {self.df["Volume (uL)"].sum()/1000}mL')
         
         now = datetime.now()
         logging.info("Experiment ready to begin: " + now.strftime("%d/%m/%Y %H:%M:%S"))
+
+    def save_csv(self):
+        self.df.to_csv(self.csv_location)
     
     def aspiration_test(self):
         # Used for testing only => No logging
@@ -145,7 +153,7 @@ class experiment:
         self.pipette.close_ser()
 
     def collect_volume(self, aspirate_volume, starting_volume, name, x, y, aspirate_constant, aspirate_speed):
-        new_volume = starting_volume - aspirate_volume * 1e-3 #ml
+        new_volume = round(starting_volume - aspirate_volume * 1e-3, 4) #ml
 
         # Move above pot
         logging.info("Moving to " + name + "..")
@@ -222,11 +230,14 @@ class experiment:
                     # Aspirate using data from relevant df row, increment pot co ordinates
                     pot_volume = self.collect_volume(dose, pot_volume, relevant_row["Name"], self.pot_locations[i][0], self.pot_locations[i][1], relevant_row["Aspirate Constant (mbar/mL)"], relevant_row["Aspirate Speed (uL/s)"])
 
-                    # Move to mixing chamber
+                    # Move to mixing chamber and dispense
                     self.deliver_volume("Mixing Chamber", self.chamber_location[0], self.chamber_location[1])
 
-                # Set new starting volume for next repeat
-                self.df.loc[i, "Starting Volume (mL)"] = pot_volume
+                    # Set new starting volume for next repeat
+                    self.df.loc[i, "Starting Volume (mL)"] = pot_volume
+
+                    # Save csv in current state (starting volumes up to date in case of unexpected interruption)
+                    self.save_csv()
 
             # Trigger servo to mix electrolyte
             self.gantry.mix()

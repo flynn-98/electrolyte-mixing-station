@@ -8,8 +8,7 @@ def accelerated_life_test():
 
     args=parser.parse_args()
 
-    experiment = experiment_setup.experiment(device_name=args.device_name)
-    experiment.read_csv(CSV_PATH="data/CSVs/accelerated_life_test.csv")
+    experiment = experiment_setup.experiment(device_name=args.device_name, csv_path="data/CSVs/accelerated_life_test.csv")
     experiment.run(args.repeats)
 
 def run_experiment():
@@ -19,8 +18,7 @@ def run_experiment():
 
     args=parser.parse_args()
 
-    experiment = experiment_setup.experiment(device_name=args.device_name)
-    experiment.read_csv(CSV_PATH="data/CSVs/electrolyte_recipe.csv")
+    experiment = experiment_setup.experiment(device_name=args.device_name, csv_path="data/CSVs/electrolyte_recipe.csv")
     experiment.run(args.repeats)
 
 def test_pipette():
@@ -29,5 +27,5 @@ def test_pipette():
 
     args=parser.parse_args()
 
-    experiment = experiment_setup.experiment(device_name=args.device_name)
+    experiment = experiment_setup.experiment(device_name=args.device_name, csv_path=None)
     experiment.aspiration_test()
