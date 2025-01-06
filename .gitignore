@@ -1,6 +1,5 @@
 dist
 build
-.venv
 .vscode
 **/__pycache__
 **/electrolyte_mixing_station.egg-info

@@ -25,7 +25,7 @@ from robot_controller import gantry_controller, pipette_controller
 
 
 class experiment:
-    def __init__(self, device_name, csv_path=None):
+    def __init__(self, device_name, csv_path=None) -> None:
         # Read device data JSON
         device_data = self.read_json(device_name)
 
@@ -61,7 +61,7 @@ class experiment:
         self.charge_pressure = self.pipette.get_charge_pressure()
 
         # Convert CSV file to df
-        if csv_path != None:
+        if csv_path is not None:
             self.read_csv()
 
     def read_json(self, device_name):
@@ -80,10 +80,10 @@ class experiment:
         logging.error("Device data for " + device_name + " could not be located.")
         sys.exit()
 
-    def show_df(self):
+    def show_df(self) -> None:
         display(HTML(self.df.to_html(index=False)))
 
-    def read_csv(self):
+    def read_csv(self) -> None:
         # Open CSV as dataframe
         logging.info("Reading CSV file..")
         self.column_names = ['#', 'Name', 'Dose Volume (uL)', 'Container Volume (mL)', 'Density (g/mL)', 'Aspirate Constant (mbar/mL)', 'Aspirate Speed (uL/s)']
@@ -107,11 +107,11 @@ class experiment:
         now = datetime.now()
         logging.info("Experiment ready to begin: " + now.strftime("%d/%m/%Y %H:%M:%S"))
 
-    def save_csv(self):
+    def save_csv(self) -> None:
         logging.info("Saving volume changes to CSV.")
         self.df.to_csv(self.csv_location, index=False)
 
-    def update_dose_volumes(self):
+    def update_dose_volumes(self) -> None:
         # Place holder for API integration
         for i in self.df.index.to_numpy(dtype=int):
             self.df.loc[i, "Dose Volume (uL)"] = input("Input new Dose Volume (uL) for " + self.df.loc[i, "Name"] + ": ")
@@ -119,7 +119,7 @@ class experiment:
 
         self.save_csv()
     
-    def aspiration_test(self):
+    def aspiration_test(self) -> None:
         # Used for testing only => No logging
 
         try:
@@ -195,7 +195,7 @@ class experiment:
         
         return new_volume
     
-    def deliver_volume(self, name, x, y):
+    def deliver_volume(self, name, x, y) -> None:
         logging.info("Moving to " + name + "..")
         self.gantry.move(x, y, 0)
         
@@ -210,7 +210,7 @@ class experiment:
         logging.info("Lifting Pipette..")
         self.gantry.move(x, y, 0)
 
-    def run(self, N=1):
+    def run(self, N=1) -> None:
         for n in range(N):
             logging.info(f"Creating electrolyte mixture #{n+1}..")
 
@@ -270,7 +270,7 @@ class experiment:
         self.gantry.close_ser()
         self.pipette.close_ser()
 
-    def plot_aspiration_variables(self, name, results, speeds, constants):
+    def plot_aspiration_variables(self, name, results, speeds, constants) -> None:
         plt.title('Tuning of Aspiration Variables: ' + name)
 
         for n in range(len(speeds)):
@@ -282,7 +282,7 @@ class experiment:
         plt.grid(visible=True, which="both", axis="both")
         plt.show()
 
-    def tune(self, name, pot_number=1, aspirate_volume=10, container_volume=50, density=1, asp_const_range=[1, 1], asp_speed_range=[1, 1], N=5):
+    def tune(self, name, pot_number=1, aspirate_volume=10, container_volume=50, density=1, asp_const_range=[1, 1], asp_speed_range=[1, 1], N=5) -> None:
         now = datetime.now()
         logging.info("Tuning of aspiration variables for " + name + ": " + now.strftime("%d/%m/%Y %H:%M:%S"))
         logging.info(f"Tuning will perform a total of {N*N} aspirations..")
@@ -307,7 +307,7 @@ class experiment:
                     container_volume = self.collect_volume(dose, container_volume, name, self.pot_locations[pot_number-1][0], self.pot_locations[pot_number-1][1], const, speed)
                     self.deliver_volume("Mass Balance", self.mass_balance_location[0], self.mass_balance_location[1])
 
-                if self.SIM == False:
+                if self.SIM is False:
                     errors[i, j] = ( 1000 * float(input("Input mass balance data in g: ")) / density ) - aspirate_volume
                 else:
                     errors[i, j] = random.uniform(-0.2, 0.2)

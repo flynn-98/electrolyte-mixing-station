@@ -9,7 +9,7 @@ import serial
 logging.basicConfig(level = logging.INFO)
 
 class pipette:
-    def __init__(self, COM, sim=False, maximum_power=500, charge_pressure=20, Kp=1, Ki=20, Kd=0):
+    def __init__(self, COM, sim=False, maximum_power=500, charge_pressure=20, Kp=1, Ki=20, Kd=0) -> None:
         self.sim = sim
 
         self.max_dose = 30 # ul
@@ -22,7 +22,7 @@ class pipette:
         self.timeout = 3 # Maximum rise/fall time (s)
         self.time_resolution = 0.016 # s
 
-        if self.sim == False:
+        if self.sim is False:
             logging.info("Configuring pipette serial port..")
             self.ser = serial.Serial(COM) # COMXX
             self.ser.baudrate = 115200 # set Baud rate to 9600
@@ -32,7 +32,7 @@ class pipette:
 
             logging.info("Attempting to open pipette serial port..")
 
-            if self.ser.isOpen() == False:
+            if self.ser.isOpen() is False:
                 self.ser.open()
 
             # Configure pump registers
@@ -40,7 +40,7 @@ class pipette:
             # R1 -> var = Maximum power (mW)
             # R2 -> 0 = Disable stream mode
 
-            if (self.register_write(0,0) == True) and (self.register_write(1,self.max_power) == True) and (self.register_write(2,0) == True):
+            if (self.register_write(0,0) is True) and (self.register_write(1,self.max_power) is True) and (self.register_write(2,0) is True):
                 logging.info("Disc pump successfully initialised.")
             else:
                 logging.error("Disc pump initialisation failed!")
@@ -52,7 +52,7 @@ class pipette:
             # R13 -> 5 = Input source (pressure sensor)
             # R33 -> 1 = Reset PID on pump enable
 
-            if (self.register_write(10,1) == True) and (self.register_write(12,0) == True) and (self.register_write(13,5) == True) and (self.register_write(33,1) == True):
+            if (self.register_write(10,1) is True) and (self.register_write(12,0) is True) and (self.register_write(13,5) is True) and (self.register_write(33,1) is True):
                 logging.info("Disc pump drive mode succesfully configured.")
             else:
                 logging.error("Disc pump drive mode configuration failed!")
@@ -64,7 +64,7 @@ class pipette:
             # R16 -> var = Integral limit (max power)
             # R17 -> var = Kd
 
-            if (self.register_write(14,Kp) == True) and (self.register_write(15,Ki) == True) and (self.register_write(16,maximum_power) == True) and (self.register_write(17,Kd) == True):
+            if (self.register_write(14,Kp) is True) and (self.register_write(15,Ki) is True) and (self.register_write(16,maximum_power) is True) and (self.register_write(17,Kd) is True):
                 logging.info("Disc pump PID settings succesfully configured.")
             else:
                 logging.error("Disc pump PID configuration failed!")
@@ -90,7 +90,7 @@ class pipette:
     def get_charge_pressure(self):
         return self.charge_pressure
     
-    def register_write(self, REGISTER_NUMBER, VALUE):
+    def register_write(self, REGISTER_NUMBER, VALUE) -> bool:
         # The PCB responds to “write” commands by echoing the command back. 
         # This response should be read and checked by the controlling software to confirm 
         # that the command has been received correctly. If the command causes an error, 
@@ -98,7 +98,7 @@ class pipette:
 
         msg = f"#W{REGISTER_NUMBER},{VALUE}" + '\n'
      
-        if self.sim == False:
+        if self.sim is False:
             self.ser.write(msg.encode('ascii'))
 
             if (self.get_data() == msg):
@@ -116,7 +116,7 @@ class pipette:
         # R39 = Pressure reading
 
         msg = f"#R{REGISTER_NUMBER}" + '\n'
-        if self.sim == False:
+        if self.sim is False:
             self.ser.write(msg.encode('ascii'))
 
             data = self.get_data()
@@ -125,9 +125,9 @@ class pipette:
         else:
             return self.gauge
 
-    def close_ser(self):
+    def close_ser(self) -> None:
         logging.info("Closing serial connection to pipette.")
-        if self.sim == False:
+        if self.sim is False:
             self.ser.close()
 
     def get_gauge(self):
@@ -136,21 +136,21 @@ class pipette:
     def get_pressure(self):
         return self.register_read(39)
 
-    def pump_on(self):
-        if self.register_write(0, 1) == True:
+    def pump_on(self) -> None:
+        if self.register_write(0, 1) is True:
             logging.info("Pipette successfully turned on.")
         else:
             logging.error("Failed to turn on Pipette.")
             sys.exit()
     
-    def pump_off(self, check=False):
-        if self.register_write(0, 0) == True:
+    def pump_off(self, check=False) -> None:
+        if self.register_write(0, 0) is True:
             logging.info("Pipette successfully turned off.")
         else:
             logging.error("Failed to turn off Pipette.")
             sys.exit()
 
-        if check == True:
+        if check is True:
             self.check_pressure(0)
 
     def get_power(self):
@@ -163,8 +163,8 @@ class pipette:
         
         return power
 
-    def check_pressure(self, target):
-        if self.sim == False:
+    def check_pressure(self, target) -> None:
+        if self.sim is False:
             start_time = time.time()
 
             pressure = self.get_pressure()
@@ -194,7 +194,7 @@ class pipette:
         else:
             logging.info(f"Pipette successfully reached {target}mbar.")
     
-    def set_pressure(self, value, check=False):
+    def set_pressure(self, value, check=False) -> None:
         # R/W register 23 for set point
         # mbar is default unit
 
@@ -212,16 +212,16 @@ class pipette:
 
             value = 0
 
-        if self.register_write(23, value) == True:
+        if self.register_write(23, value) is True:
             logging.info(f"Pipette target gauge pressure set to {value - self.gauge}mbar.")
         else:
             logging.error(f"Failed to set pipette target gauge pressure to {value - self.gauge}mbar.")
             sys.exit()
 
-        if check == True:
+        if check is True:
             self.check_pressure(value)
 
-    def charge_pipette(self):
+    def charge_pipette(self) -> None:
         self.set_pressure(self.charge_pressure, check=True)
 
     def get_poly_equation(self, xi, diff, T, N):
@@ -229,14 +229,13 @@ class pipette:
 
         # polynomial coefficients
         C_0 = xi
-        C_1 = 0
         C_3 = diff * 10 / pow(T, 3)
         C_4 = diff * -15 / pow(T, 4)
         C_5 = diff * 6 / pow(T, 5)
 
         return C_0 + C_3 * np.power(time, 3) + C_4 * np.power(time, 4) + C_5 * np.power(time, 5)
 
-    def aspirate(self, aspirate_volume, aspirate_constant, aspirate_speed, poly=False, check=True):
+    def aspirate(self, aspirate_volume, aspirate_constant, aspirate_speed, poly=False, check=True) -> None:
         charge_pressure = self.get_pressure()
 
         if aspirate_volume > self.max_dose:
@@ -262,7 +261,7 @@ class pipette:
             dT = rise_time / (N-1)
 
             if N > 2:
-                if poly==False:
+                if poly is False:
                     path = np.linspace(charge_pressure, aspirate_pressure, N)
                 else:
                     path = self.get_poly_equation(charge_pressure, diff, rise_time, N)
@@ -271,7 +270,7 @@ class pipette:
                     self.set_pressure(set_point)
                     time.sleep(dT)
 
-                if check==True:
+                if check is True:
                     self.check_pressure(aspirate_pressure) # Only check final reading
             else:
                 # Jump straight to aspirate pressure if speed is too high
@@ -281,6 +280,6 @@ class pipette:
             # Jump straight to aspirate pressure if no speed given
             self.set_pressure(aspirate_pressure, check)
     
-    def dispense(self, check=False):
+    def dispense(self, check=False) -> None:
         self.set_pressure(0) # To dispense as quickly as possible to remove all liquid
         self.pump_off(check=True)
