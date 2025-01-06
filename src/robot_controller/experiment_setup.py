@@ -84,12 +84,12 @@ class experiment:
     def read_csv(self):
         # Open CSV as dataframe
         logging.info("Reading CSV file..")
-        self.column_names = ["Name", "Volume (uL)", "Starting Volume (mL)", "Density (g/mL)", "Aspirate Constant (mbar/mL)", "Aspirate Speed (uL/s)"]
+        self.column_names = ["Name", "Dose Volume (uL)", "Container Volume (mL)", "Density (g/mL)", "Aspirate Constant (mbar/mL)", "Aspirate Speed (uL/s)"]
 
         # Using dictionary to convert specific columns
         convert_dict = {'Name': str,
-                        'Volume (uL)': float,
-                        'Starting Volume (mL)': float,
+                        'Dose Volume (uL)': float,
+                        'Container Volume (mL)': float,
                         'Density (g/mL)': float,
                         'Aspirate Constant (mbar/mL)': float,
                         'Aspirate Speed (uL/s)': float,
@@ -98,13 +98,13 @@ class experiment:
         self.df = pd.read_csv(self.csv_location, header=0, names=self.column_names).astype(convert_dict)
         display(self.df)
 
-        logging.info(f'Recipe will result in a total electrolyte volume of {self.df["Volume (uL)"].sum()/1000}mL')
+        logging.info(f'Recipe will result in a total electrolyte volume of {self.df["Dose Volume (uL)"].sum()/1000}mL')
         
         now = datetime.now()
         logging.info("Experiment ready to begin: " + now.strftime("%d/%m/%Y %H:%M:%S"))
 
     def save_csv(self):
-        self.df.to_csv(self.csv_location)
+        self.df.to_csv(self.csv_location, index=False)
     
     def aspiration_test(self):
         # Used for testing only => No logging
@@ -202,7 +202,7 @@ class experiment:
             logging.info(f"Creating electrolyte mixture #{n+1}..")
 
             try:
-                non_zero = self.df[self.df["Volume (uL)"] > 0]
+                non_zero = self.df[self.df["Dose Volume (uL)"] > 0]
             except:
                 logging.error(f"No CSV loaded.")
                 sys.exit()
@@ -212,13 +212,13 @@ class experiment:
     
                 # Extract relevant df row
                 relevant_row = non_zero.loc[i]
-                required_volume = relevant_row["Volume (uL)"]
+                required_volume = relevant_row["Dose Volume (uL)"]
                 
                 doses = math.floor(required_volume // self.max_dose) + 1
                 last_dose = required_volume % self.max_dose
 
                 # Extract starting volume in pot
-                pot_volume = relevant_row["Starting Volume (mL)"]
+                pot_volume = relevant_row["Container Volume (mL)"]
 
                 # If larger than maximum required, perform multiple collections and deliveries until entire volume is transferred
                 for j in range(doses):
@@ -234,7 +234,7 @@ class experiment:
                     self.deliver_volume("Mixing Chamber", self.chamber_location[0], self.chamber_location[1])
 
                     # Set new starting volume for next repeat
-                    self.df.loc[i, "Starting Volume (mL)"] = pot_volume
+                    self.df.loc[i, "Container Volume (mL)"] = pot_volume
 
                     # Save csv in current state (starting volumes up to date in case of unexpected interruption)
                     self.save_csv()
@@ -246,7 +246,7 @@ class experiment:
             time.sleep(2)
 
             # Pump electrolyte to next stage
-            total_vol = self.df["Volume (uL)"].sum()/1000
+            total_vol = self.df["Dose Volume (uL)"].sum()/1000
             self.gantry.pump(total_vol)
 
         logging.info(f"Experiment complete after {N} repeat(s).")
