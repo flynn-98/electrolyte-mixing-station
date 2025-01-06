@@ -1,3 +1,4 @@
+Name, Volume (uL), Starting Volume (mL), Density (g/mL), Aspirate Constant (mbar/mL), Aspirate Speed (uL/s)
 O2, 10, 30, 1, 0.6, 0
 N2, 110, 30, 1, 0.6, 0
 CH4, 10, 30, 1, 0.6, 100

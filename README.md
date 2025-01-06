@@ -19,7 +19,7 @@ python3 -m venv .venv
 Install dependencies into new venv:
 
 ```
-.venv/bin/pip install .
+.venv/bin/pip install -e .
 ```
 
 Activate venv:

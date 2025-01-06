@@ -20,7 +20,7 @@ def run_experiment():
     args=parser.parse_args()
 
     experiment = experiment_setup.experiment(device_name=args.device_name)
-    experiment.read_csv(CSV_PATH="data/CSVs/electrolye_recipe.csv")
+    experiment.read_csv(CSV_PATH="data/CSVs/electrolyte_recipe.csv")
     experiment.run(args.repeats)
 
 def test_pipette():

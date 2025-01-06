@@ -87,6 +87,9 @@ class pipette:
     def get_max_dose(self):
         return self.max_dose
     
+    def get_charge_pressure(self):
+        return self.charge_pressure
+    
     def register_write(self, REGISTER_NUMBER, VALUE):
         # The PCB responds to “write” commands by echoing the command back. 
         # This response should be read and checked by the controlling software to confirm 

@@ -10,6 +10,13 @@
             "ID" : "microtron_02",
             "Gantry_Address" : "/dev/ttyACM1",
             "Pipette_Address" : "/dev/ttyUSB1",
+            "Gantry_Active": true,
+            "Pipette_Active": true
+        },
+        {
+            "ID" : "dummy",
+            "Gantry_Address" : "/dev/ttyACM",
+            "Pipette_Address" : "/dev/ttyUSB",
             "Gantry_Active": false,
             "Pipette_Active": false
         }

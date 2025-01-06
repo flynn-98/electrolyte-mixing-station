@@ -58,6 +58,7 @@ class experiment:
 
         # Retrieve any requried variables from controllers
         self.max_dose = self.pipette.get_max_dose()
+        self.charge_pressure = self.pipette.get_charge_pressure()
 
     def read_json(self, device_name):
         json_file = 'data/devices/mixing_stations.json'
@@ -79,6 +80,7 @@ class experiment:
         # Open CSV as dataframe
         logging.info("Reading CSV file..")
         self.column_names = ["Name", "Volume (uL)", "Starting Volume (mL)", "Density (g/mL)", "Aspirate Constant (mbar/mL)", "Aspirate Speed (uL/s)"]
+        
         # Using dictionary to convert specific columns
         convert_dict = {'Name': str,
                         'Volume (uL)': float,
@@ -88,7 +90,7 @@ class experiment:
                         'Aspirate Speed (uL/s)': float,
                         }
         
-        self.df = pd.read_csv(CSV_PATH, names=self.column_names).astype(convert_dict)
+        self.df = pd.read_csv(CSV_PATH, header=0, names=self.column_names).astype(convert_dict)
         display(self.df)
 
         logging.info(f'Recipe will result in a total electrolyte volume of {self.df["Volume (uL)"].sum()/1000}mL')
@@ -102,7 +104,7 @@ class experiment:
         try:
             charge_pressure = float(input("Enter charge pressure (mbar): "))
         except:
-            charge_pressure = 20 
+            charge_pressure = self.charge_pressure
             print(f"Charge Pressure set to {charge_pressure}mbar.")
 
         # Charge pipette
