@@ -45,7 +45,7 @@ class gantry:
             logging.info("Response from gantry: " + data)
 
     def close_ser(self):
-        logging.info("Closing serial connection to gantry..")
+        logging.info("Closing serial connection to gantry.")
         if self.sim == False:
             self.ser.close()
 

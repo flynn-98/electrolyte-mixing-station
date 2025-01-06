@@ -6,7 +6,7 @@ import time
 import random
 import json
 
-from IPython.display import display
+from IPython.display import display, HTML
 import matplotlib.pyplot as plt
 
 from datetime import datetime
@@ -26,7 +26,7 @@ logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 from robot_controller import gantry_controller, pipette_controller
 
 class experiment:
-    def __init__(self, device_name, csv_path):
+    def __init__(self, device_name, csv_path=None):
         # Read device data JSON
         device_data = self.read_json(device_name)
 
@@ -81,13 +81,17 @@ class experiment:
         logging.error("Device data for " + device_name + " could not be located.")
         sys.exit()
 
+    def show_df(self):
+        display(HTML(self.df.to_html(index=False)))
+
     def read_csv(self):
         # Open CSV as dataframe
         logging.info("Reading CSV file..")
-        self.column_names = ["Name", "Dose Volume (uL)", "Container Volume (mL)", "Density (g/mL)", "Aspirate Constant (mbar/mL)", "Aspirate Speed (uL/s)"]
+        self.column_names = ['#', 'Name', 'Dose Volume (uL)', 'Container Volume (mL)', 'Density (g/mL)', 'Aspirate Constant (mbar/mL)', 'Aspirate Speed (uL/s)']
 
         # Using dictionary to convert specific columns
-        convert_dict = {'Name': str,
+        convert_dict = {'#': int,
+                        'Name': str,
                         'Dose Volume (uL)': float,
                         'Container Volume (mL)': float,
                         'Density (g/mL)': float,
@@ -95,8 +99,9 @@ class experiment:
                         'Aspirate Speed (uL/s)': float,
                         }
         
-        self.df = pd.read_csv(self.csv_location, header=0, names=self.column_names).astype(convert_dict)
-        display(self.df)
+        self.df = pd.read_csv(self.csv_location, header=0, names=self.column_names, index_col=False).astype(convert_dict)
+        self.df.set_index("#")
+        self.show_df()
 
         logging.info(f'Recipe will result in a total electrolyte volume of {self.df["Dose Volume (uL)"].sum()/1000}mL.')
         
@@ -261,7 +266,7 @@ class experiment:
         logging.info(f"Experiment complete after {N} repeat(s).")
 
         logging.info("Remaining volumes..")
-        display(self.df)
+        self.show_df()
 
         self.gantry.close_ser()
         self.pipette.close_ser()
@@ -278,7 +283,7 @@ class experiment:
         plt.grid(visible=True, which="both", axis="both")
         plt.show()
 
-    def tune(self, name, pot_number=1, aspirate_volume=10, starting_volume=50, density=1, asp_const_range=[1, 1], asp_speed_range=[1, 1], N=5):
+    def tune(self, name, pot_number=1, aspirate_volume=10, container_volume=50, density=1, asp_const_range=[1, 1], asp_speed_range=[1, 1], N=5):
         now = datetime.now()
         logging.info("Tuning of aspiration variables for " + name + ": " + now.strftime("%d/%m/%Y %H:%M:%S"))
         logging.info(f"Tuning will perform a total of {N*N} aspirations..")
@@ -300,7 +305,7 @@ class experiment:
                     else:
                         dose = self.max_dose
                         
-                    starting_volume = self.collect_volume(dose, starting_volume, name, self.pot_locations[pot_number-1][0], self.pot_locations[pot_number-1][1], const, speed)
+                    container_volume = self.collect_volume(dose, container_volume, name, self.pot_locations[pot_number-1][0], self.pot_locations[pot_number-1][1], const, speed)
                     self.deliver_volume("Mass Balance", self.mass_balance_location[0], self.mass_balance_location[1])
 
                 if self.SIM == False:
