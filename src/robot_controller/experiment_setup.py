@@ -20,9 +20,6 @@ file_handler = logging.basicConfig(filename="experiment_log.txt",
                     datefmt='%Y-%m-%d %H:%M:%S',
                     level=logging.INFO)
 
-# Also output to stdout
-logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
-
 class experiment:
     def __init__(self, device_name: str, csv_path: str | None = None) -> None:
         # Read device data JSON
