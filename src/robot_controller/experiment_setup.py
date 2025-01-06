@@ -80,10 +80,9 @@ class experiment:
     def read_csv(self) -> None:
         # Open CSV as dataframe
         logging.info("Reading CSV file..")
-        column_names = ['#', 'Name', 'Dose Volume (uL)', 'Container Volume (mL)', 'Density (g/mL)', 'Aspirate Constant (mbar/mL)', 'Aspirate Speed (uL/s)']
 
         # Using dictionary to convert specific columns
-        convert_dict = {'#': int,
+        df_columns = {'#': int,
                         'Name': str,
                         'Dose Volume (uL)': float,
                         'Container Volume (mL)': float,
@@ -92,7 +91,7 @@ class experiment:
                         'Aspirate Speed (uL/s)': float,
                         }
         
-        self.df = pd.read_csv(self.csv_location, header=0, names=column_names, index_col=False).astype(convert_dict)
+        self.df = pd.read_csv(self.csv_location, header=0, names=df_columns.keys(), index_col=False).astype(df_columns)
         self.df.set_index("#")
         self.show_df()
 
