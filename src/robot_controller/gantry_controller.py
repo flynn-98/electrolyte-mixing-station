@@ -6,7 +6,7 @@ import serial
 logging.basicConfig(level = logging.INFO)
 
 class gantry:
-    def __init__(self, COM, sim=False) -> None:
+    def __init__(self, COM: str, sim: bool = False) -> None:
         self.sim = sim
 
         if self.sim is False:
@@ -31,7 +31,7 @@ class gantry:
         else:
             logging.info("No serial connection to gantry established.")
 
-    def get_data(self):
+    def get_data(self) -> str:
         while self.ser.in_waiting == 0:
             pass
 
@@ -51,7 +51,7 @@ class gantry:
         if self.sim is False:
             self.ser.close()
 
-    def move(self, x, y, z) -> None:
+    def move(self, x: float, y: float, z: float) -> None:
         if self.sim is False:
             self.ser.write(f"move({x},{y},{z})".encode())
             self.get_response()
@@ -66,7 +66,7 @@ class gantry:
             self.ser.write("hardHome()".encode())
             self.get_response()
 
-    def pump(self, electrolyte_vol, tube_vol=1.6, overpump=1.1) -> None:
+    def pump(self, electrolyte_vol: float, tube_vol: float = 1.6, overpump: float = 1.1) -> None:
         logging.info(f"Pumping {electrolyte_vol}mL of electrolyte to next stage.")
         vol = overpump * (electrolyte_vol+tube_vol) #ml
         
@@ -74,7 +74,7 @@ class gantry:
             self.ser.write(f"pump({vol})".encode())
             self.get_response()
 
-    def mix(self, count=25, delay=100) -> None:
+    def mix(self, count: int = 25, delay: int = 100) -> None:
         logging.info(f"Mixing electrolyte {count} times with a {delay}ms delay.")
         if self.sim is False:
             # Move away from mixing chamber first

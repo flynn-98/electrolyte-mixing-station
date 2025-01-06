@@ -9,7 +9,7 @@ import serial
 logging.basicConfig(level = logging.INFO)
 
 class pipette:
-    def __init__(self, COM, sim=False, maximum_power=500, charge_pressure=20, Kp=1, Ki=20, Kd=0) -> None:
+    def __init__(self, COM: str, sim: bool = False, maximum_power: float = 500, charge_pressure: float = 20, Kp: int = 1, Ki: int = 20, Kd: int = 0) -> None:
         self.sim = sim
 
         self.max_dose = 30 # ul
@@ -78,19 +78,19 @@ class pipette:
 
         logging.info(f"Disc pump gauge pressure set as {self.gauge}mbar.")
 
-    def get_data(self):
+    def get_data(self) -> str:
         while self.ser.in_waiting == 0:
             pass
 
         return self.ser.readline().decode()
     
-    def get_max_dose(self):
+    def get_max_dose(self) -> float:
         return self.max_dose
     
-    def get_charge_pressure(self):
+    def get_charge_pressure(self) -> float:
         return self.charge_pressure
     
-    def register_write(self, REGISTER_NUMBER, VALUE) -> bool:
+    def register_write(self, REGISTER_NUMBER: int, VALUE: float) -> bool:
         # The PCB responds to “write” commands by echoing the command back. 
         # This response should be read and checked by the controlling software to confirm 
         # that the command has been received correctly. If the command causes an error, 
@@ -108,7 +108,7 @@ class pipette:
         else:
             return True
         
-    def register_read(self, REGISTER_NUMBER):
+    def register_read(self, REGISTER_NUMBER: int) -> float:
         # R3 = Drive voltage
         # R4 = Drive current
         # R5 = Drive power
@@ -130,10 +130,10 @@ class pipette:
         if self.sim is False:
             self.ser.close()
 
-    def get_gauge(self):
+    def get_gauge(self) -> float:
         return self.register_read(39)
     
-    def get_pressure(self):
+    def get_pressure(self) -> float:
         return self.register_read(39)
 
     def pump_on(self) -> None:
@@ -143,7 +143,7 @@ class pipette:
             logging.error("Failed to turn on Pipette.")
             sys.exit()
     
-    def pump_off(self, check=False) -> None:
+    def pump_off(self, check: bool = False) -> None:
         if self.register_write(0, 0) is True:
             logging.info("Pipette successfully turned off.")
         else:
@@ -153,7 +153,7 @@ class pipette:
         if check is True:
             self.check_pressure(0)
 
-    def get_power(self):
+    def get_power(self) -> float:
         power = self.register_read(5)
 
         if math.ceil(power) >= self.max_power:
@@ -163,7 +163,7 @@ class pipette:
         
         return power
 
-    def check_pressure(self, target) -> None:
+    def check_pressure(self, target: float) -> None:
         if self.sim is False:
             start_time = time.time()
 
@@ -194,7 +194,7 @@ class pipette:
         else:
             logging.info(f"Pipette successfully reached {target}mbar.")
     
-    def set_pressure(self, value, check=False) -> None:
+    def set_pressure(self, value: float, check: bool = False) -> None:
         # R/W register 23 for set point
         # mbar is default unit
 
@@ -224,7 +224,7 @@ class pipette:
     def charge_pipette(self) -> None:
         self.set_pressure(self.charge_pressure, check=True)
 
-    def get_poly_equation(self, xi, diff, T, N):
+    def get_poly_equation(self, xi: float, diff: float, T: float, N: int):
         time = np.linspace(0, T, N)
 
         # polynomial coefficients
@@ -235,7 +235,7 @@ class pipette:
 
         return C_0 + C_3 * np.power(time, 3) + C_4 * np.power(time, 4) + C_5 * np.power(time, 5)
 
-    def aspirate(self, aspirate_volume, aspirate_constant, aspirate_speed, poly=False, check=True) -> None:
+    def aspirate(self, aspirate_volume: float, aspirate_constant: float, aspirate_speed: float, poly: bool = False, check: bool = True) -> None:
         charge_pressure = self.get_pressure()
 
         if aspirate_volume > self.max_dose:
@@ -280,6 +280,6 @@ class pipette:
             # Jump straight to aspirate pressure if no speed given
             self.set_pressure(aspirate_pressure, check)
     
-    def dispense(self, check=False) -> None:
+    def dispense(self, check: bool = True) -> None:
         self.set_pressure(0) # To dispense as quickly as possible to remove all liquid
-        self.pump_off(check=True)
+        self.pump_off(check)

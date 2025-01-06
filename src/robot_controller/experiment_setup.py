@@ -25,8 +25,9 @@ from robot_controller import gantry_controller, pipette_controller
 
 
 class experiment:
-    def __init__(self, device_name, csv_path=None) -> None:
+    def __init__(self, device_name: str, csv_path: str | None = None) -> None:
         # Read device data JSON
+        self.json_file = "data/devices/mixing_stations.json"
         device_data = self.read_json(device_name)
 
         # Only record mass balance readings if Pipette active
@@ -64,10 +65,8 @@ class experiment:
         if csv_path is not None:
             self.read_csv()
 
-    def read_json(self, device_name):
-        json_file = 'data/devices/mixing_stations.json'
-
-        with open(json_file) as json_data:
+    def read_json(self, device_name: str) -> dict:
+        with open(self.json_file) as json_data:
             device_data = json.load(json_data)
 
         for i, device in enumerate(device_data["Mixing Stations"]):
@@ -81,7 +80,7 @@ class experiment:
         sys.exit()
 
     def show_df(self) -> None:
-        display(HTML(self.df.to_html(index=False)))
+        display(self.df.to_string(index=False))
 
     def read_csv(self) -> None:
         # Open CSV as dataframe
@@ -160,12 +159,12 @@ class experiment:
         _ = input("Press any key to Dispense")
 
          # Dispense pipette
-        self.pipette.dispense(check=True)
+        self.pipette.dispense()
         print("Dispense complete.")
 
         self.pipette.close_ser()
 
-    def collect_volume(self, aspirate_volume, starting_volume, name, x, y, aspirate_constant, aspirate_speed):
+    def collect_volume(self, aspirate_volume: float, starting_volume: float, name: str, x: float, y: float, aspirate_constant: float, aspirate_speed: float) -> float:
         new_volume = round(starting_volume - aspirate_volume * 1e-3, 4) #ml
 
         # Move above pot
@@ -195,7 +194,7 @@ class experiment:
         
         return new_volume
     
-    def deliver_volume(self, name, x, y) -> None:
+    def deliver_volume(self, name: str, x: float, y: float) -> None:
         logging.info("Moving to " + name + "..")
         self.gantry.move(x, y, 0)
         
@@ -203,14 +202,14 @@ class experiment:
         self.gantry.move(x, y, self.dispense_height)
 
         # Dispense pipette
-        self.pipette.dispense(check=True)
+        self.pipette.dispense()
 
         logging.info("Dispense complete.")
 
         logging.info("Lifting Pipette..")
         self.gantry.move(x, y, 0)
 
-    def run(self, N=1) -> None:
+    def run(self, N: int = 1) -> None:
         for n in range(N):
             logging.info(f"Creating electrolyte mixture #{n+1}..")
 
@@ -270,7 +269,7 @@ class experiment:
         self.gantry.close_ser()
         self.pipette.close_ser()
 
-    def plot_aspiration_variables(self, name, results, speeds, constants) -> None:
+    def plot_aspiration_variables(self, name: str, results: float, speeds: float, constants: float) -> None:
         plt.title('Tuning of Aspiration Variables: ' + name)
 
         for n in range(len(speeds)):
@@ -282,7 +281,7 @@ class experiment:
         plt.grid(visible=True, which="both", axis="both")
         plt.show()
 
-    def tune(self, name, pot_number=1, aspirate_volume=10, container_volume=50, density=1, asp_const_range=[1, 1], asp_speed_range=[1, 1], N=5) -> None:
+    def tune(self, name: str, pot_number: int = 1, aspirate_volume: float = 10, container_volume: float = 50, density: float = 1, asp_const_range: float = [1, 1], asp_speed_range: float = [1, 1], N: int = 5) -> None:
         now = datetime.now()
         logging.info("Tuning of aspiration variables for " + name + ": " + now.strftime("%d/%m/%Y %H:%M:%S"))
         logging.info(f"Tuning will perform a total of {N*N} aspirations..")
