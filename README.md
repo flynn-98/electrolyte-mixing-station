@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The Electrolyte Mixing Station (or Microtron) is a customisable tool, designed to select and mix microlitres of different electrolytes, using a volume control module and pipette system that can be configured to deal with low and high viscosities.
+The Electrolyte Mixing Station (or Microtron) is a customisable tool, designed to select and mix microlitres of different electrolytes, using a volume control module that can be configured to deal with low and high viscosities.
 
 ![image](data/images/CAD.png)
 
@@ -60,6 +60,9 @@ Open a new VSCode window and use the [PlatformIO VSCode Extension](https://docs.
 pio run --target upload
 ```
 
+## Setting up Atinary SDK
+
+TODO
 
 ## References
 1. [Smart Pump Module](https://www.theleeco.com/product/smart-pump-module/#resources)
