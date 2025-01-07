@@ -82,14 +82,14 @@ class experiment:
         logging.info("Reading CSV file..")
 
         # Using dictionary to convert specific columns
-        df_columns = {'#': int,
+        df_columns = {  '#': int,
                         'Name': str,
                         'Dose Volume (uL)': float,
                         'Container Volume (mL)': float,
                         'Density (g/mL)': float,
                         'Aspirate Constant (mbar/mL)': float,
                         'Aspirate Speed (uL/s)': float,
-                        }
+                    }
         
         self.df = pd.read_csv(self.csv_location, header=0, names=df_columns.keys(), index_col=False).astype(df_columns)
         self.df.set_index("#")

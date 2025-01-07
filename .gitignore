@@ -1,8 +1,12 @@
 dist
 build
 .vscode
-**/__pycache__
-**/electrolyte_mixing_station.egg-info
 .DS_Store
 
-experiment_log.txt
+sdlabs_sdks/
+
+**/__pycache__
+**/electrolyte_mixing_station.egg-info
+
+*.tar.gz
+*.txt
