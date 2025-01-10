@@ -64,6 +64,10 @@ pio run --target upload
 
 TODO
 
+## Recommended Extensions
+
+For easy viewing and editing of CSVs, it is recommended that you download [this CSV extension](https://marketplace.visualstudio.com/items?itemName=ReprEng.csv) for VS Code.
+
 ## References
 1. [Smart Pump Module](https://www.theleeco.com/product/smart-pump-module/#resources)
 2. [Atinary Self-Driving Labs](https://scientia.atinary.com/sdlabs/academic/dashboard)
