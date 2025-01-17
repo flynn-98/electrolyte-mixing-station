@@ -87,7 +87,7 @@ class experiment:
                         'Dose Volume (uL)': float,
                         'Container Volume (mL)': float,
                         'Density (g/mL)': float,
-                        'Aspirate Constant (mbar/mL)': float,
+                        'Aspirate Constant (mbar/uL)': float,
                         'Aspirate Speed (uL/s)': float,
                     }
         
@@ -237,7 +237,7 @@ class experiment:
                         dose = self.max_dose
 
                     # Aspirate using data from relevant df row, increment pot co ordinates
-                    pot_volume = self.collect_volume(dose, pot_volume, relevant_row["Name"], self.pot_locations[i][0], self.pot_locations[i][1], relevant_row["Aspirate Constant (mbar/mL)"], relevant_row["Aspirate Speed (uL/s)"])
+                    pot_volume = self.collect_volume(dose, pot_volume, relevant_row["Name"], self.pot_locations[i][0], self.pot_locations[i][1], relevant_row["Aspirate Constant (mbar/uL)"], relevant_row["Aspirate Speed (uL/s)"])
 
                     # Move to mixing chamber and dispense
                     self.deliver_volume("Mixing Chamber", self.chamber_location[0], self.chamber_location[1])
@@ -273,7 +273,7 @@ class experiment:
             plt.plot(constants, results[n,:], label = f"{speeds[n]}uL/s")
     
         plt.legend()
-        plt.xlabel("Aspirate Constant mbar/mL")
+        plt.xlabel("Aspirate Constant mbar/uL")
         plt.ylabel("Error ml")
         plt.grid(visible=True, which="both", axis="both")
         plt.show()
@@ -289,7 +289,7 @@ class experiment:
 
         for i, speed in enumerate(speeds):
             for j, const in enumerate(constants):
-                logging.info(f"Aspirating using parameters {const}mbar/mL and {speed}uL/s..")
+                logging.info(f"Aspirating using parameters {const}mbar/uL and {speed}uL/s..")
 
                 doses = math.floor(aspirate_volume // self.max_dose) + 1
                 last_dose = aspirate_volume % self.max_dose
@@ -312,7 +312,7 @@ class experiment:
 
         # Get minimum error variables
         i_min, j_min = np.unravel_index(np.absolute(errors).argmin(), errors.shape)
-        logging.info(f"RESULT: Minimum error of {errors[i_min, j_min]}uL for " + name + f" using {constants[j_min]}mbar/mL and {speeds[i_min]}uL/s.")
+        logging.info(f"RESULT: Minimum error of {errors[i_min, j_min]}uL for " + name + f" using {constants[j_min]}mbar/uL and {speeds[i_min]}uL/s.")
 
         self.gantry.close_ser()
         self.pipette.close_ser()

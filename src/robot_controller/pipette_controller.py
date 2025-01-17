@@ -9,10 +9,10 @@ import serial
 logging.basicConfig(level = logging.INFO)
 
 class pipette:
-    def __init__(self, COM: str, sim: bool = False, maximum_power: float = 500, charge_pressure: float = 20, Kp: int = 1, Ki: int = 20, Kd: int = 0) -> None:
+    def __init__(self, COM: str, sim: bool = False, maximum_power: float = 400, charge_pressure: float = 20, Kp: int = 2, Ki: int = 30, Kd: int = 0) -> None:
         self.sim = sim
 
-        self.max_dose = 30 # ul
+        self.max_dose = 50 # ul
         self.max_pressure = 160 # mbar
         self.charge_pressure = charge_pressure # mbar
         self.max_power = maximum_power #mW
