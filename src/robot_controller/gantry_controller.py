@@ -1,4 +1,5 @@
 import logging
+import math
 import sys
 
 import serial
@@ -66,8 +67,9 @@ class gantry:
             self.ser.write("hardHome()".encode())
             self.get_response()
 
-    def pump(self, electrolyte_vol: float, tube_vol: float = 1.1, overpump: float = 1.1) -> None:
+    def pump(self, electrolyte_vol: float, tube_length: float = 350.0, overpump: float = 1.1) -> None:
         logging.info(f"Pumping {electrolyte_vol}mL of electrolyte to next stage.")
+        tube_vol = math.pi * tube_length * 1e-3 # 1mm ID tubing (Area = Pi)
         vol = overpump * (electrolyte_vol+tube_vol) #ml
         
         if self.sim is False:

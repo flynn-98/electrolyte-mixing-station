@@ -42,7 +42,7 @@ class experiment:
                               [109, 68], [143, 68]
                             ]
         
-        self.pot_base_height = -70 # CAD value minus tunable value to ensure submersion
+        self.pot_base_height = -69.5 # CAD value (minus a little to ensure submersion)
         self.pot_area = math.pi * 2.78**2 / 4 #cm2
 
         self.chamber_location = [12, 110] # mm
