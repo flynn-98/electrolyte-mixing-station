@@ -134,7 +134,7 @@ class pipette:
         return self.register_read(39)
     
     def get_pressure(self) -> float:
-        return self.register_read(39)
+        return self.register_read(39) - self.gauge
 
     def pump_on(self) -> None:
         if self.register_write(0, 1) is True:
