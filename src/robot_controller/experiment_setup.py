@@ -107,8 +107,10 @@ class experiment:
     def update_dose_volumes(self) -> None:
         # Place holder for API integration
         for i in self.df.index.to_numpy(dtype=int):
-            self.df.loc[i, "Dose Volume (uL)"] = input("Input new Dose Volume (uL) for " + self.df.loc[i, "Name"] + ": ")
-            logging.info(self.df.loc[i, "Name"] + f" Dose Volume updated to {self.df.loc[i, "Dose Volume (uL)"]}uL")
+            vol = input("Input new Dose Volume (uL) for " + self.df.loc[i, "Name"] + ": ")
+            
+            self.df.loc[i, "Dose Volume (uL)"] = vol
+            logging.info(self.df.loc[i, "Name"] + f" Dose Volume updated to {vol}uL")
 
         self.save_csv()
     
