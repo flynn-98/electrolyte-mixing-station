@@ -2,6 +2,7 @@ dist
 build
 .vscode
 .DS_Store
+.venv/
 
 sdlabs_sdks/
 
@@ -10,3 +11,5 @@ sdlabs_sdks/
 
 *.tar.gz
 *.txt
+
+**/current_state*

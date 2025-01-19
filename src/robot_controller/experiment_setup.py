@@ -50,16 +50,16 @@ class experiment:
         self.dispense_height = -15 #mm
 
         # Declare variables for CSV read
+        self.df = pd.DataFrame()
         self.csv_path = "data/CSVs"
-        self.csv_location = os.path.join(self.csv_path, csv_filename)
+        self.csv_filename = csv_filename
 
         # Retrieve any requried variables from controllers
         self.max_dose = self.pipette.get_max_dose()
         self.charge_pressure = self.pipette.get_charge_pressure()
 
         # Convert CSV file to df
-        if csv_filename is not None:
-            self.df = pd.DataFrame()
+        if self.csv_filename is not None:
             self.read_csv()
 
     def read_json(self, device_name: str) -> dict:
@@ -82,6 +82,7 @@ class experiment:
     def read_csv(self) -> None:
         # Open CSV as dataframe
         logging.info("Reading CSV file..")
+        csv_location = os.path.join(self.csv_path, self.csv_filename)
 
         # Using dictionary to convert specific columns
         df_columns = {  '#': int,
@@ -93,7 +94,7 @@ class experiment:
                         'Aspirate Speed (uL/s)': float,
                     }
         
-        self.df = pd.read_csv(self.csv_location, header=0, names=df_columns.keys(), index_col=False).astype(df_columns)
+        self.df = pd.read_csv(csv_location, header=0, names=df_columns.keys(), index_col=False).astype(df_columns)
         self.df.set_index("#")
         self.show_df()
 
