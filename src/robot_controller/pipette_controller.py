@@ -9,7 +9,7 @@ import serial
 logging.basicConfig(level = logging.INFO)
 
 class pipette:
-    def __init__(self, COM: str, sim: bool = False, maximum_power: float = 400, charge_pressure: float = 20, Kp: int = 2, Ki: int = 30, Kd: int = 0) -> None:
+    def __init__(self, COM: str, sim: bool = False, maximum_power: float = 400, charge_pressure: float = 20, Kp: int = 2, Ki: int = 25, Kd: int = 0) -> None:
         self.sim = sim
 
         self.max_dose = 50 # ul
@@ -17,9 +17,9 @@ class pipette:
         self.charge_pressure = charge_pressure # mbar
         self.max_power = maximum_power #mW
 
-        self.pressure_error_criteria = 0.4 # approximate mbar for 1ul
+        self.pressure_error_criteria = 0.8 # roughly 2ul
 
-        self.timeout = 3 # Maximum rise/fall time (s)
+        self.timeout = 4 # Maximum rise/fall time (s)
         self.time_resolution = 0.016 # s
 
         if self.sim is False:
