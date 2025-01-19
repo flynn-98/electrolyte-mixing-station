@@ -7,20 +7,30 @@ def accelerated_life_test() -> None:
     parser=argparse.ArgumentParser(description="Input variables for Accelerated Life Test")
     parser.add_argument("--device_name", help="Used to locate the device data by matching with Device ID")
     parser.add_argument("--repeats", default=20, help="Number of experiment repeats, defaults to 20.", type=int)
+    parser.add_argument("--resume", default=False, help="Continue from last state. Defaults to False to restart.", type=bool, action=argparse.BooleanOptionalAction)
 
     args=parser.parse_args()
 
-    experiment = experiment_setup.experiment(device_name=args.device_name, csv_path="data/CSVs/accelerated_life_test.csv")
+    if args.resume is False:
+        experiment = experiment_setup.experiment(device_name=args.device_name, csv_filename="accelerated_life_test.csv")
+    else:
+        experiment = experiment_setup.experiment(device_name=args.device_name, csv_filename="current_state.csv")
+
     experiment.run(args.repeats)
 
 def run_experiment() -> None:
     parser=argparse.ArgumentParser(description="Input variables for Experiment")
     parser.add_argument("--device_name", help="Used to locate the device data by matching with Device ID")
     parser.add_argument("--repeats", default=1, help="Number of experiment repeats, defaults to 1.", type=int)
+    parser.add_argument("--resume", default=False, help="Continue from last state. Defaults to False to restart.", type=bool, action=argparse.BooleanOptionalAction)
 
     args=parser.parse_args()
 
-    experiment = experiment_setup.experiment(device_name=args.device_name, csv_path="data/CSVs/electrolyte_recipe.csv")
+    if args.resume is False:
+        experiment = experiment_setup.experiment(device_name=args.device_name, csv_filename="electrolyte_recipe.csv")
+    else:
+        experiment = experiment_setup.experiment(device_name=args.device_name, csv_filename="current_state.csv")
+    
     experiment.run(args.repeats)
 
 def test_pipette() -> None:
@@ -29,5 +39,5 @@ def test_pipette() -> None:
 
     args=parser.parse_args()
 
-    experiment = experiment_setup.experiment(device_name=args.device_name, csv_path=None)
+    experiment = experiment_setup.experiment(device_name=args.device_name, csv_filename=None)
     experiment.aspiration_test()

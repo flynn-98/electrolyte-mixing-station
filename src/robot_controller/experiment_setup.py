@@ -1,6 +1,7 @@
 import json
 import logging
 import math
+import os
 import random
 import sys
 import time
@@ -21,7 +22,7 @@ file_handler = logging.basicConfig(filename="experiment_log.txt",
                     level=logging.INFO)
 
 class experiment:
-    def __init__(self, device_name: str, csv_path: str | None = None) -> None:
+    def __init__(self, device_name: str, csv_filename: str | None = None) -> None:
         # Read device data JSON
         self.json_file = "data/devices/mixing_stations.json"
         device_data = self.read_json(device_name)
@@ -49,15 +50,16 @@ class experiment:
         self.dispense_height = -15 #mm
 
         # Declare variables for CSV read
-        self.csv_location = csv_path
-        self.df = pd.DataFrame()
+        self.csv_path = "data/CSVs"
+        self.csv_location = os.path.join(self.csv_path, csv_filename)
 
         # Retrieve any requried variables from controllers
         self.max_dose = self.pipette.get_max_dose()
         self.charge_pressure = self.pipette.get_charge_pressure()
 
         # Convert CSV file to df
-        if csv_path is not None:
+        if csv_filename is not None:
+            self.df = pd.DataFrame()
             self.read_csv()
 
     def read_json(self, device_name: str) -> dict:
@@ -100,9 +102,9 @@ class experiment:
         now = datetime.now()
         logging.info("Experiment ready to begin: " + now.strftime("%d/%m/%Y %H:%M:%S"))
 
-    def save_csv(self) -> None:
+    def save_csv(self, filename: str = "current_state.csv") -> None:
         logging.info("Saving volume changes to CSV.")
-        self.df.to_csv(self.csv_location, index=False)
+        self.df.to_csv(os.path.join(self.csv_path, filename), index=False)
 
     def update_dose_volumes(self) -> None:
         # Place holder for API integration
@@ -197,8 +199,9 @@ class experiment:
         logging.info("Moving to " + name + "..")
         self.gantry.move(x, y, 0)
         
-        logging.info(f"Dropping Pipette to {self.dispense_height}mm..")
-        self.gantry.move(x, y, self.dispense_height)
+        # Removed for now to speed up - to consider deleting as dispense happily drops vertically
+        #logging.info(f"Dropping Pipette to {self.dispense_height}mm..")
+        #self.gantry.move(x, y, self.dispense_height)
 
         # Dispense pipette
         self.pipette.dispense()
