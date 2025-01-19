@@ -14,7 +14,7 @@ const int Y_DIR = 6;
 const int Z_STEP = 9;
 const int Z_DIR = 8;
 
-// Pins for future Pump stepper motor
+// Pins for Pump stepper motor
 const int P_STEP = 11;
 const int P_DIR = 10;
 
@@ -24,12 +24,16 @@ const float STEPS_REV = 200.0;
 const float MICROSTEPS = 4.0;
 const float GEAR_RATIO = 14.0; // Peri-Pump only
 
-const float STAGE_SPEED = 800.0 * MICROSTEPS ; //microsteps/s
-const float PUMP_SPEED = 40.0 * MICROSTEPS * GEAR_RATIO; //microsteps/s
+const float STAGE_SPEED = 1000.0 * MICROSTEPS; //microsteps/s
+const float PUMP_SPEED = 80.0 * MICROSTEPS * GEAR_RATIO; //microsteps/s
 const float HOMING_SPEED = 50.0 * MICROSTEPS; //microsteps/s
-const float Z_HOMING_SPEED = 150 * MICROSTEPS; //microsteps/s
 
-const float MAX_ACCEL = 300.0 * MICROSTEPS; //microsteps/s2
+const float MAX_ACCEL = 350.0 * MICROSTEPS; //microsteps/s2
+
+const float Z_STAGE_SPEED = 1600.0 * MICROSTEPS; //microsteps/s
+const float Z_HOMING_SPEED = 150 * MICROSTEPS; //microsteps/s
+const float Z_ACCEL = 500.0 * MICROSTEPS; //microsteps/s2
+
 
 // Parameters needed to convert distances (mm) to motor steps
 const float PULLEY_RADIUS = 6.34; //mm
@@ -181,7 +185,7 @@ void gantrySoftHome() {
     // Return to usual speeds
     X_MOTOR.setMaxSpeed(STAGE_SPEED);
     Y_MOTOR.setMaxSpeed(STAGE_SPEED);
-    Z_MOTOR.setMaxSpeed(STAGE_SPEED);
+    Z_MOTOR.setMaxSpeed(Z_STAGE_SPEED);
 
     // Report back to PC
     Serial.println("Gantry Homed");
@@ -281,10 +285,10 @@ void setup() {
   // Set motor speeds / acceleration, XYZ speeds set before and after homing
   X_MOTOR.setAcceleration(MAX_ACCEL);
   Y_MOTOR.setAcceleration(MAX_ACCEL);
-  Z_MOTOR.setAcceleration(MAX_ACCEL);
+  Z_MOTOR.setAcceleration(Z_ACCEL);
 
   PUMP_MOTOR.setMaxSpeed(PUMP_SPEED);
-  PUMP_MOTOR.setAcceleration(MAX_ACCEL);
+  PUMP_MOTOR.setAcceleration(MAX_ACCEL * GEAR_RATIO);
 
   // Set positions to Zero
   X_MOTOR.setCurrentPosition(0);
