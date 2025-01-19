@@ -12,4 +12,4 @@ sdlabs_sdks/
 *.tar.gz
 *.txt
 
-**/current_state*
+**/current_state.csv
