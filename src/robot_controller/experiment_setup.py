@@ -208,7 +208,7 @@ class experiment:
         self.pipette.dispense()
 
         # Wait a second - just in case of drips
-        time.sleep(1)
+        #time.sleep(1)
 
         logging.info("Dispense complete.")
 
