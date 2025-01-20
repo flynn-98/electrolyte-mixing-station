@@ -9,7 +9,7 @@ import serial
 logging.basicConfig(level = logging.INFO)
 
 class pipette:
-    def __init__(self, COM: str, sim: bool = False, maximum_power: float = 450, charge_pressure: float = 20, Kp: int = 2, Ki: int = 25, Kd: int = 0) -> None:
+    def __init__(self, COM: str, sim: bool = False, maximum_power: float = 450, charge_pressure: float = 20, Kp: int = 2, Ki: int = 30, Kd: int = 0) -> None:
         self.sim = sim
 
         self.max_dose = 50 # ul
@@ -19,7 +19,7 @@ class pipette:
 
         self.pressure_error_criteria = 0.5 # roughly 1ul
 
-        self.timeout = 6 # Maximum rise/fall time (s)
+        self.timeout = 5 # Maximum rise/fall time (s)
         self.time_resolution = 0.016 # s
 
         if self.sim is False:
@@ -174,9 +174,10 @@ class pipette:
                 new_time = time.time() - start_time
                 if (new_time > self.timeout):
                     logging.error(f"Pipette failed to reach pressure of {target}mbar in {self.timeout}s.")
-                    logging.info(f"Final Pipette pressure is {self.get_pressure()}mbar.")
-                    self.pump_off()
-                    sys.exit()
+                    logging.info(f"Final Pipette pressure is {self.get_pressure()}mbar @ {self.get_power()}mW.")
+                    #self.pump_off()
+                    #sys.exit()
+                    break
 
                 time.sleep(10 * self.time_resolution) # pause to prevent excessive interrupts
                 
@@ -184,7 +185,7 @@ class pipette:
                 error = target - pressure
 
             new_time = time.time() - start_time
-            logging.info(f"Pipette successfully reached {pressure}mbar in less than {math.ceil(new_time*1000)}ms.")
+            logging.info(f"Pipette reached {pressure}mbar in less than {math.ceil(new_time*1000)}ms.")
 
             # Delay to let system settle
             time.sleep(2)
