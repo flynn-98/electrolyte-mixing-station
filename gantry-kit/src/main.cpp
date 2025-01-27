@@ -348,7 +348,7 @@ void setup() {
   Serial.begin(9600);
   mixer.write(servoHome);
   
-  Serial.println("Gantry Ready");
+  Serial.println("Gantry Kit Ready");
 };
 
 void loop() {

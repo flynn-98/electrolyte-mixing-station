@@ -11,26 +11,26 @@ class gantry:
         self.sim = sim
 
         if self.sim is False:
-            logging.info("Configuring gantry serial port..")
+            logging.info("Configuring gantry kit serial port..")
             self.ser = serial.Serial(COM) # COMXX
             self.ser.baudrate = 9600 # set Baud rate to 9600
             self.ser.bytesize = 8 # Number of data bits = 8
             self.ser.parity = 'N' # No parity
             self.ser.stopbits = 1 # Number of Stop bits = 1
 
-            logging.info("Attempting to open gantry serial port..")
+            logging.info("Attempting to open gantry kit serial port..")
 
             if self.ser.isOpen() is False:
                 self.ser.open()
 
-            if self.get_data() == "Gantry Ready":
-                logging.info("Serial connection to gantry established.")
+            if self.get_data() == "Gantry Kit Ready":
+                logging.info("Serial connection to gantry kit established.")
             else:
-                logging.error("Failed to establish serial connection to gantry.")
+                logging.error("Failed to establish serial connection to gantry kit.")
                 sys.exit()
 
         else:
-            logging.info("No serial connection to gantry established.")
+            logging.info("No serial connection to gantry kit established.")
 
     def get_data(self) -> str:
         while self.ser.in_waiting == 0:
@@ -42,13 +42,13 @@ class gantry:
         data = self.get_data()
         # Wait for response and check that command was understood
         if data == "Unknown command":
-            logging.error("Gantry failed to recognise command.")
+            logging.error("Gantry kit failed to recognise command.")
             sys.exit()
         else:
-            logging.info("Response from gantry: " + data)
+            logging.info("Response from gantry kit: " + data)
 
     def close_ser(self) -> None:
-        logging.info("Closing serial connection to gantry.")
+        logging.info("Closing serial connection to gantry kit.")
         if self.sim is False:
             self.ser.close()
 
