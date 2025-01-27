@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 from IPython.display import display
 
-from robot_controller import gantry_controller, pipette_controller
+from robot_controller import fluid_controller, gantry_controller, pipette_controller
 
 # Save logs to file
 file_handler = logging.basicConfig(filename="experiment_log.txt",
@@ -21,7 +21,7 @@ file_handler = logging.basicConfig(filename="experiment_log.txt",
                     datefmt='%Y-%m-%d %H:%M:%S',
                     level=logging.INFO)
 
-class experiment:
+class controller:
     def __init__(self, device_name: str, csv_filename: str | None = None, home: bool = True) -> None:
         # Read device data JSON
         self.json_file = "data/devices/mixing_stations.json"
@@ -33,6 +33,7 @@ class experiment:
         # Establish serial connections
         self.gantry = gantry_controller.gantry(device_data["Gantry_Address"], not device_data["Gantry_Active"])            
         self.pipette = pipette_controller.pipette(device_data["Pipette_Address"], self.SIM)
+        self.fluid_handler = fluid_controller.fluid_handler(device_data["Fluid_Address"], not device_data["Fluid_Active"])
 
         # Pot locations 1 -> 10 (mm)
         self.pot_locations = [[41, 0], [75, 0], 
@@ -265,6 +266,8 @@ class experiment:
             # Pump electrolyte to next stage
             total_vol = self.df["Dose Volume (uL)"].sum()/1000
             self.gantry.pump(total_vol)
+
+            # To add fluid handling steps here
 
         logging.info(f"Experiment complete after {N} repeat(s).")
 

@@ -1,7 +1,6 @@
 import argparse
 
-from robot_controller import experiment_setup
-
+from robot_controller import mixing_station
 
 def accelerated_life_test() -> None:
     parser=argparse.ArgumentParser(description="Input variables for Accelerated Life Test")
@@ -9,15 +8,15 @@ def accelerated_life_test() -> None:
     parser.add_argument("--repeats", default=20, help="Number of experiment repeats, defaults to 20.", type=int)
     parser.add_argument("--resume", default=False, help="Set true to continue from last state. Defaults to false to restart.", type=bool, action=argparse.BooleanOptionalAction)
     parser.add_argument("--home", default=False, help="Set true to home gantry on start up. Defaults to false.", type=bool, action=argparse.BooleanOptionalAction)
-
+    
     args=parser.parse_args()
 
     if args.resume is False:
-        experiment = experiment_setup.experiment(device_name=args.device_name, csv_filename="accelerated_life_test.csv", home=args.home)
+        instance = mixing_station.controller(device_name=args.device_name, csv_filename="accelerated_life_test.csv", home=args.home)
     else:
-        experiment = experiment_setup.experiment(device_name=args.device_name, csv_filename="current_state.csv", home=args.home)
+        instance = mixing_station.controller(device_name=args.device_name, csv_filename="current_state.csv", home=args.home)
 
-    experiment.run(args.repeats)
+    instance.run(args.repeats)
 
 def run_experiment() -> None:
     parser=argparse.ArgumentParser(description="Input variables for Experiment")
@@ -29,11 +28,11 @@ def run_experiment() -> None:
     args=parser.parse_args()
 
     if args.resume is False:
-        experiment = experiment_setup.experiment(device_name=args.device_name, csv_filename="electrolyte_recipe.csv", home=args.home)
+        instance = mixing_station.controller(device_name=args.device_name, csv_filename="electrolyte_recipe.csv", home=args.home)
     else:
-        experiment = experiment_setup.experiment(device_name=args.device_name, csv_filename="current_state.csv", home=args.home)
+        instance = mixing_station.controller(device_name=args.device_name, csv_filename="current_state.csv", home=args.home)
     
-    experiment.run(args.repeats)
+    instance.run(args.repeats)
 
 def test_pipette() -> None:
     parser=argparse.ArgumentParser(description="Input variables for Pipette Test")
@@ -41,5 +40,5 @@ def test_pipette() -> None:
 
     args=parser.parse_args()
 
-    experiment = experiment_setup.experiment(device_name=args.device_name, csv_filename=None)
-    experiment.aspiration_test()
+    instance = mixing_station.controller(device_name=args.device_name, csv_filename=None) 
+    instance.aspiration_test()
