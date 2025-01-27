@@ -353,6 +353,7 @@ void setup() {
 
 void loop() {
     // Main code here, to run repeatedly on a loop 
+    delay(100);
 
     // Wait until data received from PC, via Serial (USB)
     if (Serial.available() > 0) {
