@@ -14,9 +14,9 @@ const int Y_DIR = 8;
 const int Z_STEP = 9;
 const int Z_DIR = 10;
 
-// Pins for 4th stepper motor
-const int P_STEP = 11;
-const int P_DIR = 12;
+// Pins for extra stepper motor
+const int E_STEP = 11;
+const int E_DIR = 12;
 
 // Define Arduino pins for each function
 const int SERVO_PIN = 10;
@@ -55,7 +55,6 @@ const float Z_STAGE_SPEED = 1600.0 * MICROSTEPS; //microsteps/s
 const float Z_HOMING_SPEED = 150 * MICROSTEPS; //microsteps/s
 const float Z_ACCEL = 500.0 * MICROSTEPS; //microsteps/s2
 
-
 // Parameters needed to convert distances (mm) to motor steps
 const float PULLEY_RADIUS = 6.34; //mm
 const float ROD_PITCH = 2.0; //mm
@@ -72,7 +71,7 @@ const int servoEnd = 50; // +Home
 AccelStepper X_MOTOR(AccelStepper::DRIVER, X_STEP, X_DIR); 
 AccelStepper Y_MOTOR(AccelStepper::DRIVER, Y_STEP, Y_DIR);
 AccelStepper Z_MOTOR(AccelStepper::DRIVER, Z_STEP, Z_DIR); 
-AccelStepper PUMP_MOTOR(AccelStepper::DRIVER, P_STEP, P_DIR);
+AccelStepper E_MOTOR(AccelStepper::DRIVER, E_STEP, E_DIR);
 
 // Create servo instance
 Servo mixer;
@@ -127,22 +126,17 @@ void relayOff() {
     delay(200);
 };
 
-long mmToSteps(float milli, bool horizontal, bool pump, int motor) {
-    // If Pump, use ml/rev to convert to steps
-    if (pump == true) {
-        steps = floor(MICROSTEPS * STEPS_REV * milli * GEAR_RATIO / ML_REV);
-    }
+long mmToSteps(float milli, bool horizontal, int motor) {
     // Else, check if motors are vertical (Z) or horizontal (XY). Z motor uses threaded rod, XY motors use belts/pulleys
-    else {
-        if (horizontal == true) {
-            // XY Motion
-            steps = floor(motorDir[motor] * MICROSTEPS * STEPS_REV * milli / (2 * PI * PULLEY_RADIUS));
-        }
-        else {
-            // Z Motion
-            steps = floor(motorDir[motor] * MICROSTEPS * STEPS_REV * milli / ROD_PITCH);
-        }
+    if (horizontal == true) {
+        // XY Motion
+        steps = floor(motorDir[motor] * MICROSTEPS * STEPS_REV * milli / (2 * PI * PULLEY_RADIUS));
     }
+    else {
+        // Z Motion
+        steps = floor(motorDir[motor] * MICROSTEPS * STEPS_REV * milli / ROD_PITCH);
+    }
+
     return steps;
 };
 
@@ -165,16 +159,16 @@ void gantryHardHome() {
     Z_MOTOR.setMaxSpeed(Z_HOMING_SPEED);
 
     // Move towards hard pads
-    X_MOTOR.move(mmToSteps(jointLimit[1][0], true, false, 0)); // X motor homes at max X value
-    Y_MOTOR.move(-1 * mmToSteps(jointLimit[1][1], true, false, 1)); // Y motor homes at zero
-    Z_MOTOR.move(-1 * mmToSteps(jointLimit[1][2], false, false, 2)); // Z motor homes at zero
+    X_MOTOR.move(mmToSteps(jointLimit[1][0], true, 0)); // X motor homes at max X value
+    Y_MOTOR.move(-1 * mmToSteps(jointLimit[1][1], true, 1)); // Y motor homes at zero
+    Z_MOTOR.move(-1 * mmToSteps(jointLimit[1][2], false, 2)); // Z motor homes at zero
 
     motorsRun();
 
     // Move to home position
-    X_MOTOR.move(mmToSteps(home[0], true, false, 0));
-    Y_MOTOR.move(mmToSteps(home[1], true, false, 1));
-    Z_MOTOR.move(mmToSteps(home[2], false, false, 2));
+    X_MOTOR.move(mmToSteps(home[0], true, 0));
+    Y_MOTOR.move(mmToSteps(home[1], true, 1));
+    Z_MOTOR.move(mmToSteps(home[2], false, 2));
 
     motorsRun();
 
@@ -200,16 +194,16 @@ void gantrySoftHome() {
     Z_MOTOR.setMaxSpeed(Z_HOMING_SPEED);
 
     // Send to home pads plus small distance to remove any drift
-    X_MOTOR.moveTo(mmToSteps(jointLimit[1][0] + drift, true, false, 0));
-    Y_MOTOR.moveTo(mmToSteps(-1 * drift, true, false, 1));
-    Z_MOTOR.moveTo(mmToSteps(drift, false, false, 2));
+    X_MOTOR.moveTo(mmToSteps(jointLimit[1][0] + drift, true, 0));
+    Y_MOTOR.moveTo(mmToSteps(-1 * drift, true, 1));
+    Z_MOTOR.moveTo(mmToSteps(drift, false, 2));
 
     motorsRun();
 
     // Move to home position
-    X_MOTOR.move(mmToSteps(home[0], true, false, 0));
-    Y_MOTOR.move(mmToSteps(home[1], true, false, 1));
-    Z_MOTOR.move(mmToSteps(home[2], false, false, 2));
+    X_MOTOR.move(mmToSteps(home[0], true, 0));
+    Y_MOTOR.move(mmToSteps(home[1], true, 1));
+    Z_MOTOR.move(mmToSteps(home[2], false, 2));
 
     motorsRun();
 
@@ -240,7 +234,7 @@ void gantryMove(float x, float y, float z) {
     }
 
     // add steps
-    X_MOTOR.moveTo(mmToSteps(x, true, false, 0));
+    X_MOTOR.moveTo(mmToSteps(x, true, 0));
 
     if (y < jointLimit[0][1]) {
         y = jointLimit[0][1];
@@ -249,7 +243,7 @@ void gantryMove(float x, float y, float z) {
         y = jointLimit[1][1];
     }
 
-    Y_MOTOR.moveTo(mmToSteps(y, true, false, 1));
+    Y_MOTOR.moveTo(mmToSteps(y, true, 1));
 
     if (z < jointLimit[1][2]) {
         z = jointLimit[1][2];
@@ -258,7 +252,7 @@ void gantryMove(float x, float y, float z) {
         z = jointLimit[0][2];
     }
 
-    Z_MOTOR.moveTo(mmToSteps(z, false, false, 2));
+    Z_MOTOR.moveTo(mmToSteps(z, false, 2));
 
     motorsRun();
 
@@ -274,24 +268,6 @@ void gantryZero() {
     gantryMove(0, 0, 0);
     homed = true;
 }
-
-void gantryPump(float vol) {
-    relayOn();
-
-    StartTime = ceil( millis() / 1000 );
-
-    // No limits for Pump
-    PUMP_MOTOR.move(mmToSteps(vol, false, true, 0));
-
-    // Run until complete
-    PUMP_MOTOR.runToPosition();
-
-    CurrentTime = ceil( millis() / 1000 );
-    ElapsedTime = CurrentTime - StartTime;
-
-    // Report back to PC
-    Serial.println("Pump complete in " + String(ElapsedTime) + "s");
-};
 
 void gantryMix(int count, int servoDelay) {
     StartTime = ceil( millis() / 1000 );
@@ -324,8 +300,8 @@ void setup() {
   pinMode(Z_STEP, OUTPUT);
   pinMode(Z_DIR, OUTPUT);
 
-  pinMode(P_STEP, OUTPUT);
-  pinMode(P_DIR, OUTPUT);
+  pinMode(E_STEP, OUTPUT);
+  pinMode(E_DIR, OUTPUT);
 
   pinMode(SERVO_PIN, OUTPUT);
   mixer.attach(SERVO_PIN);
@@ -381,11 +357,6 @@ void loop() {
             x = Serial.readStringUntil(')').toFloat();
             
             gantryHardHome();
-        }
-        else if (action == "pump") {
-            vol = Serial.readStringUntil(')').toFloat();
-
-            gantryPump(vol);
         }
         else if (action == "mix") {
             count = Serial.readStringUntil(',').toInt();
