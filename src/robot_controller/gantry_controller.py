@@ -23,7 +23,7 @@ class gantry:
             if self.ser.isOpen() is False:
                 self.ser.open()
 
-            if self.get_data() == "Gantry Homed":
+            if self.get_data() == "Gantry Ready":
                 logging.info("Serial connection to gantry established.")
             else:
                 logging.error("Failed to establish serial connection to gantry.")

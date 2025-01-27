@@ -1,28 +1,49 @@
 #include <Servo.h>
 #include <AccelStepper.h>
 
-// Define Arduino pins for each function
-const int SERVO_PIN = 3;
+const int TX = 1;
+const int RX = 2;
 
 // Pins for XYZ stepper motors, see https://learn.sparkfun.com/tutorials/big-easy-driver-hookup-guide/all
 const int X_STEP = 5;
-const int X_DIR = 4;
+const int X_DIR = 6;
 
 const int Y_STEP = 7;
-const int Y_DIR = 6;
+const int Y_DIR = 8;
 
 const int Z_STEP = 9;
-const int Z_DIR = 8;
+const int Z_DIR = 10;
 
-// Pins for Pump stepper motor
+// Pins for 4th stepper motor
 const int P_STEP = 11;
-const int P_DIR = 10;
+const int P_DIR = 12;
+
+// Define Arduino pins for each function
+const int SERVO_PIN = 10;
+
+// Define relay pin
+const int RELAY = 19;
+
+// Define comms pins
+const int MOSI = 14;
+const int MISO = 15;
+const int SCK = 16;
+const int SDA = 23;
+const int SCL = 24;
+
+// Define remaining pins (A6 & A7 are analog only)
+const int AREF = 18;
+const int A1 = 20;
+const int A2 = 21;
+const int A3 = 22;
+const int A6 = 25;
+const int A7 = 26;
 
 // Motor speed and acceleration parameters, stepper motors have 200 steps / revolution.
 // Microsteps (per step) used for increased positional accuracy and smoother stepping
 const float STEPS_REV = 200.0;
 const float MICROSTEPS = 4.0;
-const float GEAR_RATIO = 14.0; // Peri-Pump only
+const float GEAR_RATIO = 14.0; // Pump only
 
 const float STAGE_SPEED = 1000.0 * MICROSTEPS; //microsteps/s
 const float PUMP_SPEED = 80.0 * MICROSTEPS * GEAR_RATIO; //microsteps/s
@@ -38,7 +59,8 @@ const float Z_ACCEL = 500.0 * MICROSTEPS; //microsteps/s2
 // Parameters needed to convert distances (mm) to motor steps
 const float PULLEY_RADIUS = 6.34; //mm
 const float ROD_PITCH = 2.0; //mm
-// For future Pump stepper motor
+
+// For Pump stepper motor
 const float ML_REV = 0.14; //ml/rev
 
 // Parameters for Mixer (Servo)
@@ -54,6 +76,7 @@ AccelStepper PUMP_MOTOR(AccelStepper::DRIVER, P_STEP, P_DIR);
 
 // Create servo instance
 Servo mixer;
+mixer.attach(SERVO_PIN);
 
 // Gantry (CNC) Home Positions (mm), values taken from CAD model and adjusted
 const float pad_thickness = 1.0; //mm 
@@ -93,6 +116,15 @@ unsigned long ElapsedTime;
 
 long steps;
 String action;
+bool homed = false;
+
+void relayOn() {
+    digitalWrite(RELAY, HIGH);
+};
+
+void relayOff() {
+    digitalWrite(RELAY, LOW);
+};
 
 long mmToSteps(float milli, bool horizontal, bool pump, int motor) {
     // If Pump, use ml/rev to convert to steps
@@ -114,6 +146,8 @@ long mmToSteps(float milli, bool horizontal, bool pump, int motor) {
 };
 
 void motorsRun() {
+    relayOn();
+
     // Run until complete (Z motor moves first to avoid clashes)
     Z_MOTOR.runToPosition();
 
@@ -155,6 +189,7 @@ void gantryHardHome() {
 
     // Report back to PC
     Serial.println("Gantry Homed");
+    homed = true;
 };
 
 void gantrySoftHome() {
@@ -189,6 +224,7 @@ void gantrySoftHome() {
 
     // Report back to PC
     Serial.println("Gantry Homed");
+    homed = true;
 };
 
 void gantryMove(float x, float y, float z) {
@@ -230,9 +266,17 @@ void gantryMove(float x, float y, float z) {
     
     // Report back to PC
     Serial.println("Move complete in " + String(ElapsedTime) + "s");
+    homed = false;
 };
 
+void gantryZero() {
+    gantryMove(0, 0, 0);
+    homed = true;
+}
+
 void gantryPump(float vol) {
+    relayOn();
+
     StartTime = ceil( millis() / 1000 );
 
     // No limits for Pump
@@ -269,18 +313,22 @@ void gantryMix(int count, int servoDelay) {
 
 void setup() {
   // Setup code here, will run just once on start-up
-  mixer.attach(SERVO_PIN);
+  relayOff();
 
-  // Setup OUTPUT pins
-  pinMode(SERVO_PIN, OUTPUT);
+  // Set pins to be used
   pinMode(X_STEP, OUTPUT);
   pinMode(X_DIR, OUTPUT);
   pinMode(Y_STEP, OUTPUT);
   pinMode(Y_DIR, OUTPUT);
   pinMode(Z_STEP, OUTPUT);
   pinMode(Z_DIR, OUTPUT);
+
   pinMode(P_STEP, OUTPUT);
   pinMode(P_DIR, OUTPUT);
+
+  pinMode(SERVO_PIN, OUTPUT);
+  
+  pinMode(RELAY, OUTPUT);
 
   // Set motor speeds / acceleration, XYZ speeds set before and after homing
   X_MOTOR.setAcceleration(MAX_ACCEL);
@@ -297,8 +345,8 @@ void setup() {
 
   Serial.begin(9600);
   mixer.write(servoHome);
-  gantrySoftHome();
-
+  
+  Serial.println("Gantry Ready");
 };
 
 void loop() {
@@ -351,8 +399,13 @@ void loop() {
         // Check how long since last call, move to Home if too long
         CurrentTime = ceil( millis() / 1000 );
         ElapsedTime = CurrentTime - LastCall;
+
         if (ElapsedTime > HomeTime) {
-            gantryMove(0, 0, 0);
+            if (homed == false) {
+                gantryZero();  
+            }
+
+            relayOff();
             LastCall = CurrentTime;
         }
     }
