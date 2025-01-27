@@ -96,7 +96,7 @@ const float drift = 4; //mm
 // X = 0, Y = 1, Z = 2
 const float motorDir[3] = {1, 1, -1};
 
-// Maximum time in Loop before softHome (s)
+// Maximum time in Loop before idle mode (s)
 const unsigned long HomeTime = 60;
 
 // Define variables to change during Loop
@@ -119,10 +119,12 @@ bool homed = false;
 
 void relayOn() {
     digitalWrite(RELAY_PIN, HIGH);
+    delay(200);
 };
 
 void relayOff() {
     digitalWrite(RELAY_PIN, LOW);
+    delay(200);
 };
 
 long mmToSteps(float milli, bool horizontal, bool pump, int motor) {

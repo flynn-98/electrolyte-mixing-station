@@ -22,7 +22,7 @@ file_handler = logging.basicConfig(filename="experiment_log.txt",
                     level=logging.INFO)
 
 class experiment:
-    def __init__(self, device_name: str, csv_filename: str | None = None) -> None:
+    def __init__(self, device_name: str, csv_filename: str | None = None, home: bool = True) -> None:
         # Read device data JSON
         self.json_file = "data/devices/mixing_stations.json"
         device_data = self.read_json(device_name)
@@ -31,7 +31,7 @@ class experiment:
         self.SIM = not device_data["Pipette_Active"]
 
         # Establish serial connections
-        self.gantry = gantry_controller.gantry(device_data["Gantry_Address"], not device_data["Gantry_Active"])
+        self.gantry = gantry_controller.gantry(device_data["Gantry_Address"], not device_data["Gantry_Active"])            
         self.pipette = pipette_controller.pipette(device_data["Pipette_Address"], self.SIM)
 
         # Pot locations 1 -> 10 (mm)
@@ -61,6 +61,9 @@ class experiment:
         # Convert CSV file to df
         if self.csv_filename is not None:
             self.read_csv()
+
+        if home is True:
+            self.gantry.softHome()
 
     def read_json(self, device_name: str) -> dict:
         with open(self.json_file) as json_data:

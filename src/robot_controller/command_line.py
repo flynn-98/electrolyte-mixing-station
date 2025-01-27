@@ -7,14 +7,15 @@ def accelerated_life_test() -> None:
     parser=argparse.ArgumentParser(description="Input variables for Accelerated Life Test")
     parser.add_argument("--device_name", help="Used to locate the device data by matching with Device ID")
     parser.add_argument("--repeats", default=20, help="Number of experiment repeats, defaults to 20.", type=int)
-    parser.add_argument("--resume", default=False, help="Continue from last state. Defaults to False to restart.", type=bool, action=argparse.BooleanOptionalAction)
+    parser.add_argument("--resume", default=False, help="Set true to continue from last state. Defaults to false to restart.", type=bool, action=argparse.BooleanOptionalAction)
+    parser.add_argument("--home", default=False, help="Set true to home gantry on start up. Defaults to false.", type=bool, action=argparse.BooleanOptionalAction)
 
     args=parser.parse_args()
 
     if args.resume is False:
-        experiment = experiment_setup.experiment(device_name=args.device_name, csv_filename="accelerated_life_test.csv")
+        experiment = experiment_setup.experiment(device_name=args.device_name, csv_filename="accelerated_life_test.csv", home=args.home)
     else:
-        experiment = experiment_setup.experiment(device_name=args.device_name, csv_filename="current_state.csv")
+        experiment = experiment_setup.experiment(device_name=args.device_name, csv_filename="current_state.csv", home=args.home)
 
     experiment.run(args.repeats)
 
@@ -22,14 +23,15 @@ def run_experiment() -> None:
     parser=argparse.ArgumentParser(description="Input variables for Experiment")
     parser.add_argument("--device_name", help="Used to locate the device data by matching with Device ID")
     parser.add_argument("--repeats", default=1, help="Number of experiment repeats, defaults to 1.", type=int)
-    parser.add_argument("--resume", default=False, help="Continue from last state. Defaults to False to restart.", type=bool, action=argparse.BooleanOptionalAction)
+    parser.add_argument("--resume", default=False, help="Continue from last state. Defaults to false to restart.", type=bool, action=argparse.BooleanOptionalAction)
+    parser.add_argument("--home", default=False, help="Set true to home gantry on start up. Defaults to false.", type=bool, action=argparse.BooleanOptionalAction)
 
     args=parser.parse_args()
 
     if args.resume is False:
-        experiment = experiment_setup.experiment(device_name=args.device_name, csv_filename="electrolyte_recipe.csv")
+        experiment = experiment_setup.experiment(device_name=args.device_name, csv_filename="electrolyte_recipe.csv", home=args.home)
     else:
-        experiment = experiment_setup.experiment(device_name=args.device_name, csv_filename="current_state.csv")
+        experiment = experiment_setup.experiment(device_name=args.device_name, csv_filename="current_state.csv", home=args.home)
     
     experiment.run(args.repeats)
 
