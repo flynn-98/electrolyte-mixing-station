@@ -22,22 +22,22 @@ const int P_DIR = 12;
 const int SERVO_PIN = 10;
 
 // Define relay pin
-const int RELAY = 19;
+const int RELAY_PIN = 19;
 
 // Define comms pins
-const int MOSI = 14;
-const int MISO = 15;
-const int SCK = 16;
-const int SDA = 23;
-const int SCL = 24;
+const int MOSI_PIN = 14;
+const int MISO_PIN = 15;
+const int SCK_PIN = 16;
+const int SDA_PIN = 23;
+const int SCL_PIN = 24;
 
 // Define remaining pins (A6 & A7 are analog only)
 const int AREF = 18;
-const int A1 = 20;
-const int A2 = 21;
-const int A3 = 22;
-const int A6 = 25;
-const int A7 = 26;
+const int ANALOG_1 = 20;
+const int ANALOG_2 = 21;
+const int ANALOG_3 = 22;
+const int ANALOG_6 = 25;
+const int ANALOG_7 = 26;
 
 // Motor speed and acceleration parameters, stepper motors have 200 steps / revolution.
 // Microsteps (per step) used for increased positional accuracy and smoother stepping
@@ -76,7 +76,6 @@ AccelStepper PUMP_MOTOR(AccelStepper::DRIVER, P_STEP, P_DIR);
 
 // Create servo instance
 Servo mixer;
-mixer.attach(SERVO_PIN);
 
 // Gantry (CNC) Home Positions (mm), values taken from CAD model and adjusted
 const float pad_thickness = 1.0; //mm 
@@ -119,11 +118,11 @@ String action;
 bool homed = false;
 
 void relayOn() {
-    digitalWrite(RELAY, HIGH);
+    digitalWrite(RELAY_PIN, HIGH);
 };
 
 void relayOff() {
-    digitalWrite(RELAY, LOW);
+    digitalWrite(RELAY_PIN, LOW);
 };
 
 long mmToSteps(float milli, bool horizontal, bool pump, int motor) {
@@ -327,8 +326,9 @@ void setup() {
   pinMode(P_DIR, OUTPUT);
 
   pinMode(SERVO_PIN, OUTPUT);
+  mixer.attach(SERVO_PIN);
   
-  pinMode(RELAY, OUTPUT);
+  pinMode(RELAY_PIN, OUTPUT);
 
   // Set motor speeds / acceleration, XYZ speeds set before and after homing
   X_MOTOR.setAcceleration(MAX_ACCEL);
