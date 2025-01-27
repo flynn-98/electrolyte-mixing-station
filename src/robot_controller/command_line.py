@@ -2,6 +2,7 @@ import argparse
 
 from robot_controller import mixing_station
 
+
 def accelerated_life_test() -> None:
     parser=argparse.ArgumentParser(description="Input variables for Accelerated Life Test")
     parser.add_argument("--device_name", help="Used to locate the device data by matching with Device ID")
@@ -12,9 +13,9 @@ def accelerated_life_test() -> None:
     args=parser.parse_args()
 
     if args.resume is False:
-        instance = mixing_station.controller(device_name=args.device_name, csv_filename="accelerated_life_test.csv", home=args.home)
+        instance = mixing_station.scheduler(device_name=args.device_name, csv_filename="accelerated_life_test.csv", home=args.home)
     else:
-        instance = mixing_station.controller(device_name=args.device_name, csv_filename="current_state.csv", home=args.home)
+        instance = mixing_station.scheduler(device_name=args.device_name, csv_filename="current_state.csv", home=args.home)
 
     instance.run(args.repeats)
 
@@ -28,9 +29,9 @@ def run_experiment() -> None:
     args=parser.parse_args()
 
     if args.resume is False:
-        instance = mixing_station.controller(device_name=args.device_name, csv_filename="electrolyte_recipe.csv", home=args.home)
+        instance = mixing_station.scheduler(device_name=args.device_name, csv_filename="electrolyte_recipe.csv", home=args.home)
     else:
-        instance = mixing_station.controller(device_name=args.device_name, csv_filename="current_state.csv", home=args.home)
+        instance = mixing_station.scheduler(device_name=args.device_name, csv_filename="current_state.csv", home=args.home)
     
     instance.run(args.repeats)
 
@@ -40,5 +41,5 @@ def test_pipette() -> None:
 
     args=parser.parse_args()
 
-    instance = mixing_station.controller(device_name=args.device_name, csv_filename=None) 
+    instance = mixing_station.scheduler(device_name=args.device_name, csv_filename=None) 
     instance.aspiration_test()

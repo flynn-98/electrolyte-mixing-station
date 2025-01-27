@@ -10,6 +10,6 @@ sdlabs_sdks/
 **/electrolyte_mixing_station.egg-info
 
 *.tar.gz
-*.txt
+*.log
 
 **/current_state.csv

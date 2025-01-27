@@ -15,13 +15,13 @@ from IPython.display import display
 from robot_controller import fluid_controller, gantry_controller, pipette_controller
 
 # Save logs to file
-file_handler = logging.basicConfig(filename="experiment_log.txt",
-                    filemode='a',
-                    format='%(asctime)s %(levelname)s: %(message)s',
+logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S',
-                    level=logging.INFO)
+                    level=logging.INFO,
+                    force=True,
+                    handlers=[logging.FileHandler("mixing_station.log", mode="a"), logging.StreamHandler(sys.stdout)])
 
-class controller:
+class scheduler:
     def __init__(self, device_name: str, csv_filename: str | None = None, home: bool = True) -> None:
         # Read device data JSON
         self.json_file = "data/devices/mixing_stations.json"
@@ -100,7 +100,7 @@ class controller:
         
         self.df = pd.read_csv(csv_location, header=0, names=df_columns.keys(), index_col=False).astype(df_columns)
         self.df.set_index("#")
-        self.show_df()
+        #self.show_df()
 
         logging.info(f'Recipe will result in a total electrolyte volume of {self.df["Dose Volume (uL)"].sum()/1000}mL.')
         
@@ -271,8 +271,8 @@ class controller:
 
         logging.info(f"Experiment complete after {N} repeat(s).")
 
-        logging.info("Remaining volumes..")
-        self.show_df()
+        #logging.info("Remaining volumes..")
+        #self.show_df()
 
         self.gantry.close_ser()
         self.pipette.close_ser()

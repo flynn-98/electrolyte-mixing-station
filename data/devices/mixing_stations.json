@@ -10,11 +10,11 @@
         },
         {
             "ID" : "microtron_02",
-            "Gantry_Address" : "/dev/ttyACM1",
+            "Gantry_Address" : "/dev/cu.usbmodem11101",
             "Pipette_Address" : "/dev/ttyUSB1",
             "Fluid_Address": "/dev/ttyACM0",
             "Gantry_Active": true,
-            "Pipette_Active": true,
+            "Pipette_Active": false,
             "Fluid_Active": false
         },
         {
