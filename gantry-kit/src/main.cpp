@@ -80,7 +80,7 @@ Servo mixer;
 const float pad_thickness = 1.0; //mm 
 const float x_shift = 14.0; //mm (home position shift in X direction, to avoid unwanted clash)
 
-const float home[3] = {-167.9 + pad_thickness + x_shift, 2.0 - pad_thickness, -0.5}; 
+const float home[3] = {-167.9 + pad_thickness + x_shift, 1.5 - pad_thickness, -0.5}; 
 
 // Joint Limits (mm), also taken from CAD model
 const float jointLimit[2][3] = {
