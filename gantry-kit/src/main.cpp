@@ -43,10 +43,9 @@ const byte ANALOG_7 = A7;
 // Microsteps (per step) used for increased positional accuracy and smoother stepping
 const float STEPS_REV = 200.0;
 const float MICROSTEPS = 4.0;
-const float GEAR_RATIO = 14.0; // Pump only
 
 const float STAGE_SPEED = 1000.0 * MICROSTEPS; //microsteps/s
-const float PUMP_SPEED = 80.0 * MICROSTEPS * GEAR_RATIO; //microsteps/s
+const float ROPE_SPEED = 500.0 * MICROSTEPS; //microsteps/s
 const float HOMING_SPEED = 50.0 * MICROSTEPS; //microsteps/s
 
 const float MAX_ACCEL = 350.0 * MICROSTEPS; //microsteps/s2
@@ -66,6 +65,10 @@ const float ML_REV = 0.14; //ml/rev
 const int servoHome = 90;
 const int servoStart = 20; // +Home
 const int servoEnd = 50; // +Home
+
+// Parameters for pipette rack
+const float tension_rotations = 0.5;
+const float pinch_rotations = 0.1;
 
 // Define steppers with pins (STEP, DIR)
 AccelStepper X_MOTOR(AccelStepper::DRIVER, X_STEP, X_DIR); 
@@ -93,7 +96,7 @@ const float drift = 4; //mm
 
 // Joint direction coefficients: 1 or -1, for desired motor directions
 // X = 0, Y = 1, Z = 2
-const float motorDir[3] = {1, 1, -1};
+const float motorDir[4] = {1, 1, -1, 1};
 
 // Maximum time in Loop before idle mode (s)
 const unsigned long HomeTime = 60;
@@ -125,6 +128,27 @@ void relayOff() {
     digitalWrite(RELAY_PIN, LOW);
     delay(200);
 };
+
+void pullRope(float rotations) {
+    relayOn();
+
+    steps = motorDir[3] * MICROSTEPS * STEPS_REV * rotations;
+
+    E_MOTOR.move(steps);
+    E_MOTOR.runToPosition();
+}
+
+void tensionRope() {
+    pullRope(tension_rotations);
+}
+
+void pinchPipettes() {
+    pullRope(pinch_rotations);
+}
+
+void releasePipettes() {
+    pullRope(-1 * pinch_rotations);
+}
 
 long mmToSteps(float milli, bool horizontal, int motor) {
     // Else, check if motors are vertical (Z) or horizontal (XY). Z motor uses threaded rod, XY motors use belts/pulleys
@@ -313,8 +337,8 @@ void setup() {
   Y_MOTOR.setAcceleration(MAX_ACCEL);
   Z_MOTOR.setAcceleration(Z_ACCEL);
 
-  E_MOTOR.setMaxSpeed(PUMP_SPEED);
-  E_MOTOR.setAcceleration(MAX_ACCEL * GEAR_RATIO);
+  E_MOTOR.setMaxSpeed(ROPE_SPEED);
+  E_MOTOR.setAcceleration(MAX_ACCEL);
 
   // Set positions to Zero
   X_MOTOR.setCurrentPosition(0);
@@ -363,6 +387,16 @@ void loop() {
             servoDelay = Serial.readStringUntil(')').toInt();
 
             gantryMix(count, servoDelay);
+        }
+        else if (action == "pinch") {
+            x = Serial.readStringUntil(')').toInt();
+
+            pinchPipettes();
+        }
+        else if (action == "release") {
+            x = Serial.readStringUntil(')').toInt();
+
+            releasePipettes();
         }
         else {
             // Report back to PC if confused
