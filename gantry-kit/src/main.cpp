@@ -91,8 +91,8 @@ const float jointLimit[2][3] = {
     {165.0 - x_shift, 141.0, -48.5}
 };
 
-// Overshoot value used during Homing, any gantry drift less than this value will be corrected (in theory!)
-const float drift = 4; //mm
+// Overshoot value used during Homing, any gantry drift +- this value will be corrected (in theory!)
+const float drift = 3; //mm
 
 // Joint direction coefficients: 1 or -1, for desired motor directions
 // X = 0, Y = 1, Z = 2
