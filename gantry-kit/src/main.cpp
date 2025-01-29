@@ -138,16 +138,23 @@ void pullRope(float rotations) {
     E_MOTOR.runToPosition();
 }
 
-void tensionRope() {
-    pullRope(tension_rotations);
-}
-
 void pinchPipettes() {
     pullRope(pinch_rotations);
+
+    // Report back to PC
+    Serial.println("Pipettes successfully pinched");
 }
 
 void releasePipettes() {
     pullRope(-1 * pinch_rotations);
+
+    // Report back to PC
+    Serial.println("Pipettes successfully released");
+}
+
+void tensionRope() {
+    pullRope(tension_rotations);
+    releasePipettes();
 }
 
 long mmToSteps(float milli, bool horizontal, int motor) {
@@ -347,7 +354,8 @@ void setup() {
 
   Serial.begin(9600);
   mixer.write(servoHome);
-  
+  tensionRope();
+
   Serial.println("Gantry Kit Ready");
 };
 

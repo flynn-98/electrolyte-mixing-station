@@ -35,7 +35,7 @@ class scheduler:
         self.pipette = pipette_controller.pipette(device_data["Pipette_Address"], self.SIM)
         self.fluid_handler = fluid_controller.fluid_handler(device_data["Fluid_Address"], not device_data["Fluid_Active"])
 
-        # Pot locations 1 -> 10 (mm)
+        # Pot locations 1 -> 10 (mm), pot 10 is for washing
         self.pot_locations = [[41, 0], [75, 0], 
                               [109, 0], [143, 0], 
                               [58, 34], [92, 34], 
@@ -43,11 +43,20 @@ class scheduler:
                               [109, 68], [143, 68]
                             ]
         
+        # Pipette locations 1 -> 9 (mm)
+        self.pipette_locations = [[15, 135], [15, 119], 
+                              [15, 103], [15, 87], 
+                              [15, 71], [15, 55], 
+                              [15, 39], [15,23], 
+                              [15, 7]
+                            ]
+        self.pipette_pick_height = -47.5 #mm from CAD - to be tuned
+        self.pipette_lead_in = 25 #mm to position pipette to the right of rack when returning pipette (avoid clash)
+        
         self.pot_base_height = -69.5 # CAD value (minus a little to ensure submersion)
         self.pot_area = math.pi * 2.78**2 / 4 #cm2
 
         self.chamber_location = [12, 110] # mm
-        self.mass_balance_location = [12, 110] # mm
         self.dispense_height = -15 #mm
 
         # Declare variables for CSV read
@@ -120,6 +129,51 @@ class scheduler:
             logging.info(self.df.loc[i, "Name"] + f" Dose Volume updated to {vol}uL")
 
         self.save_csv()
+
+    def pick_pipette(self, pipette_no: int) -> None:
+        # Turn pump off just in case
+        self.pipette.pump_off(check=False)
+
+        x, y = self.pipette_locations[pipette_no][0], self.pipette_locations[pipette_no][1]
+
+        # Move above pipette rack
+        logging.info(f"Moving to Pipette #{pipette_no}..")
+        self.gantry.move(x, y, 0)
+
+        # Move into pipette rack
+        logging.info("Dropping to collect pipette..")
+        self.gantry.move(x, y, self.pipette_pick_height)
+
+        # Move into pipette rack
+        logging.info(f"Raising Pipette #{pipette_no}..")
+        self.gantry.move(x, y, 0)
+
+        # Move into pipette rack
+        logging.info("Moving away from pipette rack..")
+        self.gantry.move(x + self.pipette_lead_in, y, 0)
+
+    def return_pipette(self, pipette_no: int) -> None:
+        # Turn pump off just in case
+        self.pipette.pump_off(check=False)
+
+        x, y = self.pipette_locations[pipette_no][0], self.pipette_locations[pipette_no][1]
+
+        # Move above pipette rack (first to lead in location to avoid clash)
+        logging.info(f"Moving to Pipette #{pipette_no}..")
+        self.gantry.move(x + self.pipette_lead_in, y, 0)
+        self.gantry.move(x, y, 0)
+
+        # Move into pipette rack
+        logging.info(f"Delivering Pipette #{pipette_no} to rack..")
+        self.gantry.move(x, y, self.pipette_pick_height)
+
+        # Move into pipette rack
+        self.gantry.pinch()
+        logging.info("Pipette ready for removal..")
+
+        # Move above pipette rack
+        logging.info("Raising pipette module..")
+        self.gantry.move(x, y, 0)
     
     def aspiration_test(self) -> None:
         # Used for testing only => No logging
@@ -170,8 +224,10 @@ class scheduler:
 
         self.pipette.close_ser()
 
-    def collect_volume(self, aspirate_volume: float, starting_volume: float, name: str, x: float, y: float, aspirate_constant: float, aspirate_speed: float) -> float:
+    def collect_volume(self, aspirate_volume: float, starting_volume: float, name: str, pot_no: int, aspirate_constant: float, aspirate_speed: float) -> float:
         new_volume = round(starting_volume - aspirate_volume * 1e-3, 4) #ml
+
+        x, y = self.pot_locations[pot_no][0], self.pot_locations[pot_no][1]
 
         # Move above pot
         logging.info("Moving to " + name + "..")
@@ -200,20 +256,21 @@ class scheduler:
         
         return new_volume
     
-    def deliver_volume(self, name: str, x: float, y: float) -> None:
-        logging.info("Moving to " + name + "..")
+    def deliver_volume(self) -> None:
+        x, y = self.chamber_location[0], self.chamber_location[1]
+
+        logging.info("Moving to Mixing Chamber..")
         self.gantry.move(x, y, 0)
         
-        # Removed for now to speed up - to consider deleting as dispense happily drops vertically
-        #logging.info(f"Dropping Pipette to {self.dispense_height}mm..")
-        #self.gantry.move(x, y, self.dispense_height)
+        logging.info(f"Dropping Pipette to {self.dispense_height}mm..")
+        self.gantry.move(x, y, self.dispense_height)
 
         # Dispense pipette
         self.pipette.dispense()
         logging.info("Dispense complete.")
 
-        #logging.info("Lifting Pipette..")
-        #self.gantry.move(x, y, 0)
+        logging.info("Lifting Pipette..")
+        self.gantry.move(x, y, 0)
 
     def run(self, N: int = 1) -> None:
         for n in range(N):
@@ -246,10 +303,10 @@ class scheduler:
                         dose = self.max_dose
 
                     # Aspirate using data from relevant df row, increment pot co ordinates
-                    pot_volume = self.collect_volume(dose, pot_volume, relevant_row["Name"], self.pot_locations[i][0], self.pot_locations[i][1], relevant_row["Aspirate Constant (mbar/uL)"], relevant_row["Aspirate Speed (uL/s)"])
+                    pot_volume = self.collect_volume(dose, pot_volume, relevant_row["Name"], i, relevant_row["Aspirate Constant (mbar/uL)"], relevant_row["Aspirate Speed (uL/s)"])
 
                     # Move to mixing chamber and dispense
-                    self.deliver_volume("Mixing Chamber", self.chamber_location[0], self.chamber_location[1])
+                    self.deliver_volume()
 
                     # Set new starting volume for next repeat
                     self.df.loc[i, "Container Volume (mL)"] = pot_volume
@@ -311,8 +368,8 @@ class scheduler:
                     else:
                         dose = self.max_dose
                         
-                    container_volume = self.collect_volume(dose, container_volume, name, self.pot_locations[pot_number-1][0], self.pot_locations[pot_number-1][1], const, speed)
-                    self.deliver_volume("Mass Balance", self.mass_balance_location[0], self.mass_balance_location[1])
+                    container_volume = self.collect_volume(dose, container_volume, name, pot_number-1, const, speed)
+                    self.deliver_volume()
 
                 if self.SIM is False:
                     errors[i, j] = ( 1000 * float(input("Input mass balance data in g: ")) / density ) - aspirate_volume
