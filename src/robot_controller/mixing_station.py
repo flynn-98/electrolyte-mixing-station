@@ -56,8 +56,8 @@ class scheduler:
         self.pot_base_height = -69.5 # CAD value (minus a little to ensure submersion)
         self.pot_area = math.pi * 2.78**2 / 4 #cm2
 
-        self.chamber_location = [12, 110] # mm
-        self.dispense_height = -15 #mm
+        self.chamber_location = [125, 97.7] # mm
+        self.dispense_height = -10 #mm
 
         # Declare variables for CSV read
         self.df = pd.DataFrame()
