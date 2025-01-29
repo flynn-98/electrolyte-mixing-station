@@ -173,6 +173,7 @@ long mmToSteps(float milli, bool horizontal, int motor) {
 
 void motorsRun() {
     relayOn();
+    homed = false;
 
     // Run until complete (Z motor moves first to avoid clashes)
     Z_MOTOR.runToPosition();
@@ -292,20 +293,31 @@ void gantryMove(float x, float y, float z) {
     
     // Report back to PC
     Serial.println("Move complete in " + String(ElapsedTime) + "s");
-    homed = false;
 };
 
-void gantryZero() {
-    X_MOTOR.moveTo(0);
-    Y_MOTOR.moveTo(0);
-    Z_MOTOR.moveTo(0);
-
+void gantrySafeReturn() {
     // Reverse order to minimise risk of clashes with pipette rack and bottles
     Z_MOTOR.runToPosition();
     Y_MOTOR.runToPosition();
     X_MOTOR.runToPosition();
 
     gantrySoftHome();
+}
+
+void gantryZero() {
+    X_MOTOR.moveTo(0);
+    Y_MOTOR.moveTo(0);
+    Z_MOTOR.moveTo(0);
+
+    gantrySafeReturn();
+}
+
+void gantryRecover(float x, float y, float z) {
+    X_MOTOR.move(-1 * mmToSteps(x, true, 1));
+    Y_MOTOR.move(-1 * mmToSteps(y, true, 1));
+    Z_MOTOR.move(-1 * mmToSteps(z, true, 1));
+
+    gantrySafeReturn();
 }
 
 void gantryMix(int count, int servoDelay) {
@@ -413,6 +425,21 @@ void loop() {
             x = Serial.readStringUntil(')').toInt();
 
             releasePipettes();
+        }
+        if (action == "recover") {
+            // Extract variables spaced by commas, then last variable up to closed bracket
+            x = Serial.readStringUntil(',').toFloat() - x_shift;
+            y = Serial.readStringUntil(',').toFloat();
+            z = Serial.readStringUntil(')').toFloat();
+            
+            // Call action using received variables
+            if (homed == False) {
+                gantryRecover(x, y, z);
+            }
+            else {
+                // Provide response if gantry already homed
+                Serial.println("Gantry is already Homed");
+            }
         }
         else {
             // Report back to PC if confused

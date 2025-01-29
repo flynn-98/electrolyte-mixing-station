@@ -55,6 +55,9 @@ class scheduler:
 
         # File to store last known active pipette for recovery
         self.pipette_file = "data/variables/active_pipette.txt" # 1-9, 0 = not active
+
+        # File to store last known active pipette for recovery
+        self.location_file = self.gantry.get_file()
         
         self.pot_base_height = -69.5 # CAD value (minus a little to ensure submersion)
         self.pot_area = math.pi * 2.78**2 / 4 #cm2
@@ -86,6 +89,13 @@ class scheduler:
 
             if active_pipette != 0:
                 self.return_pipette()
+
+        # Send recovery msg to gantry (will correct if power off event)
+        if os.path.exists(self.location_file):
+            with open(self.location_file, 'r') as filehandler:
+                xyz = filehandler.read().split(",")
+
+            self.gantry.recover(xyz)
 
     def read_json(self, device_name: str) -> dict:
         with open(self.json_file) as json_data:
@@ -187,6 +197,7 @@ class scheduler:
 
         # Move above pipette rack (first to lead in location to avoid clash)
         logging.info(f"Moving to Pipette #{active_pipette}..")
+        self.gantry.move(x + self.pipette_lead_in, 0, 0) # Added in case of starting from home position
         self.gantry.move(x + self.pipette_lead_in, y, 0)
         self.gantry.move(x, y, 0)
 

@@ -10,6 +10,9 @@ class gantry:
     def __init__(self, COM: str, sim: bool = False) -> None:
         self.sim = sim
 
+        # File to store last known active pipette for recovery
+        self.location_file = "data/variables/location_recovery.txt" # X,Y,Z. Allows gantry to recover position if gantry firmware not homed (i.e. full power off)
+
         if self.sim is False:
             logging.info("Configuring gantry kit serial port..")
             self.ser = serial.Serial(COM) # COMXX
@@ -32,6 +35,9 @@ class gantry:
         else:
             logging.info("No serial connection to gantry kit established.")
 
+    def get_file(self) -> str:
+        return self.location_file
+
     def get_data(self) -> str:
         while self.ser.in_waiting == 0:
             pass
@@ -53,8 +59,15 @@ class gantry:
             self.ser.close()
 
     def move(self, x: float, y: float, z: float) -> None:
+        as_string = f"{x},{y},{z}"
+
+        # Update last known location for recovery
+        with open(self.location_file, 'w') as filehandler:
+                filehandler.write(as_string)
+
         if self.sim is False:
-            self.ser.write(f"move({x},{y},{z})".encode())
+            msg = "move(" + as_string + ")"
+            self.ser.write(msg.encode())
             self.get_response()
 
     def softHome(self) -> None:
@@ -84,4 +97,10 @@ class gantry:
     def release(self) -> None:
         if self.sim is False:
             self.ser.write("release()".encode())
+            self.get_response()
+
+    def recover(self, xyz: str) -> None:
+        if self.sim is False:
+            msg = "recover(" + xyz + ")"
+            self.ser.write(msg.encode())
             self.get_response()
