@@ -45,13 +45,13 @@ const byte ANALOG_7 = A7;
 // Microsteps (per step) used for increased positional accuracy and smoother stepping
 const float STEPS_REV = 200.0;
 const float MICROSTEPS = 4.0;
-const float GEAR_RATIO = 14.0;
+const float GEAR_RATIO = 1.0;
 
-const float PUMP_SPEED = 80.0 * MICROSTEPS * GEAR_RATIO; //microsteps/s
-const float MAX_ACCEL = 350.0 * MICROSTEPS * GEAR_RATIO; //microsteps/s2
+const float PUMP_SPEED = 200.0 * MICROSTEPS * GEAR_RATIO; //microsteps/s
+const float MAX_ACCEL = 200.0 * MICROSTEPS * GEAR_RATIO; //microsteps/s2
 
 // For Pump stepper motor
-const float ML_REV = 0.14; //ml/rev
+const float ML_REV = 0.1; //ml/rev
 
 // Parameters for Mixer (Servo)
 const int servoHome = 90;
