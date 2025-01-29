@@ -128,6 +128,7 @@ class pipette:
     def close_ser(self) -> None:
         logging.info("Closing serial connection to pipette.")
         if self.sim is False:
+            self.pump_off(check=False)
             self.ser.close()
 
     def get_gauge(self) -> float:
