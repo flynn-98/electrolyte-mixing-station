@@ -392,6 +392,9 @@ class scheduler:
         i_min, j_min = np.unravel_index(np.absolute(errors).argmin(), errors.shape)
         logging.info(f"RESULT: Minimum error of {errors[i_min, j_min]}uL for " + name + f" using {constants[j_min]}mbar/uL and {speeds[i_min]}uL/s.")
 
+        if collect_pipette is True:
+            self.return_pipette(pipette_no=0)
+
         self.gantry.close_ser()
         self.pipette.close_ser()
         
