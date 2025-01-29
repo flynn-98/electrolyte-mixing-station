@@ -52,6 +52,10 @@ class scheduler:
                             ]
         self.pipette_pick_height = -47.5 #mm from CAD - to be tuned
         self.pipette_lead_in = 12.5 #mm to position pipette to the right of rack when returning pipette (avoid clash)
+
+        # Attempt to load in active pipette number
+        self.pipette_file = "data/variables/active_pipette.txt"
+        # active_pipette = 1-9, 0 for not active. Value stored in file and loaded on mixing station start up
         
         self.pot_base_height = -69.5 # CAD value (minus a little to ensure submersion)
         self.pot_area = math.pi * 2.78**2 / 4 #cm2
@@ -72,8 +76,17 @@ class scheduler:
         if self.csv_filename is not None:
             self.read_csv()
 
+        # Home if requested
         if home is True:
             self.gantry.softHome()
+
+        # Check if pipette is active, return if so.
+        if os.path.exists(self.pipette_file):
+            with open(self.pipette_file, 'r') as filehandler:
+                active_pipette = int(filehandler.read())
+
+            if active_pipette != 0:
+                self.return_pipette()
 
     def read_json(self, device_name: str) -> dict:
         with open(self.json_file) as json_data:
@@ -134,7 +147,7 @@ class scheduler:
         # Turn pump off just in case
         self.pipette.pump_off(check=False)
 
-        x, y = self.pipette_locations[pipette_no][0], self.pipette_locations[pipette_no][1]
+        x, y = self.pipette_locations[pipette_no-1][0], self.pipette_locations[pipette_no-1][1]
 
         # Move above pipette rack
         logging.info(f"Moving to Pipette #{pipette_no}..")
@@ -153,19 +166,33 @@ class scheduler:
         logging.info("Moving away from pipette rack..")
         self.gantry.move(x + self.pipette_lead_in, y, 0)
 
-    def return_pipette(self, pipette_no: int) -> None:
+        # Update active pipette variable 
+        with open(self.pipette_file, 'w') as filehandler:
+                filehandler.write(f"{pipette_no}")
+
+    def return_pipette(self) -> None:
         # Turn pump off just in case
         self.pipette.pump_off(check=False)
 
-        x, y = self.pipette_locations[pipette_no][0], self.pipette_locations[pipette_no][1]
+        # Return active pipette
+        file_exists = os.path.exists(self.pipette_file)
+        if file_exists:
+            with open(self.pipette_file, 'r') as filehandler:
+                active_pipette = int(filehandler.read())
+        
+        if active_pipette == 0 or not file_exists:
+            logging.error("Return pipette requested whilst no pipette is active.")
+            return
+
+        x, y = self.pipette_locations[active_pipette-1][0], self.pipette_locations[active_pipette-1][1]
 
         # Move above pipette rack (first to lead in location to avoid clash)
-        logging.info(f"Moving to Pipette #{pipette_no}..")
+        logging.info(f"Moving to Pipette #{active_pipette}..")
         self.gantry.move(x + self.pipette_lead_in, y, 0)
         self.gantry.move(x, y, 0)
 
         # Move into pipette rack
-        logging.info(f"Delivering Pipette #{pipette_no} to rack..")
+        logging.info(f"Delivering Pipette #{active_pipette} to rack..")
         self.gantry.move(x, y, self.pipette_pick_height)
 
         # Move into pipette rack
@@ -176,6 +203,9 @@ class scheduler:
         logging.info("Raising pipette module..")
         self.gantry.move(x, y, 0)
         self.gantry.release()
+
+        with open(self.pipette_file, 'w') as filehandler:
+                filehandler.write("0")
     
     def aspiration_test(self) -> None:
         # Used for testing only => No logging
@@ -229,7 +259,7 @@ class scheduler:
     def collect_volume(self, aspirate_volume: float, starting_volume: float, name: str, pot_no: int, aspirate_constant: float, aspirate_speed: float) -> float:
         new_volume = round(starting_volume - aspirate_volume * 1e-3, 4) #ml
 
-        x, y = self.pot_locations[pot_no][0], self.pot_locations[pot_no][1]
+        x, y = self.pot_locations[pot_no-1][0], self.pot_locations[pot_no-1][1]
 
         # Move above pot
         logging.info("Moving to " + name + "..")
@@ -287,7 +317,7 @@ class scheduler:
             # Loop through all non zero constituents
             for i in non_zero.index.to_numpy(dtype=int):
                 # Collect pipette for desired chemical (pipette 1 for pot 1)
-                self.pick_pipette(i)
+                self.pick_pipette(i+1)
     
                 # Extract relevant df row
                 relevant_row = non_zero.loc[i]
@@ -307,7 +337,7 @@ class scheduler:
                         dose = self.max_dose
 
                     # Aspirate using data from relevant df row, increment pot co ordinates
-                    pot_volume = self.collect_volume(dose, pot_volume, relevant_row["Name"], i, relevant_row["Aspirate Constant (mbar/uL)"], relevant_row["Aspirate Speed (uL/s)"])
+                    pot_volume = self.collect_volume(dose, pot_volume, relevant_row["Name"], i+1, relevant_row["Aspirate Constant (mbar/uL)"], relevant_row["Aspirate Speed (uL/s)"])
 
                     # Move to mixing chamber and dispense
                     self.deliver_volume()
@@ -319,17 +349,16 @@ class scheduler:
                     self.save_csv()
 
                 # Return pipette
-                self.return_pipette(i)
+                self.return_pipette()
 
             # Trigger servo to mix electrolyte
             self.gantry.mix()
 
             # Let mixture settle
-            time.sleep(2)
+            time.sleep(1)
 
             # Pump electrolyte to next stage
             total_vol = self.df["Dose Volume (uL)"].sum()/1000
-            self.gantry.pump(total_vol)
 
             # To add fluid handling steps here
 
@@ -378,7 +407,7 @@ class scheduler:
                     else:
                         dose = self.max_dose
                         
-                    container_volume = self.collect_volume(dose, container_volume, name, pot_number-1, const, speed)
+                    container_volume = self.collect_volume(dose, container_volume, name, pot_number, const, speed)
                     self.deliver_volume()
 
                 if self.SIM is False:
@@ -393,7 +422,7 @@ class scheduler:
         logging.info(f"RESULT: Minimum error of {errors[i_min, j_min]}uL for " + name + f" using {constants[j_min]}mbar/uL and {speeds[i_min]}uL/s.")
 
         if collect_pipette is True:
-            self.return_pipette(pipette_no=0)
+            self.return_pipette()
 
         self.gantry.close_ser()
         self.pipette.close_ser()
