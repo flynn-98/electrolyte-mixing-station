@@ -5,7 +5,7 @@ const int TX = 1;
 const int RX = 2;
 
 // Pins for XYZ stepper motors, see https://learn.sparkfun.com/tutorials/big-easy-driver-hookup-guide/all
-const int X_STEP = 5;
+const byte X_STEP = 5;
 const int X_DIR = 6;
 
 const int Y_STEP = 7;
@@ -19,10 +19,10 @@ const int E_STEP = 11;
 const int E_DIR = 12;
 
 // Define Arduino pins for each function
-const int SERVO_PIN = 10;
+const int SERVO_PIN = 13;
 
 // Define relay pin
-const int RELAY_PIN = 19;
+const byte RELAY_PIN = A0;
 
 // Define comms pins
 const int MOSI_PIN = 14;
@@ -33,11 +33,11 @@ const int SCL_PIN = 24;
 
 // Define remaining pins (A6 & A7 are analog only)
 const int AREF = 18;
-const int ANALOG_1 = 20;
-const int ANALOG_2 = 21;
-const int ANALOG_3 = 22;
-const int ANALOG_6 = 25;
-const int ANALOG_7 = 26;
+const byte ANALOG_1 = A1;
+const byte ANALOG_2 = A2;
+const byte ANALOG_3 = A3;
+const byte ANALOG_6 = A6;
+const byte ANALOG_7 = A7;
 
 // Motor speed and acceleration parameters, stepper motors have 200 steps / revolution.
 // Microsteps (per step) used for increased positional accuracy and smoother stepping
@@ -313,8 +313,8 @@ void setup() {
   Y_MOTOR.setAcceleration(MAX_ACCEL);
   Z_MOTOR.setAcceleration(Z_ACCEL);
 
-  PUMP_MOTOR.setMaxSpeed(PUMP_SPEED);
-  PUMP_MOTOR.setAcceleration(MAX_ACCEL * GEAR_RATIO);
+  E_MOTOR.setMaxSpeed(PUMP_SPEED);
+  E_MOTOR.setAcceleration(MAX_ACCEL * GEAR_RATIO);
 
   // Set positions to Zero
   X_MOTOR.setCurrentPosition(0);

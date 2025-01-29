@@ -21,10 +21,10 @@ const int PUMP_4_STEP = 11;
 const int PUMP_4_DIR = 12;
 
 // Define Arduino pins for each function
-const int SERVO_PIN = 10;
+const int SERVO_PIN = 13;
 
 // Define relay pin
-const int RELAY_PIN = 19;
+const byte RELAY_PIN = A0;
 
 // Define comms pins
 const int MOSI_PIN = 14;
@@ -35,11 +35,11 @@ const int SCL_PIN = 24;
 
 // Define remaining pins (A6 & A7 are analog only)
 const int AREF = 18;
-const int ANALOG_1 = 20;
-const int ANALOG_2 = 21;
-const int ANALOG_3 = 22;
-const int ANALOG_6 = 25;
-const int ANALOG_7 = 26;
+const byte ANALOG_1 = A1;
+const byte ANALOG_2 = A2;
+const byte ANALOG_3 = A3;
+const byte ANALOG_6 = A6;
+const byte ANALOG_7 = A7;
 
 // Motor speed and acceleration parameters, stepper motors have 200 steps / revolution.
 // Microsteps (per step) used for increased positional accuracy and smoother stepping
