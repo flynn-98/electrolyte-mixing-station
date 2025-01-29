@@ -67,8 +67,8 @@ const int servoStart = 20; // +Home
 const int servoEnd = 50; // +Home
 
 // Parameters for pipette rack
-const float tension_rotations = 0.5;
-const float pinch_rotations = 0.1;
+const float tension_rotations = 0.15;
+const float pinch_rotations = 0.03;
 
 // Define steppers with pins (STEP, DIR)
 AccelStepper X_MOTOR(AccelStepper::DRIVER, X_STEP, X_DIR); 

@@ -51,7 +51,7 @@ class scheduler:
                               [15, 7]
                             ]
         self.pipette_pick_height = -47.5 #mm from CAD - to be tuned
-        self.pipette_lead_in = 25 #mm to position pipette to the right of rack when returning pipette (avoid clash)
+        self.pipette_lead_in = 12.5 #mm to position pipette to the right of rack when returning pipette (avoid clash)
         
         self.pot_base_height = -69.5 # CAD value (minus a little to ensure submersion)
         self.pot_area = math.pi * 2.78**2 / 4 #cm2
@@ -138,6 +138,7 @@ class scheduler:
 
         # Move above pipette rack
         logging.info(f"Moving to Pipette #{pipette_no}..")
+        self.gantry.move(x + self.pipette_lead_in, y, 0)
         self.gantry.move(x, y, 0)
 
         # Move into pipette rack
@@ -174,6 +175,7 @@ class scheduler:
         # Move above pipette rack
         logging.info("Raising pipette module..")
         self.gantry.move(x, y, 0)
+        self.gantry.release()
     
     def aspiration_test(self) -> None:
         # Used for testing only => No logging
@@ -284,6 +286,8 @@ class scheduler:
             
             # Loop through all non zero constituents
             for i in non_zero.index.to_numpy(dtype=int):
+                # Collect pipette for desired chemical (pipette 1 for pot 1)
+                self.pick_pipette(i)
     
                 # Extract relevant df row
                 relevant_row = non_zero.loc[i]
@@ -313,6 +317,9 @@ class scheduler:
 
                     # Save csv in current state (starting volumes up to date in case of unexpected interruption)
                     self.save_csv()
+
+                # Return pipette
+                self.return_pipette(i)
 
             # Trigger servo to mix electrolyte
             self.gantry.mix()
@@ -346,7 +353,7 @@ class scheduler:
         plt.grid(visible=True, which="both", axis="both")
         plt.show()
 
-    def tune(self, name: str, pot_number: int = 1, aspirate_volume: float = 10, container_volume: float = 50, density: float = 1, asp_const_range: list[float] = [1.0, 1.0], asp_speed_range: list[float] = [1.0, 1.0], N: int = 5) -> None:
+    def tune(self, name: str, pot_number: int = 1, aspirate_volume: float = 10, container_volume: float = 50, density: float = 1, asp_const_range: list[float] = [1.0, 1.0], asp_speed_range: list[float] = [1.0, 1.0], N: int = 5, collect_pipette: bool = True) -> None:
         now = datetime.now()
         logging.info("Tuning of aspiration variables for " + name + ": " + now.strftime("%d/%m/%Y %H:%M:%S"))
         logging.info(f"Tuning will perform a total of {N*N} aspirations..")
@@ -354,6 +361,9 @@ class scheduler:
         errors = np.empty((N,N))
         speeds = np.linspace(asp_speed_range[0], asp_speed_range[1], N)
         constants = np.linspace(asp_const_range[0], asp_const_range[1], N)
+
+        if collect_pipette is True:
+            self.pick_pipette(pipette_no=0)
 
         for i, speed in enumerate(speeds):
             for j, const in enumerate(constants):
