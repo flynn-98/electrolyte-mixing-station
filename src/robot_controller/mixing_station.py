@@ -53,9 +53,8 @@ class scheduler:
         self.pipette_pick_height = -47.5 #mm from CAD - to be tuned
         self.pipette_lead_in = 12.5 #mm to position pipette to the right of rack when returning pipette (avoid clash)
 
-        # Attempt to load in active pipette number
-        self.pipette_file = "data/variables/active_pipette.txt"
-        # active_pipette = 1-9, 0 for not active. Value stored in file and loaded on mixing station start up
+        # File to store last known active pipette for recovery
+        self.pipette_file = "data/variables/active_pipette.txt" # 1-9, 0 = not active
         
         self.pot_base_height = -69.5 # CAD value (minus a little to ensure submersion)
         self.pot_area = math.pi * 2.78**2 / 4 #cm2

@@ -296,8 +296,16 @@ void gantryMove(float x, float y, float z) {
 };
 
 void gantryZero() {
-    gantryMove(0, 0, 0);
-    homed = true;
+    X_MOTOR.moveTo(0);
+    Y_MOTOR.moveTo(0);
+    Z_MOTOR.moveTo(0);
+
+    // Reverse order to minimise risk of clashes with pipette rack and bottles
+    Z_MOTOR.runToPosition();
+    Y_MOTOR.runToPosition();
+    X_MOTOR.runToPosition();
+
+    gantrySoftHome();
 }
 
 void gantryMix(int count, int servoDelay) {
