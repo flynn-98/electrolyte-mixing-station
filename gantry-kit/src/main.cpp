@@ -88,7 +88,7 @@ const float home[3] = {-167.9 + pad_thickness + x_shift, 1.5 - pad_thickness, -0
 // Joint Limits (mm), also taken from CAD model
 const float jointLimit[2][3] = {
     {0, 0, 0}, 
-    {165.0 - x_shift, 141.0, -48.5}
+    {165.0 - x_shift, 141.0, -49}
 };
 
 // Overshoot value used during Homing, any gantry drift +- this value will be corrected (in theory!)
