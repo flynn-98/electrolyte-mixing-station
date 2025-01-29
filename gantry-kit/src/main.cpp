@@ -295,7 +295,11 @@ void gantryMove(float x, float y, float z) {
     Serial.println("Move complete in " + String(ElapsedTime) + "s");
 };
 
-void gantrySafeReturn() {
+void gantryZero() {
+    X_MOTOR.moveTo(0);
+    Y_MOTOR.moveTo(0);
+    Z_MOTOR.moveTo(0);
+
     // Reverse order to minimise risk of clashes with pipette rack and bottles
     Z_MOTOR.runToPosition();
     Y_MOTOR.runToPosition();
@@ -304,20 +308,13 @@ void gantrySafeReturn() {
     gantrySoftHome();
 }
 
-void gantryZero() {
-    X_MOTOR.moveTo(0);
-    Y_MOTOR.moveTo(0);
-    Z_MOTOR.moveTo(0);
-
-    gantrySafeReturn();
-}
-
 void gantryRecover(float x, float y, float z) {
-    X_MOTOR.move(-1 * mmToSteps(x, true, 1));
-    Y_MOTOR.move(-1 * mmToSteps(y, true, 1));
-    Z_MOTOR.move(-1 * mmToSteps(z, true, 1));
+    // No need for limit check, 
+    X_MOTOR.setCurrentPosition(mmToSteps(x, true, 0));
+    Y_MOTOR.setCurrentPosition(mmToSteps(y, true, 1));
+    Z_MOTOR.setCurrentPosition(mmToSteps(z, false, 2));
 
-    gantrySafeReturn();
+    gantryZero();
 }
 
 void gantryMix(int count, int servoDelay) {
