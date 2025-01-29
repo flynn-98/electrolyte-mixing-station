@@ -296,13 +296,17 @@ void gantryMove(float x, float y, float z) {
 };
 
 void gantryZero() {
-    X_MOTOR.moveTo(0);
+    // Move X to middle of workspace to avoid pipette rack
+    X_MOTOR.moveTo(mmToSteps(jointLimit[1][0] / 4, true, 0));
     Y_MOTOR.moveTo(0);
     Z_MOTOR.moveTo(0);
 
     // Reverse order to minimise risk of clashes with pipette rack and bottles
     Z_MOTOR.runToPosition();
+    X_MOTOR.runToPosition();
     Y_MOTOR.runToPosition();
+
+    X_MOTOR.moveTo(0);
     X_MOTOR.runToPosition();
 
     gantrySoftHome();
