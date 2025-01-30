@@ -5,7 +5,7 @@ const int TX = 1;
 const int RX = 2;
 
 // Pins for XYZ stepper motors, see https://learn.sparkfun.com/tutorials/big-easy-driver-hookup-guide/all
-const byte X_STEP = 5;
+const int X_STEP = 5;
 const int X_DIR = 6;
 
 const int Y_STEP = 7;
@@ -22,7 +22,7 @@ const int E_DIR = 12;
 const int SERVO_PIN = 13;
 
 // Define relay pin
-const byte RELAY_PIN = A0;
+const int RELAY_PIN = A0;
 
 // Define comms pins
 const int MOSI_PIN = 14;
@@ -33,11 +33,11 @@ const int SCL_PIN = 24;
 
 // Define remaining pins (A6 & A7 are analog only)
 const int AREF = 18;
-const byte ANALOG_1 = A1;
-const byte ANALOG_2 = A2;
-const byte ANALOG_3 = A3;
-const byte ANALOG_6 = A6;
-const byte ANALOG_7 = A7;
+const int ANALOG_1 = A1;
+const int ANALOG_2 = A2;
+const int ANALOG_3 = A3;
+const int ANALOG_6 = A6;
+const int ANALOG_7 = A7;
 
 // Motor speed and acceleration parameters, stepper motors have 200 steps / revolution.
 // Microsteps (per step) used for increased positional accuracy and smoother stepping
