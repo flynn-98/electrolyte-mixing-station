@@ -1,40 +1,39 @@
 #include <Servo.h>
 #include <AccelStepper.h>
 
-const int TX = 1;
-const int RX = 2;
+const int TX = 0;
+const int RX = 1;
 
 // Pins for pump stepper motors, see https://learn.sparkfun.com/tutorials/big-easy-driver-hookup-guide/all
-const int PUMP_1_STEP = 5;
-const int PUMP_1_DIR = 6;
+const int PUMP_1_STEP = 2;
+const int PUMP_1_DIR = 3;
 
-const int PUMP_2_STEP = 7;
-const int PUMP_2_DIR = 8;
+const int PUMP_2_STEP = 4;
+const int PUMP_2_DIR = 5;
 
-const int PUMP_3_STEP = 9;
-const int PUMP_3_DIR = 10;
+const int PUMP_3_STEP = 6;
+const int PUMP_3_DIR = 7;
 
 // Pump 1 = Electrolyte into Cell, Pump 2 = Electrolyte out of Cell, Pump 3 = Cleaning Solution into Cell
 
 // Pins for 4th stepper motor
-const int PUMP_4_STEP = 11;
-const int PUMP_4_DIR = 12;
+const int PUMP_4_STEP = 8;
+const int PUMP_4_DIR = 9;
 
 // Define Arduino pins for each function
-const int SERVO_PIN = 13;
+const int SERVO_PIN = 10;
 
 // Define relay pin
 const byte RELAY_PIN = A0;
 
 // Define comms pins
-const int MOSI_PIN = 14;
-const int MISO_PIN = 15;
-const int SCK_PIN = 16;
-const int SDA_PIN = 23;
-const int SCL_PIN = 24;
+const int MOSI_PIN = 11;
+const int MISO_PIN = 12;
+const int SCK_PIN = 13;
+const int SDA_PIN = 18;
+const int SCL_PIN = 19;
 
 // Define remaining pins (A6 & A7 are analog only)
-const int AREF = 18;
 const byte ANALOG_1 = A1;
 const byte ANALOG_2 = A2;
 const byte ANALOG_3 = A3;
@@ -47,8 +46,8 @@ const float STEPS_REV = 200.0;
 const float MICROSTEPS = 4.0;
 const float GEAR_RATIO = 1.0;
 
-const float PUMP_SPEED = 200.0 * MICROSTEPS * GEAR_RATIO; //microsteps/s
-const float MAX_ACCEL = 200.0 * MICROSTEPS * GEAR_RATIO; //microsteps/s2
+const float PUMP_SPEED = 500.0 * MICROSTEPS * GEAR_RATIO; //microsteps/s
+const float MAX_ACCEL = 350.0 * MICROSTEPS * GEAR_RATIO; //microsteps/s2
 
 // For Pump stepper motor
 const float ML_REV = 0.1; //ml/rev
@@ -77,7 +76,6 @@ unsigned long CurrentTime;
 unsigned long LastCall = 0;
 unsigned long ElapsedTime;
 
-long steps;
 String action;
 
 void relayOn() {
@@ -142,7 +140,7 @@ void cleanCell(float vol) {
     PUMP_3.runToPosition();
 
     // Deprime line to avoid dripping into cell
-    PUMP_3.move(0);
+    PUMP_3.move(-1 * volToSteps(vol));
 
     // Run until complete
     PUMP_3.runToPosition();
@@ -156,7 +154,6 @@ void cleanCell(float vol) {
 
 void setup() {
   // Setup code here, will run just once on start-up
-  relayOff();
 
   // Set pins to be used
   pinMode(PUMP_1_STEP, OUTPUT);
@@ -189,15 +186,10 @@ void setup() {
   PUMP_4.setAcceleration(MAX_ACCEL);
   PUMP_4.setMaxSpeed(PUMP_SPEED);
 
-  // Set positions to Zero
-  PUMP_1.setCurrentPosition(0);
-  PUMP_2.setCurrentPosition(0);
-  PUMP_3.setCurrentPosition(0);
-  PUMP_4.setCurrentPosition(0);
-
   Serial.begin(9600);
   mixer.write(servoHome);
-  
+
+relayOff();
   Serial.println("Fluid Handling Kit Ready");
 };
 
