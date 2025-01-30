@@ -339,7 +339,6 @@ void gantryMix(int count, int servoDelay) {
 
 void setup() {
   // Setup code here, will run just once on start-up
-  relayOff();
 
   // Set pins to be used
   pinMode(X_STEP, OUTPUT);
@@ -375,6 +374,7 @@ void setup() {
   tensionRope();
 
   Serial.println("Gantry Kit Ready");
+  relayOff();
 };
 
 void loop() {
