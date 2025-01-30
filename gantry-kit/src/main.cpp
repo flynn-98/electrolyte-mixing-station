@@ -431,7 +431,7 @@ void loop() {
             z = Serial.readStringUntil(')').toFloat();
             
             // Call action using received variables
-            if (homed == False) {
+            if (homed == false) {
                 gantryRecover(x, y, z);
             }
             else {
