@@ -78,9 +78,19 @@ class scheduler:
         if self.csv_filename is not None:
             self.read_csv()
 
+        # Send recovery msg to gantry (will correct if power off event)
+        if os.path.exists(self.location_file):
+            with open(self.location_file, 'r') as filehandler:
+                xyz = filehandler.read().split(",")
+
+            self.gantry.recover(xyz)
+
         # Home if requested
         if home is True:
             self.gantry.softHome()
+
+        # Move to start position (to avoid pipette rack clash)
+        self.gantry.move(self.pipette_locations[0][0] + self.pipette_lead_in, 0, 0)
 
         # Check if pipette is active, return if so.
         if os.path.exists(self.pipette_file):
@@ -89,13 +99,6 @@ class scheduler:
 
             if active_pipette != 0:
                 self.return_pipette()
-
-        # Send recovery msg to gantry (will correct if power off event)
-        if os.path.exists(self.location_file):
-            with open(self.location_file, 'r') as filehandler:
-                xyz = filehandler.read().split(",")
-
-            self.gantry.recover(xyz)
 
     def read_json(self, device_name: str) -> dict:
         with open(self.json_file) as json_data:
@@ -197,7 +200,6 @@ class scheduler:
 
         # Move above pipette rack (first to lead in location to avoid clash)
         logging.info(f"Moving to Pipette #{active_pipette}..")
-        self.gantry.move(x + self.pipette_lead_in, 0, 0) # Added in case of starting from home position
         self.gantry.move(x + self.pipette_lead_in, y, 0)
         self.gantry.move(x, y, 0)
 
