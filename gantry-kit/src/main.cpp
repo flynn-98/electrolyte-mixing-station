@@ -1,38 +1,37 @@
 #include <Servo.h>
 #include <AccelStepper.h>
 
-const int TX = 1;
-const int RX = 2;
+const int TX = 0;
+const int RX = 1;
 
 // Pins for XYZ stepper motors, see https://learn.sparkfun.com/tutorials/big-easy-driver-hookup-guide/all
-const int X_STEP = 5;
-const int X_DIR = 6;
+const int X_STEP = 2;
+const int X_DIR = 3;
 
-const int Y_STEP = 7;
-const int Y_DIR = 8;
+const int Y_STEP = 4;
+const int Y_DIR = 5;
 
-const int Z_STEP = 9;
-const int Z_DIR = 10;
+const int Z_STEP = 6;
+const int Z_DIR = 7;
 
 // Pins for extra stepper motor
-const int E_STEP = 11;
-const int E_DIR = 12;
+const int E_STEP = 8;
+const int E_DIR = 9;
 
 // Define Arduino pins for each function
-const int SERVO_PIN = 13;
+const int SERVO_PIN = 10;
 
 // Define relay pin
 const int RELAY_PIN = A0;
 
 // Define comms pins
-const int MOSI_PIN = 14;
-const int MISO_PIN = 15;
-const int SCK_PIN = 16;
-const int SDA_PIN = 23;
-const int SCL_PIN = 24;
+const int MOSI_PIN = 11;
+const int MISO_PIN = 12;
+const int SCK_PIN = 13;
+const int SDA_PIN = 18;
+const int SCL_PIN = 19;
 
 // Define remaining pins (A6 & A7 are analog only)
-const int AREF = 18;
 const int ANALOG_1 = A1;
 const int ANALOG_2 = A2;
 const int ANALOG_3 = A3;
