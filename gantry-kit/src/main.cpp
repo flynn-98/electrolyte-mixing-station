@@ -364,6 +364,10 @@ void setup() {
   E_MOTOR.setMaxSpeed(ROPE_SPEED);
   E_MOTOR.setAcceleration(MAX_ACCEL);
 
+  X_MOTOR.setMaxSpeed(STAGE_SPEED);
+  Y_MOTOR.setMaxSpeed(STAGE_SPEED);
+  Z_MOTOR.setMaxSpeed(Z_STAGE_SPEED);
+
   // Set positions to Zero
   X_MOTOR.setCurrentPosition(0);
   Y_MOTOR.setCurrentPosition(0);
