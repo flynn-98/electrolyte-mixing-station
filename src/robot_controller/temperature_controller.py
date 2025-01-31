@@ -57,6 +57,12 @@ class peltier:
                 logging.error("Temperatuer controller Tc configuration failed")
                 sys.exit()
 
+            if self.configure_main_sensor() is True:
+                logging.info("Temperature controller Sensor1 settings successfully configured.")
+            else:
+                logging.error("Temperatuer controller Sensor1 configuration failed")
+                sys.exit()   
+
             if self.set_fan_modes() is True:
                 logging.info("Temperature controller Fan settings successfully configured.")
             else:
@@ -183,7 +189,7 @@ class peltier:
             return n
         
     def set_tc_parameters(self, max_percent: int = 100, dead_band: int = 5) -> bool:
-        if self.register_write(6, self.clamp(max_percent, 0, 100)) is True and self.register_write(7, self.clamp(dead_band, 0, 50)) is True:
+        if (self.register_write(6, self.clamp(max_percent, 0, 100)) is True) and (self.register_write(7, self.clamp(dead_band, 0, 50)) is True):
             return True
         else:
             return False
@@ -193,7 +199,7 @@ class peltier:
         # This helps to save the life of the peltier modules
 
     def set_pid_parameters(self, p: float, i: float, d: float, i_lim: float = 100) -> bool:
-        if self.register_write(1, p) is True and self.register_write(2, i) is True and self.register_write(3, d) is True and self.register_write(1, self.clamp(i_lim, 0, 100)) is True:
+        if (self.register_write(1, p) is True) and (self.register_write(2, i) is True) and (self.register_write(3, d) is True) and (self.register_write(1, self.clamp(i_lim, 0, 100)) is True):
             return True
         else:
             return False
@@ -215,10 +221,19 @@ class peltier:
         # Always OFF = 2
         # Cool / Heat = 4, on when main output is non zero (reg[106])
 
-        if self.register_write(16, mode) is True and self.register_write(23, mode) is True and self.register_write(22, self.input_voltage) is True and self.register_write(29, self.input_voltage) is True:
+        if (self.register_write(16, mode) is True) and (self.register_write(23, mode) is True) and (self.register_write(22, self.input_voltage) is True) and (self.register_write(29, self.input_voltage) is True):
             return True
         else:
             return False
+        
+    def configure_main_sensor(self, mode: int = 2)
+        # 2 = to activate Steinhart calculation
+        # 3 = to activate Zoom mode (internal control of digital pot). Have this bit set to achieve maximal resolution.
+        # 4 = to activate PT mode 
+
+        # To revisit best mode and values to use
+
+        return self.register_write(55, mode)
         
     def get_tc_value(self) -> float:
         return self.register_read(106)
