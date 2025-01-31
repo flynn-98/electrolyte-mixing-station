@@ -5,10 +5,12 @@
             "Pipette_Address" : "/dev/ttyUSB0",
             "Fluid_Address": "/dev/ttyACM1",
             "Mass_Address": "/dev/ttyACM2",
+            "Temp_Address": "/dev/ttyACM3",
             "Gantry_Active": true,
             "Pipette_Active": true,
-            "Fluid_Active": false,
-            "Mass_Active": false
+            "Fluid_Active": true,
+            "Mass_Active": false,
+            "Temp_Active": false
         },
         {
             "ID" : "microtron_02",
@@ -16,21 +18,25 @@
             "Pipette_Address" : "/dev/ttyUSB0",
             "Fluid_Address": "/dev/ttyACM1",
             "Mass_Address": "/dev/ttyACM2",
+            "Temp_Address": "/dev/ttyACM3",
             "Gantry_Active": true,
             "Pipette_Active": true,
-            "Fluid_Active": false,
-            "Mass_Active": false
+            "Fluid_Active": true,
+            "Mass_Active": false,
+            "Temp_Active": false
         },
         {
-            "ID" : "dummy",
+            "ID" : "simulation",
             "Gantry_Address" : "",
             "Pipette_Address" : "",
             "Fluid_Address": "",
             "Mass_Address": "",
+            "Temp_Address": "",
             "Gantry_Active": false,
             "Pipette_Active": false,
             "Fluid_Active": false,
-            "Mass_Active": false
+            "Mass_Active": false,
+            "Temp_Active": false
         }
     ]
 }

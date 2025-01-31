@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 from IPython.display import display
 
-from robot_controller import fluid_controller, gantry_controller, mass_balance, pipette_controller
+from robot_controller import fluid_controller, gantry_controller, mass_balance, pipette_controller, temperature_controller
 
 # Save logs to file
 logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
@@ -35,6 +35,7 @@ class scheduler:
         self.pipette = pipette_controller.pipette(device_data["Pipette_Address"], self.SIM)
         self.fluid_handler = fluid_controller.fluid_handler(device_data["Fluid_Address"], not device_data["Fluid_Active"])
         self.mass_balance = mass_balance.mass_reader(device_data["Mass_Address"], not device_data["Mass_Active"])
+        self.peltier = temperature_controller.peltier(device_data["Temp_Address"], not device_data["Temp_Active"])
 
         # Pot locations 1 -> 10 (mm), pot 10 is for washing
         self.pot_locations = [[41, 0], [75, 0], 
@@ -398,6 +399,7 @@ class scheduler:
             self.check_mass_change(total_mass, starting_mass)
 
             # Potentiostat / Temperature control functions
+            self.peltier.set_temperature(10.5) # For example
 
             # Empty cell once complete
             self.fluid_handler.empty_cell(total_vol)
