@@ -20,7 +20,7 @@ dependencies = [
     "ipython",
     "datetime",
     "matplotlib",
-    "pyside2",
+    "pyside6",
 ]
 
 [project.optional-dependencies]

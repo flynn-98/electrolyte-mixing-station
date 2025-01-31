@@ -48,6 +48,7 @@ class mass_reader:
                 pass
 
             readout = self.ser.readline().decode().rstrip().replace("g", "")
+            
             self.ser.close()
             return float(readout)
         
