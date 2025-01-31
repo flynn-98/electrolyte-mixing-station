@@ -1,5 +1,4 @@
 import logging
-import math
 import sys
 
 import serial
@@ -226,7 +225,7 @@ class peltier:
         else:
             return False
         
-    def configure_main_sensor(self, mode: int = 2)
+    def configure_main_sensor(self, mode: int = 2) -> bool:
         # 2 = to activate Steinhart calculation
         # 3 = to activate Zoom mode (internal control of digital pot). Have this bit set to achieve maximal resolution.
         # 4 = to activate PT mode 
