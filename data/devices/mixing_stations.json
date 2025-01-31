@@ -3,28 +3,34 @@
             "ID" : "microtron_01",
             "Gantry_Address" : "/dev/ttyACM0",
             "Pipette_Address" : "/dev/ttyUSB0",
-            "Fluid_Address": "/dev/ttyACM0",
+            "Fluid_Address": "/dev/ttyACM1",
+            "Mass_Address": "/dev/ttyACM2",
             "Gantry_Active": true,
             "Pipette_Active": true,
-            "Fluid_Active": false
+            "Fluid_Active": false,
+            "Mass_Active": false
         },
         {
             "ID" : "microtron_02",
-            "Gantry_Address" : "/dev/cu.usbmodem11101",
-            "Pipette_Address" : "/dev/ttyUSB1",
-            "Fluid_Address": "/dev/ttyACM0",
+            "Gantry_Address" : "/dev/ttyACM0",
+            "Pipette_Address" : "/dev/ttyUSB0",
+            "Fluid_Address": "/dev/ttyACM1",
+            "Mass_Address": "/dev/ttyACM2",
             "Gantry_Active": true,
-            "Pipette_Active": false,
-            "Fluid_Active": false
+            "Pipette_Active": true,
+            "Fluid_Active": false,
+            "Mass_Active": false
         },
         {
             "ID" : "dummy",
-            "Gantry_Address" : "/dev/ttyUSB0",
-            "Pipette_Address" : "/dev/ttyUSB0",
-            "Fluid_Address": "/dev/ttyUSB0",
+            "Gantry_Address" : "",
+            "Pipette_Address" : "",
+            "Fluid_Address": "",
+            "Mass_Address": "",
             "Gantry_Active": false,
             "Pipette_Active": false,
-            "Fluid_Active": false
+            "Fluid_Active": false,
+            "Mass_Active": false
         }
     ]
 }

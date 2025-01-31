@@ -305,7 +305,7 @@ void gantryZero() {
     X_MOTOR.runToPosition();
     Y_MOTOR.runToPosition();
 
-    gantrySoftHome();
+    // gantrySoftHome();
 }
 
 void gantryRecover(float x, float y, float z) {

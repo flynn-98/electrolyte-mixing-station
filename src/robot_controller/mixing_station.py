@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 from IPython.display import display
 
-from robot_controller import fluid_controller, gantry_controller, pipette_controller
+from robot_controller import fluid_controller, gantry_controller, mass_balance, pipette_controller
 
 # Save logs to file
 logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
@@ -34,6 +34,7 @@ class scheduler:
         self.gantry = gantry_controller.gantry(device_data["Gantry_Address"], not device_data["Gantry_Active"])            
         self.pipette = pipette_controller.pipette(device_data["Pipette_Address"], self.SIM)
         self.fluid_handler = fluid_controller.fluid_handler(device_data["Fluid_Address"], not device_data["Fluid_Active"])
+        self.mass_balance = mass_balance.mass_reader(device_data["Mass_Address"], not device_data["Mass_Active"])
 
         # Pot locations 1 -> 10 (mm), pot 10 is for washing
         self.pot_locations = [[41, 0], [75, 0], 
@@ -44,26 +45,28 @@ class scheduler:
                             ]
         
         # Pipette locations 1 -> 9 (mm)
-        self.pipette_locations = [[15, 135], [15, 119], 
-                              [15, 103], [15, 87], 
-                              [15, 71], [15, 55], 
-                              [15, 39], [15,23], 
-                              [15, 7]
+        pipette_x_location = 15 #mm
+        self.pipette_locations = [[pipette_x_location, 135], [pipette_x_location, 119], 
+                              [pipette_x_location, 103], [pipette_x_location, 87], 
+                              [pipette_x_location, 71], [pipette_x_location, 55], 
+                              [pipette_x_location, 39], [pipette_x_location,23], 
+                              [pipette_x_location, 7]
                             ]
         self.pipette_pick_height = -48 #mm from CAD - to be tuned
         self.pipette_lead_in = 12.5 #mm to position pipette to the right of rack when returning pipette (avoid clash)
+        start_x_location = pipette_x_location + self.pipette_lead_in # to avoid pipette rack clash
 
         # File to store last known active pipette for recovery
-        self.pipette_file = "data/variables/active_pipette.txt" # 1-9, 0 = not active
-
-        # File to store last known active pipette for recovery
-        self.location_file = self.gantry.get_file()
+        self.pipette_file = "data/variables/active_pipette.txt" # 1-9, 0 = not active        
         
         self.pot_base_height = -69.5 # CAD value (minus a little to ensure submersion)
         self.pot_area = math.pi * 2.78**2 / 4 #cm2
 
         self.chamber_location = [125, 97.7] # mm
         self.dispense_height = -10 #mm
+
+        # Mass balance checks
+        self.max_mass_error = 0.2 # grams, error if exceeded
 
         # Declare variables for CSV read
         self.df = pd.DataFrame()
@@ -73,6 +76,7 @@ class scheduler:
         # Retrieve any requried variables from controllers
         self.max_dose = self.pipette.get_max_dose()
         self.charge_pressure = self.pipette.get_charge_pressure()
+        self.location_file = self.gantry.get_file() # For pipette number recovery
 
         # Convert CSV file to df
         if self.csv_filename is not None:
@@ -81,16 +85,16 @@ class scheduler:
         # Send recovery msg to gantry (will correct if power off event)
         if os.path.exists(self.location_file):
             with open(self.location_file, 'r') as filehandler:
-                xyz = filehandler.read().split(",")
+                xyz = filehandler.read()
 
             self.gantry.recover(xyz)
 
-        # Home if requested
+        # Home if requested (will also happen during recovery)
         if home is True:
             self.gantry.softHome()
 
-        # Move to start position (to avoid pipette rack clash)
-        self.gantry.move(self.pipette_locations[0][0] + self.pipette_lead_in, 0, 0)
+        # Move to start/end position
+        self.gantry.move(start_x_location, 0, 0)
 
         # Check if pipette is active, return if so.
         if os.path.exists(self.pipette_file):
@@ -316,6 +320,15 @@ class scheduler:
         logging.info("Lifting Pipette..")
         self.gantry.move(x, y, 0)
 
+    def check_mass_change(self, expected_mass: float, starting_mass: float) -> None:
+        mass_change = self.mass_balance.get_mass() - starting_mass
+        error = mass_change - expected_mass
+
+        if abs(error) > self.max_mass_error:
+            logging.error(f"Mass balance detected {mass_change}g added to Test Cell ({error}g error).")
+        else:
+            logging.info(f"Mass balance detected {mass_change}g added to Test Cell ({error}g error).")
+
     def run(self, N: int = 1) -> None:
         for n in range(N):
             logging.info(f"Creating electrolyte mixture #{n+1}..")
@@ -369,18 +382,33 @@ class scheduler:
             # Let mixture settle
             time.sleep(1)
 
+            # Take mass balance reading
+            starting_mass = self.mass_balance.get_mass()
+
             # Pump electrolyte to next stage
             total_vol = self.df["Dose Volume (uL)"].sum()/1000
+            self.fluid_handler.add_electrolyte(total_vol)
 
-            # To add fluid handling steps here
+            # Mass Balance checks
+            self.df["Temp Mass Values (1e3*g)"] =  self.df["Density (g/mL)"] * self.df["Dose Volume (uL)"]
+            total_mass = self.df["Temp Mass Values (1e3*g)"].sum()/1000
+            self.df = self.df.drop("Temp Mass Values (1e3*g)", axis=1)
+            
+            self.check_mass_change(total_mass, starting_mass)
+
+            # Potentiostat / Temperature control functions
+
+            # Empty cell once complete
+            self.fluid_handler.empty_cell(total_vol)
+
+            # Clean cell once complete
+            self.fluid_handler.clean_cell()
 
         logging.info(f"Experiment complete after {N} repeat(s).")
 
-        #logging.info("Remaining volumes..")
-        #self.show_df()
-
         self.gantry.close_ser()
         self.pipette.close_ser()
+        self.fluid_handler.close_ser()
 
     def plot_aspiration_variables(self, name: str, results: np.ndarray, speeds: np.ndarray, constants: np.ndarray) -> None:
         plt.title('Tuning of Aspiration Variables: ' + name)
