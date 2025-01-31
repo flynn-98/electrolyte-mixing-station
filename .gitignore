@@ -12,5 +12,6 @@ sdlabs_sdks/
 *.tar.gz
 *.log
 *.txt
+*.whl
 
 **/current_state.csv
