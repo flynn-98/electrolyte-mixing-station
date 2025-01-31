@@ -12,11 +12,11 @@ class fluid_handler:
 
         if self.sim is False:
             logging.info("Configuring fluid handling kit serial port..")
-            self.ser = serial.Serial(COM) # COMXX
-            self.ser.baudrate = 9600 # set Baud rate to 9600
-            self.ser.bytesize = 8 # Number of data bits = 8
+            self.ser = serial.Serial(COM) 
+            self.ser.baudrate = 9600
+            self.ser.bytesize = 8 
             self.ser.parity = 'N' # No parity
-            self.ser.stopbits = 1 # Number of Stop bits = 1
+            self.ser.stopbits = 1
 
             logging.info("Attempting to open fluid handling kit serial port..")
 

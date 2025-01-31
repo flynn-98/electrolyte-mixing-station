@@ -5,6 +5,8 @@ from PySide6.QtWidgets import QApplication
 # Import EIS specific package
 from SquidstatPyLibrary import AisDeviceTracker, AisEISPotentiostaticElement, AisExperiment
 
+# To communicate with: https://www.admiralinstruments.com/product-page/squidstat-plus-with-eis
+
 experiment = AisExperiment()
 eisElement = AisEISPotentiostaticElement(
     10000, # startFrequency

@@ -28,21 +28,9 @@ Activate venv:
 source .venv/bin/activate
 ```
 
-## Setting up Squidstat Python API
+## Setting up SquidstatPyLibrary (Windows Only!)
 
-### Mac & Linux (Build API using CMake)
-
-For Mac & Linux users, follow the instructions given [here](https://admiral-instruments.github.io/AdmiralSquidstatAPI/md_intro_and_examples_2__build__a_p_i_using__cmake.html) to build the SquidstatLibrary.
-
-For Mac users, it is recommended that you use `brew` to download cmake:
-
-```
-brew install cmake
-```
-
-### Windows (SquidstatPyLibrary)
-
-For Windows users, a Python wrapper can be used. Download latest *.whl* file from [here](https://github.com/Admiral-Instruments/AdmiralSquidstatAPI/tree/main/SquidstatLibrary/windows/pythonWrapper/Release). Move the file to the *electrolyte-mixing-station* and run the following command:
+Download latest *.whl* file from [here](https://github.com/Admiral-Instruments/AdmiralSquidstatAPI/tree/main/SquidstatLibrary/windows/pythonWrapper/Release). Move the file to the *electrolyte-mixing-station* and run the following command:
 
 ```
 .venv/bin/pip install FILE.whl

@@ -228,8 +228,9 @@ class scheduler:
 
         try:
             charge_pressure = float(input("Enter charge pressure (mbar): "))
-        except Exception:
+        except Exception as ex:
             charge_pressure = self.charge_pressure
+            print(ex)
             print(f"Charge Pressure set to {charge_pressure}mbar.")
 
         # Charge pipette

@@ -24,11 +24,11 @@ class pipette:
 
         if self.sim is False:
             logging.info("Configuring pipette serial port..")
-            self.ser = serial.Serial(COM) # COMXX
-            self.ser.baudrate = 115200 # set Baud rate to 9600
-            self.ser.bytesize = 8 # Number of data bits = 8
+            self.ser = serial.Serial(COM) 
+            self.ser.baudrate = 115200 
+            self.ser.bytesize = 8 
             self.ser.parity = 'N' # No parity
-            self.ser.stopbits = 1 # Number of Stop bits = 1
+            self.ser.stopbits = 1 
 
             logging.info("Attempting to open pipette serial port..")
 
@@ -55,7 +55,7 @@ class pipette:
             if (self.register_write(10,1) is True) and (self.register_write(12,0) is True) and (self.register_write(13,5) is True) and (self.register_write(33,1) is True):
                 logging.info("Disc pump drive mode succesfully configured.")
             else:
-                logging.error("Disc pump drive mode configuration failed!")
+                logging.error("Disc pump drive mode configuration failed.")
                 sys.exit()
 
             # Configure PID constants
@@ -67,7 +67,7 @@ class pipette:
             if (self.register_write(14,Kp) is True) and (self.register_write(15,Ki) is True) and (self.register_write(16,maximum_power) is True) and (self.register_write(17,Kd) is True):
                 logging.info("Disc pump PID settings succesfully configured.")
             else:
-                logging.error("Disc pump PID configuration failed!")
+                logging.error("Disc pump PID configuration failed.")
                 sys.exit()
 
             self.gauge = self.get_gauge() #mbar
