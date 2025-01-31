@@ -35,36 +35,19 @@ class pipette:
             if self.ser.isOpen() is False:
                 self.ser.open()
 
-            # Configure pump registers
-            # R0 -> 0/1 = Disable/Enable pump
-            # R1 -> var = Maximum power (mW)
-            # R2 -> 0 = Disable stream mode
-
-            if (self.register_write(0,0) is True) and (self.register_write(1,self.max_power) is True) and (self.register_write(2,0) is True):
+            if self.configure_pump() is True:
                 logging.info("Disc pump successfully initialised.")
             else:
                 logging.error("Disc pump initialisation failed!")
                 sys.exit()
             
-            # Configure PID Settings
-            # R10 -> 1 = PID mode (0 = manual)
-            # R12 -> 0 = Setpoint source (register val)
-            # R13 -> 5 = Input source (pressure sensor)
-            # R33 -> 1 = Reset PID on pump enable
-
-            if (self.register_write(10,1) is True) and (self.register_write(12,0) is True) and (self.register_write(13,5) is True) and (self.register_write(33,1) is True):
+            if self.configure_pid() is True:
                 logging.info("Disc pump drive mode succesfully configured.")
             else:
                 logging.error("Disc pump drive mode configuration failed.")
                 sys.exit()
 
-            # Configure PID constants
-            # R14 -> var = Kp
-            # R15 -> var = Ki
-            # R16 -> var = Integral limit (max power)
-            # R17 -> var = Kd
-
-            if (self.register_write(14,Kp) is True) and (self.register_write(15,Ki) is True) and (self.register_write(16,maximum_power) is True) and (self.register_write(17,Kd) is True):
+            if self.configure_pid_constants(Kp, Ki, Kd) is True:
                 logging.info("Disc pump PID settings succesfully configured.")
             else:
                 logging.error("Disc pump PID configuration failed.")
@@ -130,6 +113,41 @@ class pipette:
         if self.sim is False:
             self.pump_off(check=False)
             self.ser.close()
+
+    def configure_pump(self) -> bool:
+        # Configure pump registers
+        # R0 -> 0/1 = Disable/Enable pump
+        # R1 -> var = Maximum power (mW)
+        # R2 -> 0 = Disable stream mode
+
+        if (self.register_write(0,0) is True) and (self.register_write(1,self.max_power) is True) and (self.register_write(2,0) is True):
+            return True
+        else:
+            return False
+        
+    def configure_pid_settings(self) -> bool:
+        # Configure PID Settings
+        # R10 -> 1 = PID mode (0 = manual)
+        # R12 -> 0 = Setpoint source (register val)
+        # R13 -> 5 = Input source (pressure sensor)
+        # R33 -> 1 = Reset PID on pump enable
+
+        if (self.register_write(10,1) is True) and (self.register_write(12,0) is True) and (self.register_write(13,5) is True) and (self.register_write(33,1) is True):
+            return True
+        else:
+            return False
+        
+    def configure_pid_constants(self, Kp: float, Ki: float, Kd: float) -> bool:
+        # Configure PID constants
+            # R14 -> var = Kp
+            # R15 -> var = Ki
+            # R16 -> var = Integral limit (max power)
+            # R17 -> var = Kd
+
+            if (self.register_write(14,Kp) is True) and (self.register_write(15,Ki) is True) and (self.register_write(16,self.max_power) is True) and (self.register_write(17,Kd) is True):
+                return True
+            else:
+                return False
 
     def get_gauge(self) -> float:
         return self.register_read(39)

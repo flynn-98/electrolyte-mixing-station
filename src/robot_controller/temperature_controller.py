@@ -41,31 +41,31 @@ class peltier:
             if self.set_pid_parameters(Kp, Ki, Kd) is True:
                 logging.info("Temperature controller PID settings successfully configured.")
             else:
-                logging.error("Temperatuer controller PID configuration failed")
+                logging.error("Temperature controller PID configuration failed.")
                 sys.exit()
 
             if self.set_regulator_mode() is True:
                 logging.info("Temperature controller regulation settings successfully configured.")
             else:
-                logging.error("Temperatuer controller regulation configuration failed")
+                logging.error("Temperature controller regulation configuration failed.")
                 sys.exit()
 
             if self.set_tc_parameters() is True:
                 logging.info("Temperature controller Tc settings successfully configured.")
             else:
-                logging.error("Temperatuer controller Tc configuration failed")
+                logging.error("Temperature controller Tc configuration failed.")
                 sys.exit()
 
             if self.configure_main_sensor() is True:
                 logging.info("Temperature controller Sensor1 settings successfully configured.")
             else:
-                logging.error("Temperatuer controller Sensor1 configuration failed")
+                logging.error("Temperature controller Sensor1 configuration failed.")
                 sys.exit()   
 
             if self.set_fan_modes() is True:
                 logging.info("Temperature controller Fan settings successfully configured.")
             else:
-                logging.error("Temperatuer controller Fan configuration failed")
+                logging.error("Temperature controller Fan configuration failed.")
                 sys.exit()      
 
         else:
