@@ -466,7 +466,7 @@ class scheduler:
                 self.fluid_handler.empty_cell(volume, tube_length=100)
 
         # Save results
-        pd.DataFrame(errors, index=constants, columns=volumes).to_csv('data/results/aspiration_tuning.csv', index=True)  
+        pd.DataFrame(errors, index=constants, columns=volumes).to_csv(f"data/results/aspiration_tuning_{asp_speed}_uL_s.csv", index=True)  
         self.plot_aspiration_results(errors, volumes, constants)
 
         # Get minimum error variables
