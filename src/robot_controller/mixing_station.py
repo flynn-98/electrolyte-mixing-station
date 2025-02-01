@@ -27,12 +27,9 @@ class scheduler:
         self.json_file = "data/devices/mixing_stations.json"
         device_data = self.read_json(device_name)
 
-        # Only record mass balance readings if Pipette active
-        self.SIM = not device_data["Pipette_Active"]
-
         # Establish serial connections
         self.gantry = gantry_controller.gantry(device_data["Gantry_Address"], not device_data["Gantry_Active"])            
-        self.pipette = pipette_controller.pipette(device_data["Pipette_Address"], self.SIM)
+        self.pipette = pipette_controller.pipette(device_data["Pipette_Address"], device_data["Pipette_Active"])
         self.fluid_handler = fluid_controller.fluid_handler(device_data["Fluid_Address"], not device_data["Fluid_Active"])
         self.mass_balance = mass_balance.mass_reader(device_data["Mass_Address"], not device_data["Mass_Active"])
         self.peltier = temperature_controller.peltier(device_data["Temp_Address"], not device_data["Temp_Active"])
@@ -46,16 +43,15 @@ class scheduler:
                             ]
         
         # Pipette locations 1 -> 9 (mm)
-        pipette_x_location = 15 #mm
-        self.pipette_locations = [[pipette_x_location, 135], [pipette_x_location, 119], 
-                              [pipette_x_location, 103], [pipette_x_location, 87], 
-                              [pipette_x_location, 71], [pipette_x_location, 55], 
-                              [pipette_x_location, 39], [pipette_x_location,23], 
-                              [pipette_x_location, 7]
+        self.pipette_x_location = 15 #mm
+        self.pipette_locations = [[self.pipette_x_location, 135], [self.pipette_x_location, 119], 
+                              [self.pipette_x_location, 103], [self.pipette_x_location, 87], 
+                              [self.pipette_x_location, 71], [self.pipette_x_location, 55], 
+                              [self.pipette_x_location, 39], [self.pipette_x_location,23], 
+                              [self.pipette_x_location, 7]
                             ]
         self.pipette_pick_height = -48 #mm from CAD - to be tuned
         self.pipette_lead_in = 12.5 #mm to position pipette to the right of rack when returning pipette (avoid clash)
-        start_x_location = pipette_x_location + self.pipette_lead_in # to avoid pipette rack clash
 
         # File to store last known active pipette for recovery
         self.pipette_file = "data/variables/active_pipette.txt" # 1-9, 0 = not active        
@@ -93,9 +89,6 @@ class scheduler:
         # Home if requested (will also happen during recovery)
         if home is True:
             self.gantry.softHome()
-
-        # Move to start/end position
-        self.gantry.move(start_x_location, 0, 0)
 
         # Check if pipette is active, return if so.
         if os.path.exists(self.pipette_file):
@@ -149,6 +142,23 @@ class scheduler:
     def save_csv(self, filename: str = "current_state.csv") -> None:
         logging.info("Saving volume changes to CSV.")
         self.df.to_csv(os.path.join(self.csv_path, filename), index=False)
+
+    def move_to_start(self) -> None:
+        # Add to start of all loops involving gantry motion
+        self.gantry.move(self.pipette_x_location + self.pipette_lead_in, 0, 0)
+
+    def close_all_ports(self) -> None:
+        if self.gantry.ser.isOpen() is True:
+                self.gantry.close_ser()
+
+        if self.pipette.ser.isOpen() is True:
+                self.gantry.close_ser()
+
+        if self.fluid_handler.ser.isOpen() is True:
+                self.fluid_handler.close_ser()
+
+        if self.peltier.ser.isOpen() is True:
+            self.peltier.close_ser()
 
     def update_dose_volumes(self) -> None:
         # Place holder for API integration
@@ -334,6 +344,7 @@ class scheduler:
     def run(self, N: int = 1) -> None:
         for n in range(N):
             logging.info(f"Creating electrolyte mixture #{n+1}..")
+            self.move_to_start()
 
             try:
                 non_zero = self.df[self.df["Dose Volume (uL)"] > 0]
@@ -409,12 +420,8 @@ class scheduler:
 
         logging.info(f"Experiment complete after {N} repeat(s).")
 
-        self.gantry.close_ser()
-        self.pipette.close_ser()
-        self.fluid_handler.close_ser()
-
-    def plot_aspiration_results(self, results: np.ndarray, volumes: np.ndarray, constants: np.ndarray) -> None:
-        plt.title('Results of Aspiration Tuning')
+    def plot_aspiration_results(self, results: np.ndarray, volumes: np.ndarray, constants: np.ndarray, speed: float) -> None:
+        plt.title(f'Results of Aspiration Tuning: {speed}uL/s')
 
         for n in range(len(volumes)):
             plt.plot(constants, results[n,:], label = f"{volumes[n]}uL")
@@ -432,10 +439,11 @@ class scheduler:
         errors = np.empty((N,M))
         constants = np.linspace(asp_const[0], asp_const[1], N) # i -> N
         volumes = np.linspace(aspirate_volume[0], aspirate_volume[1], M) # j -> M
-
+        
         for i, const in enumerate(constants):
             for j, volume in enumerate(volumes):
                 logging.info(f"Aspirating {volume}uL using parameters {const}mbar/uL and {asp_speed}uL/s..")
+                self.move_to_start()
 
                 doses = math.floor(volume // self.max_dose) + 1
                 last_dose = volume % self.max_dose
@@ -467,14 +475,11 @@ class scheduler:
 
         # Save results
         pd.DataFrame(errors, index=constants, columns=volumes).to_csv(f"data/results/aspiration_tuning_{asp_speed}_uL_s.csv", index=True)  
-        self.plot_aspiration_results(errors, volumes, constants)
+        self.plot_aspiration_results(errors, volumes, constants, asp_speed)
 
         # Get minimum error variables
         i_min, j_min = np.unravel_index(np.absolute(errors).argmin(), errors.shape)
         logging.info(f"RESULT: Minimum error of {errors[i_min, j_min]}g using {constants[i_min]}mbar/uL and {volumes[j_min]}uL.")
-
-        self.gantry.close_ser()
-        self.pipette.close_ser()
         
 
 
