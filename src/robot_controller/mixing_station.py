@@ -465,6 +465,8 @@ class scheduler:
                 # Empty cell once complete
                 self.fluid_handler.empty_cell(volume, tube_length=100)
 
+        # Save results
+        pd.DataFrame(errors, index=constants, columns=volumes).to_csv('data/results/aspiration_tuning.csv', index=True)  
         self.plot_aspiration_results(errors, volumes, constants)
 
         # Get minimum error variables
