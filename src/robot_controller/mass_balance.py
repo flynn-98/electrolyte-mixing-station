@@ -1,6 +1,5 @@
 import logging
-import math
-import sys
+import random
 
 import serial
 
@@ -53,4 +52,4 @@ class mass_reader:
             return float(readout)
         
         else:
-            return 0.0
+            return random.uniform(1, 50)

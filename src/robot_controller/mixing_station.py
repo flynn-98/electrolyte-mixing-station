@@ -413,11 +413,11 @@ class scheduler:
         self.pipette.close_ser()
         self.fluid_handler.close_ser()
 
-    def plot_aspiration_variables(self, name: str, results: np.ndarray, speeds: np.ndarray, constants: np.ndarray) -> None:
-        plt.title('Tuning of Aspiration Variables: ' + name)
+    def plot_aspiration_results(self, results: np.ndarray, volumes: np.ndarray, constants: np.ndarray) -> None:
+        plt.title('Results of Aspiration Tuning')
 
-        for n in range(len(speeds)):
-            plt.plot(constants, results[n,:], label = f"{speeds[n]}uL/s")
+        for n in range(len(volumes)):
+            plt.plot(constants, results[n,:], label = f"{volumes[n]}uL")
     
         plt.legend()
         plt.xlabel("Aspirate Constant mbar/uL")
@@ -425,24 +425,20 @@ class scheduler:
         plt.grid(visible=True, which="both", axis="both")
         plt.show()
 
-    def tune(self, name: str, pot_number: int = 1, aspirate_volume: float = 10, container_volume: float = 50, density: float = 1, asp_const_range: list[float] = [1.0, 1.0], asp_speed_range: list[float] = [1.0, 1.0], N: int = 5, collect_pipette: bool = True) -> None:
+    def tune(self, pot_number: int = 1, aspirate_volume: list[float] = [1.0, 50.0], asp_const: list[float] = [0.3, 0.8], container_volume: float = 35, asp_speed: float = 0, density: float = 1.0, N: int = 5, M: int = 5) -> None:
         now = datetime.now()
-        logging.info("Tuning of aspiration variables for " + name + ": " + now.strftime("%d/%m/%Y %H:%M:%S"))
-        logging.info(f"Tuning will perform a total of {N*N} aspirations..")
+        logging.info(f"Tuning will perform a total of {N*M} aspirations: " + now.strftime("%d/%m/%Y %H:%M:%S"))
 
-        errors = np.empty((N,N))
-        speeds = np.linspace(asp_speed_range[0], asp_speed_range[1], N)
-        constants = np.linspace(asp_const_range[0], asp_const_range[1], N)
+        errors = np.empty((N,M))
+        constants = np.linspace(asp_const[0], asp_const[1], N) # i -> N
+        volumes = np.linspace(aspirate_volume[0], aspirate_volume[1], M) # j -> M
 
-        if collect_pipette is True:
-            self.pick_pipette(pipette_no=0)
+        for i, const in enumerate(constants):
+            for j, volume in enumerate(volumes):
+                logging.info(f"Aspirating {volume}uL using parameters {const}mbar/uL and {asp_speed}uL/s..")
 
-        for i, speed in enumerate(speeds):
-            for j, const in enumerate(constants):
-                logging.info(f"Aspirating using parameters {const}mbar/uL and {speed}uL/s..")
-
-                doses = math.floor(aspirate_volume // self.max_dose) + 1
-                last_dose = aspirate_volume % self.max_dose
+                doses = math.floor(volume // self.max_dose) + 1
+                last_dose = volume % self.max_dose
 
                 for k in range(doses):
                     if k == doses-1:
@@ -450,22 +446,30 @@ class scheduler:
                     else:
                         dose = self.max_dose
                         
-                    container_volume = self.collect_volume(dose, container_volume, name, pot_number, const, speed)
+                    container_volume = self.collect_volume(dose, container_volume, "_", pot_number, const, asp_speed)
                     self.deliver_volume()
 
-                if self.SIM is False:
-                    errors[i, j] = ( 1000 * float(input("Input mass balance data in g: ")) / density ) - aspirate_volume
-                else:
-                    errors[i, j] = random.uniform(-0.2, 0.2)
+                # Take mass balance reading
+                starting_mass = self.mass_balance.get_mass()
 
-        self.plot_aspiration_variables(name, errors, speeds, constants)
+                # Pump electrolyte to next stage
+                self.fluid_handler.add_electrolyte(volume, tube_length=100)
+
+                # New mass reading
+                mass_change = self.mass_balance.get_mass() - starting_mass
+                target_mass = volume * density * 1e-3
+
+                # Record error
+                errors[i][j] = mass_change - target_mass
+
+                # Empty cell once complete
+                self.fluid_handler.empty_cell(volume, tube_length=100)
+
+        self.plot_aspiration_results(errors, volumes, constants)
 
         # Get minimum error variables
         i_min, j_min = np.unravel_index(np.absolute(errors).argmin(), errors.shape)
-        logging.info(f"RESULT: Minimum error of {errors[i_min, j_min]}uL for " + name + f" using {constants[j_min]}mbar/uL and {speeds[i_min]}uL/s.")
-
-        if collect_pipette is True:
-            self.return_pipette()
+        logging.info(f"RESULT: Minimum error of {errors[i_min, j_min]}g using {constants[i_min]}mbar/uL and {volumes[j_min]}uL.")
 
         self.gantry.close_ser()
         self.pipette.close_ser()
