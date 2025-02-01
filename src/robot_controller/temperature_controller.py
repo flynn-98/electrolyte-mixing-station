@@ -198,13 +198,13 @@ class peltier:
         # This helps to save the life of the peltier modules
 
     def set_pid_parameters(self, p: float, i: float, d: float, i_lim: float = 100) -> bool:
-        if (self.register_write(1, p) is True) and (self.register_write(2, i) is True) and (self.register_write(3, d) is True) and (self.register_write(1, self.clamp(i_lim, 0, 100)) is True):
+        if (self.register_write(1, p) is True) and (self.register_write(2, i) is True) and (self.register_write(3, d) is True) and (self.register_write(8, self.clamp(i_lim, 0, 100)) is True):
             return True
         else:
             return False
 
     def set_low_pass(self, low_pass_a: float, low_pass_b: float) -> bool:
-        if self.register_write(2, abs(low_pass_a)) is True and self.register_write(3, abs(low_pass_b)) is True:
+        if self.register_write(4, abs(low_pass_a)) is True and self.register_write(5, abs(low_pass_b)) is True:
             return True
         else:
             return False
