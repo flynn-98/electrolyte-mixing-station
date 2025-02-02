@@ -67,7 +67,7 @@ class scheduler:
 
         # Declare variables for CSV read
         self.df = pd.DataFrame()
-        self.csv_path = "data/CSVs"
+        self.csv_path = "data/recipes"
         self.csv_filename = csv_filename
 
         # Retrieve any requried variables from controllers

@@ -4,9 +4,9 @@
 
 The Electrolyte Mixing Station (or Microtron) is a customisable tool, designed to select and mix microlitres of different electrolytes, using a volume control module that can be configured to deal with low and high viscosities.
 
-**Make sure to follow ALL the below set up steps!**
-
 ![image](data/images/CAD.png)
+
+### Be sure to follow all the following steps to set up the virtual environment!
 
 ## Installing Dependencies
 
@@ -70,21 +70,15 @@ run-experiment --device_name microtron_01 --repeats 1
 
 Run `run-experiment --help` for more information. The electrolyte mixing ratios and aspiration variables will be pulled from [here](data/CSVs/electrolyte_recipe.csv) (for now).
 
-## Accelerated Life Tests
-
-**Accelerated life tests should be run without any liquids to avoid unsupervised spillages.**
-
-```
-accelerated-life-test --device_name microtron_01 --repeats 20
-```
-
-Run `accelerated-life-test --help` for more information. 
-
 ## Recommended Extensions
 
 For easy viewing and editing of CSVs, it is recommended that you download [this CSV extension](https://marketplace.visualstudio.com/items?itemName=ReprEng.csv) for VS Code.
 
 ## References
 1. [Smart Pump Module](https://www.theleeco.com/product/smart-pump-module/#resources)
-2. [Atinary Self-Driving Labs](https://scientia.atinary.com/sdlabs/academic/dashboard)
-3. [Squidstat API Manual](https://admiral-instruments.github.io/AdmiralSquidstatAPI/index.html)
+2. [Laird Temperature Controller](https://lairdthermal.com/products/product-temperature-controllers/tc-xx-pr-59-temperature-controller?creative=&keyword=&matchtype=&network=x&device=c&gad_source=1&gclid=CjwKCAiAzPy8BhBoEiwAbnM9O_ueQ3Ph8NvZ4LYCpqO9oUzX78J1sfagfGnYWUDeDpQ8P9rKzc11pBoCUR8QAvD_BwE)
+3. [PCX Peltier Module](https://lairdthermal.com/products/thermoelectric-cooler-modules/peltier-thermal-cycling-pcx-series)
+4. [Kern Mass Balance](https://www.kern-sohn.com/shop/en/products/laboratory-balances/precision-balances/PCD-2500-2/)
+5. [Boxer Pump](https://www.boxerpumps.com/peristaltic-pumps-for-liquid/29qq/)
+6. [Atinary Self-Driving Labs](https://scientia.atinary.com/sdlabs/academic/dashboard)
+7. [Squidstat API Manual](https://admiral-instruments.github.io/AdmiralSquidstatAPI/index.html)

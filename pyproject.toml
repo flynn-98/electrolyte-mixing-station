@@ -33,7 +33,6 @@ lint = [
 repository = "https://github.com/flynn-98/electrolyte-mixing-station"
 
 [project.scripts]
-accelerated-life-test = "robot_controller.command_line:accelerated_life_test"
 run-experiment = "robot_controller.command_line:run_experiment"
 test-pipette = "robot_controller.command_line:test_pipette"
 
