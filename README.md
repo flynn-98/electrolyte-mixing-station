@@ -44,10 +44,6 @@ Download latest *.tar.gz* file from [here](https://scientia.atinary.com/download
 .venv/bin/pip install FILE.tar.gz
 ```
 
-## Device Data and Configuration
-
-Information on each device can be found [here](data/devices/mixing_stations.json). To add a new device, simply copy and paste the last device entry, increment the ID and rename the COM port addresses. The easiest way to determine these addresses, is to connect the device(s) and go to [PlatformIO's](https://docs.platformio.org/en/latest/integration/ide/vscode.html) *Devices* tab.
-
 ## Using Platformio to Flash Latest Firmware
 
 Install the [PlatformIO VSCode Extension](https://docs.platformio.org/en/latest/integration/ide/vscode.html) and open a new Pio terminal (found in *Quick Access/Miscellaneous*). Change directory to either *gantry-kit* or *fluid-handling-kit* in the terminal, then connect the the target Arduino Nano via USB and run the following command:
@@ -60,6 +56,12 @@ cd gantry-kit/
 pio run --target upload
 ```
 
+## Device Configuration
+
+Com port addresses for each device can be found [here](data/devices/mixing_stations.json). To add a new device, simply copy and paste the last device entry, increment the ID and rename the COM port addresses. The easiest way to determine these addresses, is to connect the device(s) and go to [PlatformIO's](https://docs.platformio.org/en/latest/integration/ide/vscode.html) *Devices* tab.
+
+By toggling the booleans, you can activate or deactivate the various com port connections for scenarios where not all connections are needed.
+
 ## Run Experiments
 
 Experiments can be run using a command line tool, allowing for a single PC to run tests on multiple mixing stations at once. For each device, open a new terminal and run the following command:
@@ -69,6 +71,8 @@ run-experiment --device_name microtron_01
 ```
 
 Run `run-experiment --help` for more information. The electrolyte mixing ratios and aspiration variables will be pulled from [here](data/CSVs/electrolyte_recipe.csv) (for now).
+
+**Jump to the [workspace jupyter notebook](Workspace.ipynb) for more guidance on how to use the mixing station!**
 
 ## Recommended Extensions
 
