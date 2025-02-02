@@ -15,3 +15,4 @@ sdlabs_sdks/
 *.whl
 
 **/current_state.csv
+data/results/*
