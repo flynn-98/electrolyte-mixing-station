@@ -60,12 +60,12 @@ cd gantry-kit/
 pio run --target upload
 ```
 
-## Run Experiments from Command Line
+## Run Experiments
 
 Experiments can be run using a command line tool, allowing for a single PC to run tests on multiple mixing stations at once. For each device, open a new terminal and run the following command:
 
 ```
-run-experiment --device_name microtron_01 --repeats 1
+run-experiment --device_name microtron_01
 ```
 
 Run `run-experiment --help` for more information. The electrolyte mixing ratios and aspiration variables will be pulled from [here](data/CSVs/electrolyte_recipe.csv) (for now).

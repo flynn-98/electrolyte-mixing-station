@@ -29,7 +29,7 @@ class scheduler:
 
         # Establish serial connections
         self.gantry = gantry_controller.gantry(device_data["Gantry_Address"], not device_data["Gantry_Active"])            
-        self.pipette = pipette_controller.pipette(device_data["Pipette_Address"], device_data["Pipette_Active"])
+        self.pipette = pipette_controller.pipette(device_data["Pipette_Address"], not device_data["Pipette_Active"])
         self.fluid_handler = fluid_controller.fluid_handler(device_data["Fluid_Address"], not device_data["Fluid_Active"])
         self.mass_balance = mass_balance.mass_reader(device_data["Mass_Address"], not device_data["Mass_Active"])
         self.peltier = temperature_controller.peltier(device_data["Temp_Address"], not device_data["Temp_Active"])
@@ -341,84 +341,90 @@ class scheduler:
         else:
             logging.info(f"Mass balance detected {mass_change}g added to Test Cell ({error}g error).")
 
-    def run(self, N: int = 1) -> None:
+    def run(self) -> None:
+        logging.info("Beginning electrolyte mixing..")
+        self.move_to_start()
+
+        try:
+            non_zero = self.df[self.df["Dose Volume (uL)"] > 0]
+        except Exception as ex:
+            logging.error(ex + ": No CSV loaded.")
+            sys.exit()
+            
+        # Loop through all non zero constituents
+        for i in non_zero.index.to_numpy(dtype=int):
+            # Collect pipette for desired chemical (pipette 1 for pot 1)
+            self.pick_pipette(i+1)
+    
+            # Extract relevant df row
+            relevant_row = non_zero.loc[i]
+            required_volume = relevant_row["Dose Volume (uL)"]
+                
+            doses = math.floor(required_volume // self.max_dose) + 1
+            last_dose = required_volume % self.max_dose
+
+            # Extract starting volume in pot
+            pot_volume = relevant_row["Container Volume (mL)"]
+
+            # If larger than maximum required, perform multiple collections and deliveries until entire volume is transferred
+            for j in range(doses):
+                if j == doses-1:
+                    dose = last_dose
+                else:
+                    dose = self.max_dose
+
+                # Aspirate using data from relevant df row, increment pot co ordinates
+                pot_volume = self.collect_volume(dose, pot_volume, relevant_row["Name"], i+1, relevant_row["Aspirate Constant (mbar/uL)"], relevant_row["Aspirate Speed (uL/s)"])
+
+                # Move to mixing chamber and dispense
+                self.deliver_volume()
+
+                # Set new starting volume for next repeat
+                self.df.loc[i, "Container Volume (mL)"] = pot_volume
+
+                # Save csv in current state (starting volumes up to date in case of unexpected interruption)
+                self.save_csv()
+
+            # Return pipette
+            self.return_pipette()
+
+        # Trigger servo to mix electrolyte
+        self.gantry.mix()
+
+        # Let mixture settle
+        time.sleep(1)
+
+        # Take mass balance reading
+        starting_mass = self.mass_balance.get_mass()
+
+        # Pump electrolyte to next stage
+        total_vol = self.df["Dose Volume (uL)"].sum()/1000
+        self.fluid_handler.add_electrolyte(total_vol)
+
+        # Mass Balance checks
+        self.df["Temp Mass Values (1e3*g)"] =  self.df["Density (g/mL)"] * self.df["Dose Volume (uL)"]
+        total_mass = self.df["Temp Mass Values (1e3*g)"].sum()/1000
+        self.df = self.df.drop("Temp Mass Values (1e3*g)", axis=1)
+            
+        self.check_mass_change(total_mass, starting_mass)
+
+        # Potentiostat / Temperature control functions
+        self.peltier.set_temperature(10.5) # For example
+
+        # Empty cell once complete
+        self.fluid_handler.empty_cell(total_vol)
+
+        # Clean cell once complete
+        self.fluid_handler.clean_cell()
+
+        logging.info("Experiment complete.")
+
+    def run_life_test(self, N: int = 1) -> None:
+        logging.info(f"Beginning {N}X life test..")
+
         for n in range(N):
             logging.info(f"Creating electrolyte mixture #{n+1}..")
-            self.move_to_start()
-
-            try:
-                non_zero = self.df[self.df["Dose Volume (uL)"] > 0]
-            except Exception as ex:
-                logging.error(ex + ": No CSV loaded.")
-                sys.exit()
-            
-            # Loop through all non zero constituents
-            for i in non_zero.index.to_numpy(dtype=int):
-                # Collect pipette for desired chemical (pipette 1 for pot 1)
-                self.pick_pipette(i+1)
-    
-                # Extract relevant df row
-                relevant_row = non_zero.loc[i]
-                required_volume = relevant_row["Dose Volume (uL)"]
-                
-                doses = math.floor(required_volume // self.max_dose) + 1
-                last_dose = required_volume % self.max_dose
-
-                # Extract starting volume in pot
-                pot_volume = relevant_row["Container Volume (mL)"]
-
-                # If larger than maximum required, perform multiple collections and deliveries until entire volume is transferred
-                for j in range(doses):
-                    if j == doses-1:
-                        dose = last_dose
-                    else:
-                        dose = self.max_dose
-
-                    # Aspirate using data from relevant df row, increment pot co ordinates
-                    pot_volume = self.collect_volume(dose, pot_volume, relevant_row["Name"], i+1, relevant_row["Aspirate Constant (mbar/uL)"], relevant_row["Aspirate Speed (uL/s)"])
-
-                    # Move to mixing chamber and dispense
-                    self.deliver_volume()
-
-                    # Set new starting volume for next repeat
-                    self.df.loc[i, "Container Volume (mL)"] = pot_volume
-
-                    # Save csv in current state (starting volumes up to date in case of unexpected interruption)
-                    self.save_csv()
-
-                # Return pipette
-                self.return_pipette()
-
-            # Trigger servo to mix electrolyte
-            self.gantry.mix()
-
-            # Let mixture settle
-            time.sleep(1)
-
-            # Take mass balance reading
-            starting_mass = self.mass_balance.get_mass()
-
-            # Pump electrolyte to next stage
-            total_vol = self.df["Dose Volume (uL)"].sum()/1000
-            self.fluid_handler.add_electrolyte(total_vol)
-
-            # Mass Balance checks
-            self.df["Temp Mass Values (1e3*g)"] =  self.df["Density (g/mL)"] * self.df["Dose Volume (uL)"]
-            total_mass = self.df["Temp Mass Values (1e3*g)"].sum()/1000
-            self.df = self.df.drop("Temp Mass Values (1e3*g)", axis=1)
-            
-            self.check_mass_change(total_mass, starting_mass)
-
-            # Potentiostat / Temperature control functions
-            self.peltier.set_temperature(10.5) # For example
-
-            # Empty cell once complete
-            self.fluid_handler.empty_cell(total_vol)
-
-            # Clean cell once complete
-            self.fluid_handler.clean_cell()
-
-        logging.info(f"Experiment complete after {N} repeat(s).")
+            self.run()
 
     def plot_aspiration_results(self, results: np.ndarray, volumes: np.ndarray, constants: np.ndarray, speed: float) -> None:
         plt.title(f'Results of Aspiration Tuning: {speed}uL/s')
