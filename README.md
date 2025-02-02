@@ -2,9 +2,9 @@
 
 ## Introduction
 
-The Electrolyte Mixing Station (or Microtron) is a customisable tool, designed to select and mix microlitres of different electrolytes, using a volume control module that can be configured to deal with low and high viscosities.
+The Electrolyte Mixing Station is a flexible tool, primarily designed to select and mix microlitres of different electrolytes, using a volume control module that can be configured to deal with low and higher viscosities.
 
-![image](data/images/CAD.png)
+![image](data/images/workflow.png)
 
 ### Be sure to follow all the steps to set up the virtual environment!
 
