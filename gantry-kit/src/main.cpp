@@ -373,7 +373,8 @@ void setup() {
   tensionRope();
 
   relayOff();
-  Serial.println("Gantry Kit Ready");
+  
+  // Serial.println("Gantry Kit Ready"); Moved to request
 };
 
 void loop() {
@@ -422,6 +423,11 @@ void loop() {
             x = Serial.readStringUntil(')').toFloat();
 
             releasePipettes();
+        }
+        else if (action == "returnState") {
+            x = Serial.readStringUntil(')').toFloat();
+
+            Serial.println("Gantry Kit Ready");
         }
         else {
             // Report back to PC if confused

@@ -26,7 +26,7 @@ class gantry:
             if self.ser.isOpen() is False:
                 self.ser.open()
 
-            if self.get_data() == "Gantry Kit Ready":
+            if self.request_state() is True:
                 logging.info("Serial connection to gantry kit established.")
             else:
                 logging.error("Failed to establish serial connection to gantry kit.")
@@ -57,6 +57,18 @@ class gantry:
         logging.info("Closing serial connection to gantry kit.")
         if self.sim is False:
             self.ser.close()
+
+    def request_state(self) -> bool:
+        if self.sim is False:
+            self.ser.write("returnState()".encode())
+            
+            if self.get_data() == "Gantry Kit Ready":
+                return True
+            else:
+                return False
+
+        else:
+            return True
 
     def move(self, x: float, y: float, z: float) -> None:
         as_string = f"{x},{y},{z}"

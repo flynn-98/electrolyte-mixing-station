@@ -190,7 +190,8 @@ void setup() {
   mixer.write(servoHome);
 
 relayOff();
-  Serial.println("Fluid Handling Kit Ready");
+
+// Serial.println("Fluid Handling Kit Ready"); Moved to request
 };
 
 void loop() {
@@ -223,6 +224,11 @@ void loop() {
             
             // Call action using received variables
             emptyCell(vol);
+        }
+        else if (action == "returnState") {
+            x = Serial.readStringUntil(')').toFloat();
+
+            Serial.println("Fluid Handling Kit Ready");
         }
         else {
             // Report back to PC if confused

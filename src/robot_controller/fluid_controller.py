@@ -23,7 +23,7 @@ class fluid_handler:
             if self.ser.isOpen() is False:
                 self.ser.open()
 
-            if self.get_data() == "Fluid Handling Kit Ready":
+            if self.request_state() is True:
                 logging.info("Serial connection to fluid handling kit established.")
             else:
                 logging.error("Failed to establish serial connection to fluid handling kit.")
@@ -51,6 +51,18 @@ class fluid_handler:
         logging.info("Closing serial connection to fluid handling kit.")
         if self.sim is False:
             self.ser.close()
+
+    def request_state(self) -> bool:
+        if self.sim is False:
+            self.ser.write("returnState()".encode())
+            
+            if self.get_data() == "Fluid Handling Kit Ready":
+                return True
+            else:
+                return False
+
+        else:
+            return True
 
     def add_electrolyte(self, fluid_vol: float, tube_length: float = 350.0, overpump: float = 1.05) -> None:
         logging.info(f"Pumping {fluid_vol}mL of electrolyte to test cell..")
