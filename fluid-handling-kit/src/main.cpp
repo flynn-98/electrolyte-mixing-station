@@ -191,7 +191,7 @@ void setup() {
 
 relayOff();
 
-// Serial.println("Fluid Handling Kit Ready"); Moved to request
+Serial.println("Fluid Handling Kit Ready");
 };
 
 void loop() {

@@ -1,6 +1,6 @@
 import logging
-import math
 import sys
+import time
 
 import serial
 
@@ -9,9 +9,7 @@ logging.basicConfig(level = logging.INFO)
 class gantry:
     def __init__(self, COM: str, sim: bool = False) -> None:
         self.sim = sim
-
-        # File to store last known active pipette for recovery
-        self.location_file = "data/variables/location_recovery.txt" # X,Y,Z. Allows gantry to recover position if gantry firmware not homed (i.e. full power off)
+        self.timeout = 5 #s
 
         if self.sim is False:
             logging.info("Configuring gantry kit serial port..")
@@ -26,7 +24,7 @@ class gantry:
             if self.ser.isOpen() is False:
                 self.ser.open()
 
-            if self.request_state() is True:
+            if self.get_data() == "Gantry Kit Ready":
                 logging.info("Serial connection to gantry kit established.")
             else:
                 logging.error("Failed to establish serial connection to gantry kit.")
@@ -34,9 +32,6 @@ class gantry:
 
         else:
             logging.info("No serial connection to gantry kit established.")
-
-    def get_file(self) -> str:
-        return self.location_file
 
     def get_data(self) -> str:
         while self.ser.in_waiting == 0:
@@ -58,18 +53,6 @@ class gantry:
         if self.sim is False:
             self.ser.close()
 
-    def request_state(self) -> bool:
-        if self.sim is False:
-            self.ser.write("returnState()".encode())
-            
-            if self.get_data() == "Gantry Kit Ready":
-                return True
-            else:
-                return False
-
-        else:
-            return True
-
     def move(self, x: float, y: float, z: float) -> None:
         as_string = f"{x},{y},{z}"
 
@@ -77,10 +60,6 @@ class gantry:
             msg = "move(" + as_string + ")"
             self.ser.write(msg.encode())
             self.get_response()
-
-        # Update last known location for recovery
-        with open(self.location_file, 'w') as filehandler:
-                filehandler.write(as_string)
 
     def softHome(self) -> None:
         if self.sim is False:

@@ -374,7 +374,7 @@ void setup() {
 
   relayOff();
   
-  // Serial.println("Gantry Kit Ready"); Moved to request
+  Serial.println("Gantry Kit Ready");
 };
 
 void loop() {

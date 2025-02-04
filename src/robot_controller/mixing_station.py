@@ -22,7 +22,7 @@ logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
                     handlers=[logging.FileHandler("mixing_station.log", mode="a"), logging.StreamHandler(sys.stdout)])
 
 class scheduler:
-    def __init__(self, device_name: str, csv_filename: str | None = None, home: bool = True) -> None:
+    def __init__(self, device_name: str, csv_filename: str | None = None, home: bool = False) -> None:
         # Read device data JSON
         self.json_file = "data/devices/mixing_stations.json"
         device_data = self.read_json(device_name)
@@ -73,7 +73,6 @@ class scheduler:
         # Retrieve any requried variables from controllers
         self.max_dose = self.pipette.get_max_dose()
         self.charge_pressure = self.pipette.get_charge_pressure()
-        self.location_file = self.gantry.get_file() # For pipette number recovery
 
         # Convert CSV file to df
         if self.csv_filename is not None:
