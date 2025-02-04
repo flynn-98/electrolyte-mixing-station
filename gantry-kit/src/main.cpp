@@ -66,7 +66,7 @@ const int servoStart = 20; // +Home
 const int servoEnd = 50; // +Home
 
 // Parameters for pipette rack
-const float tension_rotations = 0.15;
+const float tension_rotations = 0.3;
 const float pinch_rotations = 0.03;
 
 // Define steppers with pins (STEP, DIR)
@@ -98,7 +98,7 @@ const float drift = 5; //mm
 const float motorDir[4] = {1, 1, -1, 1};
 
 // Maximum time in Loop before idle mode (s)
-const unsigned long HomeTime = 60;
+const unsigned long HomeTime = 30;
 
 // Define variables to change during Loop
 float x = 0;
@@ -153,7 +153,7 @@ void releasePipettes() {
 
 void tensionRope() {
     pullRope(tension_rotations);
-    releasePipettes();
+    pullRope(-1 * pinch_rotations);
 }
 
 long mmToSteps(float milli, bool horizontal, int motor) {
@@ -172,7 +172,6 @@ long mmToSteps(float milli, bool horizontal, int motor) {
 
 void motorsRun() {
     relayOn();
-    homed = false;
 
     // Run until complete (Z motor moves first to avoid clashes)
     Z_MOTOR.runToPosition();
@@ -190,7 +189,7 @@ void gantryHardHome() {
     Z_MOTOR.setMaxSpeed(Z_HOMING_SPEED);
 
     // Move towards hard pads
-    X_MOTOR.move(mmToSteps(jointLimit[1][0], true, 0)); // X motor homes at max X value
+    X_MOTOR.move(mmToSteps(jointLimit[1][0] + x_shift, true, 0)); // X motor homes at max X value
     Y_MOTOR.move(-1 * mmToSteps(jointLimit[1][1], true, 1)); // Y motor homes at zero
     Z_MOTOR.move(-1 * mmToSteps(jointLimit[1][2], false, 2)); // Z motor homes at zero
 
@@ -286,6 +285,7 @@ void gantryMove(float x, float y, float z) {
     Z_MOTOR.moveTo(mmToSteps(z, false, 2));
 
     motorsRun();
+    homed = false;
 
     CurrentTime = ceil( millis() / 1000 );
     ElapsedTime = CurrentTime - StartTime;
@@ -305,16 +305,12 @@ void gantryZero() {
     X_MOTOR.runToPosition();
     Y_MOTOR.runToPosition();
 
+    X_MOTOR.moveTo(0);
+    X_MOTOR.runToPosition();
+
+    homed = true;
+
     // gantrySoftHome();
-}
-
-void gantryRecover(float x, float y, float z) {
-    // No need for limit check, 
-    X_MOTOR.setCurrentPosition(mmToSteps(x, true, 0));
-    Y_MOTOR.setCurrentPosition(mmToSteps(y, true, 1));
-    Z_MOTOR.setCurrentPosition(mmToSteps(z, false, 2));
-
-    gantryZero();
 }
 
 void gantryMix(int count, int servoDelay) {
@@ -376,8 +372,8 @@ void setup() {
   mixer.write(servoHome);
   tensionRope();
 
-  Serial.println("Gantry Kit Ready");
   relayOff();
+  Serial.println("Gantry Kit Ready");
 };
 
 void loop() {
@@ -418,29 +414,14 @@ void loop() {
             gantryMix(count, servoDelay);
         }
         else if (action == "pinch") {
-            x = Serial.readStringUntil(')').toInt();
+            x = Serial.readStringUntil(')').toFloat();
 
             pinchPipettes();
         }
         else if (action == "release") {
-            x = Serial.readStringUntil(')').toInt();
+            x = Serial.readStringUntil(')').toFloat();
 
             releasePipettes();
-        }
-        if (action == "recover") {
-            // Extract variables spaced by commas, then last variable up to closed bracket
-            x = Serial.readStringUntil(',').toFloat() - x_shift;
-            y = Serial.readStringUntil(',').toFloat();
-            z = Serial.readStringUntil(')').toFloat();
-            
-            // Call action using received variables
-            if (homed == false) {
-                gantryRecover(x, y, z);
-            }
-            else {
-                // Provide response if gantry already homed
-                Serial.println("Gantry is already Homed");
-            }
         }
         else {
             // Report back to PC if confused
@@ -456,7 +437,7 @@ void loop() {
             if (homed == false) {
                 gantryZero();  
             }
-
+            
             relayOff();
             LastCall = CurrentTime;
         }

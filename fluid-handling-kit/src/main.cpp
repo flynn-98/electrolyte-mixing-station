@@ -68,7 +68,7 @@ Servo mixer;
 const float motorDir = 1;
 
 // Maximum time in Loop before idle mode (s)
-const unsigned long idleTime = 60;
+const unsigned long idleTime = 30;
 
 float vol = 0;
 unsigned long StartTime;

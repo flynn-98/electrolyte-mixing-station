@@ -59,7 +59,7 @@ class scheduler:
         self.pot_base_height = -69.5 # CAD value (minus a little to ensure submersion)
         self.pot_area = math.pi * 2.78**2 / 4 #cm2
 
-        self.chamber_location = [125, 97.7] # mm
+        self.chamber_location = [125, 96] # mm
         self.dispense_height = -10 #mm
 
         # Mass balance checks
@@ -78,13 +78,6 @@ class scheduler:
         # Convert CSV file to df
         if self.csv_filename is not None:
             self.read_csv()
-
-        # Send recovery msg to gantry (will correct if power off event)
-        if os.path.exists(self.location_file):
-            with open(self.location_file, 'r') as filehandler:
-                xyz = filehandler.read()
-
-            self.gantry.recover(xyz)
 
         # Home if requested (will also happen during recovery)
         if home is True:

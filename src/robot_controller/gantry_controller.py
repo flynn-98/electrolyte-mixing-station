@@ -61,14 +61,14 @@ class gantry:
     def move(self, x: float, y: float, z: float) -> None:
         as_string = f"{x},{y},{z}"
 
-        # Update last known location for recovery
-        with open(self.location_file, 'w') as filehandler:
-                filehandler.write(as_string)
-
         if self.sim is False:
             msg = "move(" + as_string + ")"
             self.ser.write(msg.encode())
             self.get_response()
+
+        # Update last known location for recovery
+        with open(self.location_file, 'w') as filehandler:
+                filehandler.write(as_string)
 
     def softHome(self) -> None:
         if self.sim is False:
@@ -97,10 +97,4 @@ class gantry:
     def release(self) -> None:
         if self.sim is False:
             self.ser.write("release()".encode())
-            self.get_response()
-
-    def recover(self, xyz: str) -> None:
-        if self.sim is False:
-            msg = "recover(" + xyz + ")"
-            self.ser.write(msg.encode())
             self.get_response()
