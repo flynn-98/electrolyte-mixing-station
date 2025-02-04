@@ -9,7 +9,7 @@ logging.basicConfig(level = logging.INFO)
 class gantry:
     def __init__(self, COM: str, sim: bool = False) -> None:
         self.sim = sim
-        self.timeout = 5 #s
+        self.pipette_slope = 2 #mm temporary solution to play in z bearings
 
         if self.sim is False:
             logging.info("Configuring gantry kit serial port..")
@@ -22,6 +22,9 @@ class gantry:
             logging.info("Attempting to open gantry kit serial port..")
 
             if self.ser.isOpen() is False:
+                self.ser.open()
+            else:
+                self.ser.close()
                 self.ser.open()
 
             if self.get_data() == "Gantry Kit Ready":
@@ -54,7 +57,7 @@ class gantry:
             self.ser.close()
 
     def move(self, x: float, y: float, z: float) -> None:
-        as_string = f"{x},{y},{z}"
+        as_string = f"{x},{y+self.pipette_slope},{z}"
 
         if self.sim is False:
             msg = "move(" + as_string + ")"

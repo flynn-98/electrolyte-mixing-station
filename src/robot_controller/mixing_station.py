@@ -50,7 +50,7 @@ class scheduler:
                               [self.pipette_x_location, 39], [self.pipette_x_location,23], 
                               [self.pipette_x_location, 7]
                             ]
-        self.pipette_pick_height = -48 #mm from CAD - to be tuned
+        self.pipette_pick_height = -49 #mm from CAD - to be tuned
         self.pipette_lead_in = 12.5 #mm to position pipette to the right of rack when returning pipette (avoid clash)
 
         # File to store last known active pipette for recovery

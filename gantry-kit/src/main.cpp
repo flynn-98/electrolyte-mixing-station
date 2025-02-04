@@ -44,7 +44,7 @@ const float STEPS_REV = 200.0;
 const float MICROSTEPS = 4.0;
 
 const float STAGE_SPEED = 1000.0 * MICROSTEPS; //microsteps/s
-const float ROPE_SPEED = 500.0 * MICROSTEPS; //microsteps/s
+const float ROPE_SPEED = 20.0 * MICROSTEPS; //microsteps/s
 const float HOMING_SPEED = 50.0 * MICROSTEPS; //microsteps/s
 
 const float MAX_ACCEL = 350.0 * MICROSTEPS; //microsteps/s2
@@ -57,17 +57,14 @@ const float Z_ACCEL = 500.0 * MICROSTEPS; //microsteps/s2
 const float PULLEY_RADIUS = 6.34; //mm
 const float ROD_PITCH = 2.0; //mm
 
-// For Pump stepper motor
-const float ML_REV = 0.14; //ml/rev
-
 // Parameters for Mixer (Servo)
 const int servoHome = 90;
 const int servoStart = 20; // +Home
 const int servoEnd = 50; // +Home
 
 // Parameters for pipette rack
-const float tension_rotations = 0.3;
-const float pinch_rotations = 0.03;
+const float tension_rotations = 0.25;
+const float pinch_rotations = 0.08;
 
 // Define steppers with pins (STEP, DIR)
 AccelStepper X_MOTOR(AccelStepper::DRIVER, X_STEP, X_DIR); 
@@ -153,6 +150,7 @@ void releasePipettes() {
 
 void tensionRope() {
     pullRope(tension_rotations);
+    pullRope(pinch_rotations);
     pullRope(-1 * pinch_rotations);
 }
 
