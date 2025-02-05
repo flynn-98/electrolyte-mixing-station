@@ -32,7 +32,7 @@ class peltier:
                 self.ser.open()
 
             # Unknown if this occurs on start up!
-            if self.get_data() == self.ready_chars:
+            if self.handshake() is True:
                 logging.info("Serial connection to temperature controller established.")
             else:
                 logging.error("Failed to establish serial connection to temperature controller.")   
@@ -79,42 +79,44 @@ class peltier:
         while self.ser.in_waiting == 0:
             pass
 
-        return self.ser.readline().decode()
+        return self.ser.readline().decode().rstrip()
     
-    def send_chars(self, msg: str) -> bool: 
-        last = len(msg) - 1
+    def handshake(self) -> bool:
+        msg = "$LI"
 
-        for i, character in enumerate(msg):
-                # Char by Char communication which is echoed back
-                self.ser.write(character.encode('ascii'))
-
-                if i < last:
-                    received = self.get_data()
-                    if (received != character):
-                        logging.error("Bad char received by temperature controller: " + character + " sent but " + received + "received.")
-                        return False
-                else:
-                    # Ready chars sent once stop char (\r) received
-                    if (received != self.ready_chars):
-                        logging.error("Register write not received by temperature controller.")
-                        return False
-                    else:
-                        return True
-
-    def set_run_flag(self) -> None:
-        msg = "$W" + '\r'
+        # returns '18245 TC-XX-PR-59 REV2.6'
 
         if self.sim is False:
-            if self.send_chars(msg) is True:
+            self.ser.write((msg+'\r').encode('ascii'))
+
+            repeat = self.get_data()
+            info = self.get_data()
+            if info.split(" ")[1] == "TC-XX-PR-59" and repeat == msg:
+                logging.info("Serial device located: " + info)
+                return True
+            else:
+                return False
+
+    def set_run_flag(self) -> None:
+        msg = "$W"
+
+        if self.sim is False:
+            self.ser.write((msg+'\r').encode('ascii'))
+            repeat = self.get_data()
+
+            if self.get_data() == "Run" and repeat == msg:
                 logging.info("Temperature controller Run flag set.")
             else:
                 logging.error("Failed to set temperature controller Run flag.")
 
     def clear_run_flag(self) -> None:
-        msg = "$Q" + '\r'
+        msg = "$Q"
 
         if self.sim is False:
-            if self.send_chars(msg) is True:
+            self.ser.write((msg+'\r').encode('ascii'))
+            repeat = self.get_data()
+
+            if self.get_data() == "Stop" and repeat == msg:
                 logging.info("Temperature controller Run flag cleared.")
             else:   
                 logging.error("Failed to clear temperature controller Run flag.")
@@ -141,16 +143,17 @@ class peltier:
         # For RXX=, if data=int response is <Downloaded data>, if foat <no response>
 
         if self.sim is False:
-            msg = f"$R{REGISTER_NUMBER}={VALUE}" + '\r'
+            msg = f"$R{REGISTER_NUMBER}={VALUE}"
 
-            if self.send_chars(msg) is True:
-                logging.info(f"Successfully wrote to Register {REGISTER_NUMBER}.")
-            
+            self.ser.write((msg+'\r').encode('ascii'))
+
+            repeat = self.get_data().split(" ")[1]
             response = self.get_data()
-            if response == "Downloaded data" or response == "no response":
+            if (response == f"{VALUE}" or response == '') and repeat == msg:
+                logging.info(f"Successfully wrote to R{REGISTER_NUMBER}.")
                 return True
             else:
-                logging.error("Integer data not received by temperature controller.")
+                logging.error(f"Failed to write to R{REGISTER_NUMBER}.")
                 return False
                             
         else:
@@ -158,14 +161,16 @@ class peltier:
         
     def register_read(self, REGISTER_NUMBER: int) -> float:
         if self.sim is False:
-            msg = f"$R{REGISTER_NUMBER}?" + '\r'
+            msg = f"$R{REGISTER_NUMBER}?"
+            self.ser.write((msg+'\r').encode('ascii'))
 
-            if self.send_chars(msg) is True:
-                logging.info("Successfully read data from temperature controller.")
+            repeat = self.get_data().split(" ")[1]
+            if repeat == msg:
+                logging.info(f"Successfully read R{REGISTER_NUMBER}.")
+            else:
+                logging.error(f"Failed to read R{REGISTER_NUMBER}.")
 
-            data = self.get_data()
-            return float(data)
-        
+            return float(self.get_data())
         else:
             return 0.0
         
@@ -187,7 +192,7 @@ class peltier:
         else:
             return n
         
-    def set_tc_parameters(self, max_percent: int = 100, dead_band: int = 5) -> bool:
+    def set_tc_parameters(self, max_percent: int = 100, dead_band: int = 10) -> bool:
         if (self.register_write(6, self.clamp(max_percent, 0, 100)) is True) and (self.register_write(7, self.clamp(dead_band, 0, 50)) is True):
             return True
         else:
@@ -236,3 +241,6 @@ class peltier:
         
     def get_tc_value(self) -> float:
         return self.register_read(106)
+    
+    def get_t1_value(self) -> float:
+        return self.register_read(100)
