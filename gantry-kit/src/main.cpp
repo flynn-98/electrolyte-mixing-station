@@ -300,6 +300,8 @@ void zQuickHome() {
     Z_MOTOR.runToPosition();
 
     Z_MOTOR.setCurrentPosition(0);
+
+    Serial.println("Z Motor Homed");
 };
 
 void gantryZero() {

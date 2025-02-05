@@ -74,6 +74,11 @@ class gantry:
             self.ser.write("hardHome()".encode())
             self.get_response()
 
+    def zQuickHome(self) -> None:
+        if self.sim is False:
+            self.ser.write("zQuickHome()".encode())
+            self.get_response()
+
     def mix(self, count: int = 25, delay: int = 100) -> None:
         logging.info(f"Mixing electrolyte {count} times with a {delay}ms delay.")
         if self.sim is False:

@@ -2,7 +2,6 @@ import json
 import logging
 import math
 import os
-import random
 import sys
 import time
 from datetime import datetime
@@ -179,7 +178,7 @@ class scheduler:
 
         # Move into pipette rack
         logging.info(f"Raising Pipette #{pipette_no}..")
-        self.gantry.move(x, y, 0)
+        self.gantry.zQuickHome()
 
         # Move into pipette rack
         logging.info("Moving away from pipette rack..")
@@ -220,7 +219,7 @@ class scheduler:
 
         # Move above pipette rack
         logging.info("Raising pipette module..")
-        self.gantry.move(x, y, 0)
+        self.gantry.zQuickHome()
         self.gantry.release()
 
         with open(self.pipette_file, 'w') as filehandler:
