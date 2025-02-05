@@ -44,7 +44,7 @@ const float STEPS_REV = 200.0;
 const float MICROSTEPS = 4.0;
 
 const float STAGE_SPEED = 1000.0 * MICROSTEPS; //microsteps/s
-const float ROPE_SPEED = 20.0 * MICROSTEPS; //microsteps/s
+const float ROPE_SPEED = 50.0 * MICROSTEPS; //microsteps/s
 const float HOMING_SPEED = 50.0 * MICROSTEPS; //microsteps/s
 
 const float MAX_ACCEL = 350.0 * MICROSTEPS; //microsteps/s2
@@ -63,7 +63,7 @@ const int servoStart = 20; // +Home
 const int servoEnd = 50; // +Home
 
 // Parameters for pipette rack
-const float tension_rotations = 0.25;
+const float tension_rotations = 0.2;
 const float pinch_rotations = 0.08;
 
 // Define steppers with pins (STEP, DIR)
@@ -88,7 +88,7 @@ const float jointLimit[2][3] = {
 };
 
 // Overshoot value used during Homing, any gantry drift +- this value will be corrected (in theory!)
-const float drift = 5; //mm
+const float drift = 2; //mm
 
 // Joint direction coefficients: 1 or -1, for desired motor directions
 // X = 0, Y = 1, Z = 2
@@ -132,27 +132,26 @@ void pullRope(float rotations) {
 
     E_MOTOR.move(steps);
     E_MOTOR.runToPosition();
-}
+};
 
 void pinchPipettes() {
     pullRope(pinch_rotations);
 
     // Report back to PC
     Serial.println("Pipettes successfully pinched");
-}
+};
 
 void releasePipettes() {
     pullRope(-1 * pinch_rotations);
 
     // Report back to PC
     Serial.println("Pipettes successfully released");
-}
+};
 
 void tensionRope() {
     pullRope(tension_rotations);
-    pullRope(pinch_rotations);
     pullRope(-1 * pinch_rotations);
-}
+};
 
 long mmToSteps(float milli, bool horizontal, int motor) {
     // Else, check if motors are vertical (Z) or horizontal (XY). Z motor uses threaded rod, XY motors use belts/pulleys
@@ -292,6 +291,17 @@ void gantryMove(float x, float y, float z) {
     Serial.println("Move complete in " + String(ElapsedTime) + "s");
 };
 
+void zQuickHome() {
+    // To be used during pipette picking and collecting, where z errors may occur
+    Z_MOTOR.moveTo(mmToSteps(drift, false, 2));
+    Z_MOTOR.runToPosition();
+
+    Z_MOTOR.move(mmToSteps(home[2], false, 2));
+    Z_MOTOR.runToPosition();
+
+    Z_MOTOR.setCurrentPosition(0);
+};
+
 void gantryZero() {
     // Move X to middle of workspace to avoid pipette rack
     X_MOTOR.moveTo(mmToSteps(jointLimit[1][0] / 2, true, 0));
@@ -405,6 +415,11 @@ void loop() {
             x = Serial.readStringUntil(')').toFloat();
             
             gantryHardHome();
+        }
+        else if (action == "zQuickHome") {
+            x = Serial.readStringUntil(')').toFloat();
+            
+            zQuickHome();
         }
         else if (action == "mix") {
             count = Serial.readStringUntil(',').toInt();
