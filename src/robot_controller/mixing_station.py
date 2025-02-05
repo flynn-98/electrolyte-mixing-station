@@ -50,7 +50,7 @@ class scheduler:
                               [self.pipette_x_location, 7]
                             ]
         self.pipette_pick_height = -49 #mm from CAD - to be tuned
-        self.pipette_lead_in = 12.5 #mm to position pipette to the right of rack when returning pipette (avoid clash)
+        self.pipette_lead_in = 14 #mm to position pipette to the right of rack when returning pipette (avoid clash)
 
         # File to store last known active pipette for recovery
         self.pipette_file = "data/variables/active_pipette.txt" # 1-9, 0 = not active        
@@ -169,12 +169,12 @@ class scheduler:
 
         # Move above pipette rack
         logging.info(f"Moving to Pipette #{pipette_no}..")
-        self.gantry.move(x + self.pipette_lead_in, y, 0)
-        self.gantry.move(x, y, 0)
+        self.gantry.move(x + self.pipette_lead_in, y, 0, accurately=True)
+        self.gantry.move(x, y, 0, accurately=True)
 
         # Move into pipette rack
         logging.info("Dropping to collect pipette..")
-        self.gantry.move(x, y, self.pipette_pick_height)
+        self.gantry.move(x, y, self.pipette_pick_height, accurately=True)
 
         # Move into pipette rack
         logging.info(f"Raising Pipette #{pipette_no}..")
@@ -182,7 +182,7 @@ class scheduler:
 
         # Move into pipette rack
         logging.info("Moving away from pipette rack..")
-        self.gantry.move(x + self.pipette_lead_in, y, 0)
+        self.gantry.move(x + self.pipette_lead_in, y, 0, accurately=True)
 
         # Update active pipette variable 
         with open(self.pipette_file, 'w') as filehandler:
@@ -206,12 +206,12 @@ class scheduler:
 
         # Move above pipette rack (first to lead in location to avoid clash)
         logging.info(f"Moving to Pipette #{active_pipette}..")
-        self.gantry.move(x + self.pipette_lead_in, y, 0)
-        self.gantry.move(x, y, 0)
+        self.gantry.move(x + self.pipette_lead_in, y, 0, accurately=True)
+        self.gantry.move(x, y, 0, accurately=True)
 
         # Move into pipette rack
         logging.info(f"Delivering Pipette #{active_pipette} to rack..")
-        self.gantry.move(x, y, self.pipette_pick_height)
+        self.gantry.move(x, y, self.pipette_pick_height, accurately=True)
 
         # Move into pipette rack
         self.gantry.pinch()

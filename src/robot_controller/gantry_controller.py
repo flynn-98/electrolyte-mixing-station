@@ -1,6 +1,5 @@
 import logging
 import sys
-import time
 
 import serial
 
@@ -9,6 +8,10 @@ logging.basicConfig(level = logging.INFO)
 class gantry:
     def __init__(self, COM: str, sim: bool = False) -> None:
         self.sim = sim
+
+        # To be tuned if needed
+        self.x_correction = -1 #mm 
+        self.y_correction = 1 #mm
 
         if self.sim is False:
             logging.info("Configuring gantry kit serial port..")
@@ -55,11 +58,14 @@ class gantry:
         if self.sim is False:
             self.ser.close()
 
-    def move(self, x: float, y: float, z: float) -> None:
-        as_string = f"{x},{y},{z}"
+    def move(self, x: float, y: float, z: float, accurately: bool = False) -> None:
+        if accurately is False:
+            msg = f"move({x},{y},{z})"
+        else:
+            # Move accurately during pipette picking and return
+            msg = f"move({x+self.x_correction},{y+self.y_correction},{z})"
 
         if self.sim is False:
-            msg = "move(" + as_string + ")"
             self.ser.write(msg.encode())
             self.get_response()
 
