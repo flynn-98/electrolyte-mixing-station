@@ -377,10 +377,10 @@ class peltier:
         logging.error(f"Temperature controller timed out trying to reach {value}degsC.")
         return False
     
-    def cycle_through_temperatures(self, start_temp: float = 60.0, end_temp: float = -20.0, points: int = 9) -> None:
+    def cycle_through_temperatures(self, start_temp: float = 60.0, end_temp: float = -40.0, points: int = 11, plot: bool = False) -> None:
         logging.info(f"Cycling through {points} temperatures from {start_temp}degsC to {end_temp}degsC.")
 
-        for val in np.linspace(start_temp, end_temp, points):
+        for val in np.linspace(start_temp, end_temp, points, plot):
             if self.wait_until_temperature(val) is False:
                 logging.error("Failed to cycle through temperature set points.")
                 sys.exit()
