@@ -329,8 +329,10 @@ class peltier:
     
     def wait_until_temperature(self, value: float, sample_rate: float = 2, plot: bool = False, plot_width: int = 100) -> bool:
         self.set_temperature(value)
-
         global_start = time.time()
+
+        if self.sim is True:
+            return True
 
         if plot is True:
             plt.ion()
@@ -338,7 +340,7 @@ class peltier:
             fig = plt.figure(figsize=(14, 8))
             ax = fig.add_subplot(111)
             
-            plt.title(f"Target Temp: {value}degsC")
+            plt.title(f"Target Temp: {value}degsC, Sample Rate: {sample_rate}Hz")
             plt.xlabel("Samples")
             plt.ylabel("Error /degsC")
             plt.ylim([self.min_temp - self.max_temp, self.max_temp - self.min_temp])
@@ -348,11 +350,11 @@ class peltier:
             samples = range(1, plot_width+1)
             line1, = ax.plot(samples, error, 'r-')
 
-        while (time.time() - global_start) < self.timeout:
+        while (time.time() - global_start) < self.timeout and self.sim is False:
 
             if plot is True:
                 # Append and loose first element
-                error.append(self.get_t1_value() - value)
+                error.append(value - self.get_t1_value())
                 error = error[-plot_width:]
 
                 line1.set_ydata(error)
@@ -361,7 +363,7 @@ class peltier:
                 
             local_start = time.time()
 
-            while (abs(self.get_t1_value() - value) < self.allowable_error) and (time.time() - local_start < self.steady_state):
+            while (abs(value - self.get_t1_value()) < self.allowable_error) and (time.time() - local_start < self.steady_state):
                 time.sleep(1 / sample_rate)
 
             # Check if steady state timeout reached
@@ -379,5 +381,8 @@ class peltier:
         logging.info(f"Cycling through {points} temperatures from {start_temp}degsC to {end_temp}degsC.")
 
         for val in np.linspace(start_temp, end_temp, points):
-            self.wait_until_temperature(val)
+            if self.wait_until_temperature(val) is False:
+                logging.error("Failed to cycle through temperature set points.")
+                sys.exit()
+
                 
