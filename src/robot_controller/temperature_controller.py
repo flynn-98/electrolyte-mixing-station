@@ -8,15 +8,23 @@ logging.basicConfig(level = logging.INFO)
 # To communicate with: https://lairdthermal.com/products/product-temperature-controllers/tc-xx-pr-59-temperature-controller
 
 class peltier:
-    def __init__(self, COM: str, sim: bool = False, Kp: float = 1, Ki: float = 1, Kd: float = 0) -> None:
+    def __init__(self, COM: str, sim: bool = False, Kp: float = 20, Ki: float = 2, Kd: float = 5) -> None:
         self.sim = sim
 
-        self.ready_chars = '\r' + '\n' + '>' + ' '
+        #self.ready_chars = '\r' + '\n' + '>' + ' '
 
         self.max_temp = 60 #degsC
         self.min_temp = -40 #degsC
 
-        self.input_voltage = 12 #V
+        self.input_voltage = 12.0 #V
+        self.max_current = 9.0 #A
+        self.fan_current = 0.5 #A
+        self.fan_voltage = 12.0
+
+        # Thermisistor Steinhart coefficients
+        self.A_coeff = 1.396917e-3
+        self.B_coeff = 2.378257e-4
+        self.C_coeff = 9.372652e-8
 
         if self.sim is False:
             logging.info("Configuring temperature controller serial port..")
@@ -45,15 +53,21 @@ class peltier:
                 sys.exit()
 
             if self.set_regulator_mode() is True:
-                logging.info("Temperature controller regulation settings successfully configured.")
+                logging.info("Temperature controller regulator settings successfully configured.")
             else:
-                logging.error("Temperature controller regulation configuration failed.")
+                logging.error("Temperature controller regulator configuration failed.")
                 sys.exit()
 
             if self.set_tc_parameters() is True:
                 logging.info("Temperature controller Tc settings successfully configured.")
             else:
                 logging.error("Temperature controller Tc configuration failed.")
+                sys.exit()
+
+            if self.set_alarm_settings() is True:
+                logging.info("Temperature controller alarm settings successfully configured.")
+            else:
+                logging.error("Temperature controller alarm configuration failed.")
                 sys.exit()
 
             if self.configure_main_sensor() is True:
@@ -102,7 +116,7 @@ class peltier:
 
         if self.sim is False:
             self.ser.write((msg+'\r').encode('ascii'))
-            repeat = self.get_data()
+            repeat = self.get_data().split(" ")[1]
 
             if self.get_data() == "Run" and repeat == msg:
                 logging.info("Temperature controller Run flag set.")
@@ -114,12 +128,40 @@ class peltier:
 
         if self.sim is False:
             self.ser.write((msg+'\r').encode('ascii'))
-            repeat = self.get_data()
+            repeat = self.get_data().split(" ")[1]
 
             if self.get_data() == "Stop" and repeat == msg:
                 logging.info("Temperature controller Run flag cleared.")
             else:   
                 logging.error("Failed to clear temperature controller Run flag.")
+
+    def get_status(self) -> None:
+        msg = "$S"
+
+        if self.sim is False:
+            self.ser.write((msg+'\r').encode('ascii'))
+            repeat = self.get_data().split(" ")[1]
+
+            if repeat == msg:
+                logging.info("Temperature controller status returned.")
+            else:   
+                logging.error("Failed to return temperature controller status.")
+
+            logging.info("Status: " + self.get_data())
+
+    def clear_status(self) -> None:
+        msg = "$SC"
+
+        if self.sim is False:
+            self.ser.write((msg+'\r').encode('ascii'))
+            repeat = self.get_data().split(" ")[1]
+
+            if repeat == msg:
+                logging.info("Temperature controller status cleared.")
+            else:   
+                logging.error("Failed to clear temperature controller status.")
+
+            logging.info("Status: " + self.get_data())
         
     def register_write(self, REGISTER_NUMBER: int, VALUE: int) -> bool:
         # Command set is built up by: Start char - command - data - stop char
@@ -150,7 +192,7 @@ class peltier:
             repeat = self.get_data().split(" ")[1]
             response = self.get_data()
             if (response == f"{VALUE}" or response == '') and repeat == msg:
-                logging.info(f"Successfully wrote to R{REGISTER_NUMBER}.")
+                #logging.info(f"Successfully wrote to R{REGISTER_NUMBER}.")
                 return True
             else:
                 logging.error(f"Failed to write to R{REGISTER_NUMBER}.")
@@ -165,9 +207,7 @@ class peltier:
             self.ser.write((msg+'\r').encode('ascii'))
 
             repeat = self.get_data().split(" ")[1]
-            if repeat == msg:
-                logging.info(f"Successfully read R{REGISTER_NUMBER}.")
-            else:
+            if repeat != msg:
                 logging.error(f"Failed to read R{REGISTER_NUMBER}.")
 
             return float(self.get_data())
@@ -192,7 +232,7 @@ class peltier:
         else:
             return n
         
-    def set_tc_parameters(self, max_percent: int = 100, dead_band: int = 10) -> bool:
+    def set_tc_parameters(self, max_percent: int = 100, dead_band: int = 5) -> bool:
         if (self.register_write(6, self.clamp(max_percent, 0, 100)) is True) and (self.register_write(7, self.clamp(dead_band, 0, 50)) is True):
             return True
         else:
@@ -208,7 +248,8 @@ class peltier:
         else:
             return False
 
-    def set_low_pass(self, low_pass_a: float, low_pass_b: float) -> bool:
+    def set_low_pass(self, low_pass_a: float = 2, low_pass_b: float = 3) -> bool:
+        # Default controller values for now => no need to set
         if self.register_write(4, abs(low_pass_a)) is True and self.register_write(5, abs(low_pass_b)) is True:
             return True
         else:
@@ -221,24 +262,56 @@ class peltier:
             logging.error("Failed to set peltier target temperature.")
 
     def set_fan_modes(self, mode: int = 4) -> bool:
+        # Always OFF = 0
         # Always ON = 1
-        # Always OFF = 2
+        # Cool = 2
+        # Heat = 3
         # Cool / Heat = 4, on when main output is non zero (reg[106])
 
-        if (self.register_write(16, mode) is True) and (self.register_write(23, mode) is True) and (self.register_write(22, self.input_voltage) is True) and (self.register_write(29, self.input_voltage) is True):
+        if (self.register_write(16, mode) is True) and (self.register_write(23, mode) is True) and (self.register_write(22, self.fan_voltage) is True) and (self.register_write(29, self.fan_voltage) is True):
             return True
         else:
             return False
         
-    def configure_main_sensor(self, mode: int = 2) -> bool:
+    def set_alarm_settings(self) -> bool:
+        # Set alarms for over and under voltage
+        # Main current over
+        # Fan current over
+        if (self.register_write(45, self.input_voltage + 1) is True) and (self.register_write(46, self.input_voltage - 1) is True) and (self.register_write(47, self.max_current) is True) and (self.register_write(49, self.fan_current) is True) and (self.register_write(51, self.fan_current) is True):
+            return True
+        else:
+            return False
+        
+    def configure_main_sensor(self, mode: int = 12) -> bool:
         # 2 = to activate Steinhart calculation
         # 3 = to activate Zoom mode (internal control of digital pot). Have this bit set to achieve maximal resolution.
         # 4 = to activate PT mode 
 
         # To revisit best mode and values to use
 
-        return self.register_write(55, mode)
+        # Also set alarms on over and under
+
+        if (self.register_write(55, mode) is True) and (self.register_write(71, self.max_temp + 5) is True) and (self.register_write(72, self.min_temp - 5) is True):
+            return True
+        else:
+            return False
         
+    def set_steinhart_coeffs(self) -> list[float]:
+        if (self.register_write(59, self.A_coeff) is True) and (self.register_write(60, self.B_coeff) is True) and (self.register_write(61, self.C_coeff) is True):
+            return True
+        else:
+            return False
+        
+    def get_steinhart_coeffs(self) -> list[float]:
+        A = self.register_read(59)
+        B = self.register_read(60)
+        C = self.register_read(61)
+
+        return [A, B, C]
+    
+    def get_t1_mode(self) -> int:
+        return self.register_read(55)
+                
     def get_tc_value(self) -> float:
         return self.register_read(106)
     
