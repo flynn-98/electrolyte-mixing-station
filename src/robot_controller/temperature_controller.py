@@ -1,6 +1,10 @@
 import logging
+import random
 import sys
+import time
 
+import matplotlib.pyplot as plt
+import numpy as np
 import serial
 
 logging.basicConfig(level = logging.INFO)
@@ -8,7 +12,7 @@ logging.basicConfig(level = logging.INFO)
 # To communicate with: https://lairdthermal.com/products/product-temperature-controllers/tc-xx-pr-59-temperature-controller
 
 class peltier:
-    def __init__(self, COM: str, sim: bool = False, Kp: float = 20, Ki: float = 2, Kd: float = 5) -> None:
+    def __init__(self, COM: str, sim: bool = False, Kp: float = 5, Ki: float = 2, Kd: float = 1) -> None:
         self.sim = sim
 
         #self.ready_chars = '\r' + '\n' + '>' + ' '
@@ -25,6 +29,11 @@ class peltier:
         self.A_coeff = 1.396917e-3
         self.B_coeff = 2.378257e-4
         self.C_coeff = 9.372652e-8
+
+        # Steady state temperature
+        self.allowable_error = 0.5 #degsC
+        self.steady_state = 2 #s
+        self.timeout = 600 #s
 
         if self.sim is False:
             logging.info("Configuring temperature controller serial port..")
@@ -212,7 +221,7 @@ class peltier:
 
             return float(self.get_data())
         else:
-            return 0.0
+            return random.uniform(self.min_temp, self.max_temp)
         
     def set_regulator_mode(self, mode: int = 6) -> bool:
         # 1 = Power 
@@ -317,3 +326,58 @@ class peltier:
     
     def get_t1_value(self) -> float:
         return self.register_read(100)
+    
+    def wait_until_temperature(self, value: float, sample_rate: float = 2, plot: bool = False, plot_width: int = 100) -> bool:
+        self.set_temperature(value)
+
+        global_start = time.time()
+
+        if plot is True:
+            plt.ion()
+
+            fig = plt.figure(figsize=(14, 8))
+            ax = fig.add_subplot(111)
+            
+            plt.title(f"Target Temp: {value}degsC")
+            plt.xlabel("Samples")
+            plt.ylabel("Error /degsC")
+            plt.ylim([self.min_temp - self.max_temp, self.max_temp - self.min_temp])
+            plt.grid(True)
+
+            error = [0] * plot_width
+            samples = range(1, plot_width+1)
+            line1, = ax.plot(samples, error, 'r-')
+
+        while (time.time() - global_start) < self.timeout:
+
+            if plot is True:
+                # Append and loose first element
+                error.append(self.get_t1_value() - value)
+                error = error[-plot_width:]
+
+                line1.set_ydata(error)
+                fig.canvas.draw()
+                fig.canvas.flush_events()
+                
+            local_start = time.time()
+
+            while (abs(self.get_t1_value() - value) < self.allowable_error) and (time.time() - local_start < self.steady_state):
+                time.sleep(1 / sample_rate)
+
+            # Check if steady state timeout reached
+            end_time = time.time() - local_start
+            if end_time >= self.steady_state:
+                logging.info(f"Temperature controller successfully reached {value}degsC in {end_time}s.")
+                return True
+            
+            time.sleep(1 / sample_rate)
+            
+        logging.error(f"Temperature controller timed out trying to reach {value}degsC.")
+        return False
+    
+    def cycle_through_temperatures(self, start_temp: float = 60.0, end_temp: float = -20.0, points: int = 9) -> None:
+        logging.info(f"Cycling through {points} temperatures from {start_temp}degsC to {end_temp}degsC.")
+
+        for val in np.linspace(start_temp, end_temp, points):
+            self.wait_until_temperature(val)
+                
