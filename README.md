@@ -28,13 +28,17 @@ Activate venv:
 source .venv/bin/activate
 ```
 
-## Setting up SquidstatPyLibrary (Windows Only!)
+## Setting up SquidstatPyLibrary
 
 Download latest *.whl* file from [here](https://github.com/Admiral-Instruments/AdmiralSquidstatAPI/tree/main/SquidstatLibrary/windows/pythonWrapper/Release). Move the file to the *electrolyte-mixing-station* and run the following command:
 
 ```
 .venv/bin/pip install FILE.whl
 ```
+
+## Downloading ATEN RS232 to USB Driver
+
+The Laird PID temperature controller uses RS232 to communicate, which requires an [adapter](https://www.aten.com/global/en/products/usb-solutions/converters/uc232a1/) to convert the signal to a 5V logic level for USB. Download the correct driver [here](https://www.aten.com/global/en/supportcenter/info/downloads/?action=display_product&pid=1142). Installing the drivers may require you to restart your computer.
 
 ## Setting up Atinary SDK
 

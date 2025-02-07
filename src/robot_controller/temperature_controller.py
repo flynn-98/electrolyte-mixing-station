@@ -12,7 +12,7 @@ logging.basicConfig(level = logging.INFO)
 # To communicate with: https://lairdthermal.com/products/product-temperature-controllers/tc-xx-pr-59-temperature-controller
 
 class peltier:
-    def __init__(self, COM: str, sim: bool = False, Kp: float = 5, Ki: float = 2, Kd: float = 1) -> None:
+    def __init__(self, COM: str, sim: bool = False) -> None:
         self.sim = sim
 
         #self.ready_chars = '\r' + '\n' + '>' + ' '
@@ -32,8 +32,21 @@ class peltier:
 
         # Steady state temperature
         self.allowable_error = 0.5 #degsC
-        self.steady_state = 2 #s
+        self.steady_state = 10 #s
         self.timeout = 600 #s
+
+        # Heating control
+        self.heat_Kp = 15
+        self.heat_Ki = 0.1
+        self.heat_Kd = 0
+
+        # Cooling control
+        self.cool_Kp = 20
+        self.cool_Ki = 1
+        self.cool_Kd = 0
+
+        self.temp_threshold = 20 #degsC
+        self.dead_band = 5 #+-% to prevent rapid switching
 
         if self.sim is False:
             logging.info("Configuring temperature controller serial port..")
@@ -55,11 +68,8 @@ class peltier:
                 logging.error("Failed to establish serial connection to temperature controller.")   
                 sys.exit()
 
-            if self.set_pid_parameters(Kp, Ki, Kd) is True:
-                logging.info("Temperature controller PID settings successfully configured.")
-            else:
-                logging.error("Temperature controller PID configuration failed.")
-                sys.exit()
+            # Clear run flat
+            self.clear_run_flag()
 
             if self.set_regulator_mode() is True:
                 logging.info("Temperature controller regulator settings successfully configured.")
@@ -241,8 +251,8 @@ class peltier:
         else:
             return n
         
-    def set_tc_parameters(self, max_percent: int = 100, dead_band: int = 5) -> bool:
-        if (self.register_write(6, self.clamp(max_percent, 0, 100)) is True) and (self.register_write(7, self.clamp(dead_band, 0, 50)) is True):
+    def set_tc_parameters(self, max_percent: int = 100) -> bool:
+        if (self.register_write(6, self.clamp(max_percent, 0, 100)) is True) and (self.register_write(7, self.clamp(self.dead_band, 0, 100)) is True):
             return True
         else:
             return False
@@ -265,6 +275,19 @@ class peltier:
             return False
 
     def set_temperature(self, temp: float) -> None:
+        if temp < self.temp_threshold:
+            if self.set_pid_parameters(self.cool_Kp, self.cool_Ki, self.cool_Kd) is True:
+                logging.info("Temperature controller PID settings successfully set to cooling mode.")
+            else:
+                logging.error("Failed to set temperature controller PID settings to cooling mode.")
+                sys.exit()
+        else:
+            if self.set_pid_parameters(self.heat_Kp, self.heat_Ki, self.heat_Kd) is True:
+                logging.info("Temperature controller PID settings successfully set to heating mode.")
+            else:
+                logging.error("Failed to set temperature controller PID settings to heating mode.")
+                sys.exit()
+
         if self.register_write(0, self.clamp(temp, self.min_temp, self.max_temp)) is True:
             logging.info(f"Peltier target temperature set to {temp}degsC.")
         else:
@@ -341,23 +364,36 @@ class peltier:
             ax = fig.add_subplot(111)
             
             plt.title(f"Target Temp: {value}degsC, Sample Rate: {sample_rate}Hz")
+            plt.suptitle("Live Data:")
             plt.xlabel("Samples")
-            plt.ylabel("Error /degsC")
             plt.ylim([self.min_temp - self.max_temp, self.max_temp - self.min_temp])
-            plt.grid(True)
+            plt.grid(which="both")
 
             error = [0] * plot_width
+            drive = [0] * plot_width
             samples = range(1, plot_width+1)
-            line1, = ax.plot(samples, error, 'r-')
+            line1, = ax.plot(samples, error, 'r-', label="Temperature Error K")
+            line2, = ax.plot(samples, drive, 'g-', label="Driver Power %")
+            plt.legend(loc="upper right")
+
+        # Turn controller ON
+        self.set_run_flag()
 
         while (time.time() - global_start) < self.timeout and self.sim is False:
 
             if plot is True:
                 # Append and loose first element
-                error.append(value - self.get_t1_value())
+                curr = self.get_t1_value()
+                plt.title(f"Target Temp: {value}degsC, Sample Rate: {sample_rate}Hz")
+                plt.suptitle(f"Live Data: Temperature = {round(curr,2)}degsC, Elapsed Time = {round(time.time() - global_start,2)}s")
+                error.append(value - curr)
                 error = error[-plot_width:]
 
+                drive.append(self.get_tc_value())
+                drive = drive[-plot_width:]
+
                 line1.set_ydata(error)
+                line2.set_ydata(drive)
                 fig.canvas.draw()
                 fig.canvas.flush_events()
                 
@@ -369,12 +405,18 @@ class peltier:
             # Check if steady state timeout reached
             end_time = time.time() - local_start
             if end_time >= self.steady_state:
-                logging.info(f"Temperature controller successfully reached {value}degsC in {end_time}s.")
+                logging.info(f"Temperature controller successfully reached {value}degsC in {time.time() - global_start}s.")
+
+                # Turn controller OFF
+                self.clear_run_flag()
                 return True
             
             time.sleep(1 / sample_rate)
             
         logging.error(f"Temperature controller timed out trying to reach {value}degsC.")
+
+        # Turn controller OFF
+        self.clear_run_flag()
         return False
     
     def cycle_through_temperatures(self, start_temp: float = 60.0, end_temp: float = -40.0, points: int = 11, plot: bool = False) -> None:
