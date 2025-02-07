@@ -226,7 +226,7 @@ void loop() {
             emptyCell(vol);
         }
         else if (action == "returnState") {
-            x = Serial.readStringUntil(')').toFloat();
+            vol = Serial.readStringUntil(')').toFloat();
 
             Serial.println("Fluid Handling Kit Ready");
         }
