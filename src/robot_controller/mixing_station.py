@@ -151,6 +151,9 @@ class scheduler:
         if self.peltier.ser.isOpen() is True:
             self.peltier.close_ser()
 
+        if self.mass_balance.ser.isOpen() is True:
+            self.peltier.close_ser()
+
     def update_dose_volumes(self) -> None:
         # Place holder for API integration
         for i in self.df.index.to_numpy(dtype=int):
@@ -400,7 +403,8 @@ class scheduler:
         self.check_mass_change(total_mass, starting_mass)
 
         # Potentiostat / Temperature control functions
-        self.peltier.set_temperature(10.5) # For example
+        self.peltier.cycle_through_temperatures() 
+        # Potentiostat
 
         # Empty cell once complete
         self.fluid_handler.empty_cell(total_vol)

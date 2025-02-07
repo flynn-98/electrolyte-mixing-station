@@ -22,15 +22,16 @@ class mass_reader:
             logging.info("Attempting to open mass balance serial port..")
 
             if self.ser.isOpen() is False:
-                try:
-                    self.ser.open()
-                    logging.info("Serial connection to mass balance established.")
-                except Exception as ex:
-                    logging.error(ex)
-                    logging.error("Failed to establish serial connection to mass balance.")    
+                self.ser.open()
 
-            # Close serial until mass reading required - to silence continuous streaming.
-            self.close_ser()
+            
+            try:
+                self.tare()
+                logging.info("Serial connection to mass balance established.")
+            except Exception as ex:
+                logging.error(ex)
+                logging.error("Failed to establish serial connection to mass balance.")
+
 
         else:
             logging.info("No serial connection to mass balance established.")
@@ -41,15 +42,18 @@ class mass_reader:
 
     def get_mass(self) -> float:
         if self.sim is False:
-            self.ser.open()
+            # Send char to trigger stable value to be sent
+            self.ser.write("s".encode())
 
             while self.ser.in_waiting == 0:
                 pass
 
-            readout = self.ser.readline().decode().rstrip().replace("g", "")
+            readout = self.ser.readline().decode().rstrip().replace("g", "").replace(" ", "")
             
-            self.ser.close()
             return float(readout)
-        
         else:
             return random.uniform(1, 50)
+        
+    def tare(self) -> None:
+        # Send char to trigger tare
+        self.ser.write("t".encode())
