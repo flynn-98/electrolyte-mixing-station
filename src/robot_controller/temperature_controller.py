@@ -441,8 +441,8 @@ class peltier:
             drive = [0] * plot_width
             samples = range(1, plot_width+1)
             line1, = ax.plot(samples, error, 'r-', label="Temperature Error K")
-            line2, = ax.plot(samples, drive, 'g-', label="Driver Power %")
-            line3, = ax.plot(samples, dT, 'g-', label="Driver Power %")
+            line2, = ax.plot(samples, drive, 'g-', label="Drive Power %")
+            line3, = ax.plot(samples, dT, 'b-', label="dT K")
             plt.legend(loc="upper right")
 
         # Turn controller ON
