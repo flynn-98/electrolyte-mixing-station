@@ -19,13 +19,12 @@ class mass_reader:
             self.ser.parity = 'N' # No parity
             self.ser.stopbits = 1
 
-            logging.info("Attempting to open mass balance serial port..")
+            logging.info("Attempting to open mass balance serial port..")            
 
-            if self.ser.isOpen() is False:
-                self.ser.open()
-
-            
             try:
+                if self.ser.isOpen() is False:
+                    self.ser.open()
+
                 self.tare()
                 logging.info("Serial connection to mass balance established.")
             except Exception as ex:

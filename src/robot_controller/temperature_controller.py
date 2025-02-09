@@ -418,61 +418,102 @@ class peltier:
             return False
     
     def wait_until_temperature(self, value: float, sample_rate: float = 2, plot: bool = False, plot_width: int = 100) -> bool:
-        self.set_temperature(value)
-        global_start = time.time()
-
         if self.sim is True:
             return True
-
-        if plot is True:
-            plt.ion()
-
-            fig = plt.figure(figsize=(16, 10))
-            ax = fig.add_subplot(111)
-            
-            plt.title(f"Target Temp: {value}degsC, Sample Rate: {sample_rate}Hz")
-            plt.suptitle("Live Data:")
-            plt.xlabel("Samples")
-            plt.ylim([self.min_temp - self.max_temp, self.max_temp - self.min_temp])
-            plt.grid(which="both")
-
-            error = [0] * plot_width
-            dT = [0] * plot_width
-            drive = [0] * plot_width
-            samples = range(1, plot_width+1)
-            line1, = ax.plot(samples, error, 'r-', label="Temperature Error K")
-            line2, = ax.plot(samples, drive, 'g-', label="Drive Power %")
-            line3, = ax.plot(samples, dT, 'b-', label="dT K")
-            plt.legend(loc="upper right")
+        
+        self.set_temperature(value)
+        global_start = time.time()
 
         # Turn controller ON
         self.set_run_flag()
 
-        while (time.time() - global_start) < self.timeout and self.sim is False:
+        while (time.time() - global_start) < self.timeout:                
+            local_start = time.time()
 
-            if plot is True:
-                # Append and loose first element
-                control = self.get_t1_value()
-                sink = self.get_t2_value()
-                curr = self.get_main_current()
-                plt.title(f"Target Temp: {value}degsC, Sample Rate: {sample_rate}Hz")
-                plt.suptitle(f"Live Data: Control Temperature = {round(control,2)}degsC, Heat Sink Temperature = {round(sink,2)}degsC, Main Current = {round(curr,2)}A, Elapsed Time = {round(time.time() - global_start,2)}s")
+            while (abs(value - self.get_t1_value()) < self.allowable_error) and (time.time() - local_start < self.steady_state):
+                time.sleep(1 / sample_rate)
 
-                error.append(value - control)
-                error = error[-plot_width:]
+            # Check if steady state timeout reached
+            end_time = time.time() - local_start
+            if end_time >= self.steady_state:
+                logging.info(f"Temperature controller successfully reached {value}degsC in {time.time() - global_start}s")
+                logging.info(f"Final peltier current is {round(self.get_main_current(),2)}A.")
 
-                drive.append(self.get_tc_value())
-                drive = drive[-plot_width:]
+                # Turn controller OFF
+                self.clear_run_flag()
+                return True
+            
+            time.sleep(1 / sample_rate)
+            
+        logging.error(f"Temperature controller timed out trying to reach {value}degsC.")
+        logging.info(f"Final peltier current is {round(self.get_main_current(),2)}A.")
 
-                dT.append(abs(control - sink))
-                dT = dT[-plot_width:]
+        # Turn controller OFF
+        self.clear_run_flag()
+        return False
+    
+    def cycle_through_temperatures(self, start_temp: float = 60.0, end_temp: float = -40.0, points: int = 11, plot: bool = False) -> None:
+        logging.info(f"Cycling through {points} temperatures from {start_temp}degsC to {end_temp}degsC.")
 
-                line1.set_ydata(error)
-                line2.set_ydata(drive)
-                line3.set_ydata(dT)
+        for val in np.linspace(start_temp, end_temp, points, plot):
+            if self.wait_until_temperature(val) is False:
+                logging.error("Failed to cycle through temperature set points.")
+                sys.exit()
+    
+    def plot_live_temperature_control(self, value: float, sample_rate: float = 2, plot_width: int = 100) -> bool:
+        if self.sim is True:
+            return True
+        
+        self.set_temperature(value)
+        global_start = time.time()
 
-                fig.canvas.draw()
-                fig.canvas.flush_events()
+        plt.ion()
+
+        fig = plt.figure(figsize=(16, 10))
+        ax = fig.add_subplot(111)
+            
+        plt.title(f"Target Temp: {value}degsC, Sample Rate: {sample_rate}Hz")
+        plt.suptitle("Live Data:")
+        plt.xlabel("Samples")
+        plt.ylim([self.min_temp - self.max_temp, self.max_temp - self.min_temp])
+        plt.grid(which="both")
+
+        error = [0] * plot_width
+        dT = [0] * plot_width
+        drive = [0] * plot_width
+        samples = range(1, plot_width+1)
+        line1, = ax.plot(samples, error, 'r-', label="Temperature Error K")
+        line2, = ax.plot(samples, drive, 'g-', label="Drive Power %")
+        line3, = ax.plot(samples, dT, 'b-', label="dT K")
+        plt.legend(loc="upper right")
+
+        # Turn controller ON
+        self.set_run_flag()
+
+        while (time.time() - global_start) < self.timeout:
+            
+            # Append and loose first element
+            control = self.get_t1_value()
+            sink = self.get_t2_value()
+            curr = self.get_main_current()
+            plt.title(f"Target Temp: {value}degsC, Sample Rate: {sample_rate}Hz")
+            plt.suptitle(f"Live Data: Control Temperature = {round(control,2)}degsC, Heat Sink Temperature = {round(sink,2)}degsC, Main Current = {round(curr,2)}A, Elapsed Time = {round(time.time() - global_start,2)}s")
+
+            error.append(value - control)
+            error = error[-plot_width:]
+
+            drive.append(self.get_tc_value())
+            drive = drive[-plot_width:]
+
+            dT.append(abs(control - sink))
+            dT = dT[-plot_width:]
+
+            line1.set_ydata(error)
+            line2.set_ydata(drive)
+            line3.set_ydata(dT)
+
+            fig.canvas.draw()
+            fig.canvas.flush_events()
                 
             local_start = time.time()
 
@@ -492,17 +533,10 @@ class peltier:
             time.sleep(1 / sample_rate)
             
         logging.error(f"Temperature controller timed out trying to reach {value}degsC.")
+        logging.info(f"Final peltier current is {round(self.get_main_current(),2)}A.")
 
         # Turn controller OFF
         self.clear_run_flag()
         return False
-    
-    def cycle_through_temperatures(self, start_temp: float = 60.0, end_temp: float = -40.0, points: int = 11, plot: bool = False) -> None:
-        logging.info(f"Cycling through {points} temperatures from {start_temp}degsC to {end_temp}degsC.")
-
-        for val in np.linspace(start_temp, end_temp, points, plot):
-            if self.wait_until_temperature(val) is False:
-                logging.error("Failed to cycle through temperature set points.")
-                sys.exit()
 
                 
