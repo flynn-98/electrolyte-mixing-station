@@ -21,29 +21,38 @@ class peltier:
         self.min_temp = -40 #degsC
 
         self.input_voltage = 12.0 #V
-        self.max_current = 9.0 #A
+        self.max_current = 10.0 #A
+        self.expected_current_range = [3.5, 4.5] #A, 2x peltiers at 100%
+
         self.fan_current = 0.5 #A
         self.fan_voltage = 12.0
 
-        # Thermisistor Steinhart coefficients
-        self.A_coeff = 1.396917e-3
-        self.B_coeff = 2.378257e-4
-        self.C_coeff = 9.372652e-8
+        # Thermisistor Steinhart coefficients NTC1
+        self.A_coeff_1 = 1.396917e-3
+        self.B_coeff_1 = 2.378257e-4
+        self.C_coeff_1 = 9.372652e-8
+
+        # Thermisistor Steinhart coefficients NTC2
+        self.A_coeff_2 = 1.0373e-3
+        self.B_coeff_2 = 2.3317e-4
+        self.C_coeff_2 = 8.3896e-8
 
         # Steady state temperature
         self.allowable_error = 0.5 #degsC
         self.steady_state = 10 #s
-        self.timeout = 3600 #s
+        self.timeout = 1800 #s
 
         # Heating control
         self.heat_Kp = 15
         self.heat_Ki = 0.1
         self.heat_Kd = 0
+        self.heat_tc_max = 60
 
         # Cooling control
         self.cool_Kp = 20
         self.cool_Ki = 1
         self.cool_Kd = 0
+        self.cool_tc_max = 100
 
         self.temp_threshold = 20 #degsC
         self.dead_band = 5 #+-% to prevent rapid switching
@@ -90,16 +99,34 @@ class peltier:
                 sys.exit()
 
             if self.configure_main_sensor() is True:
-                logging.info("Temperature controller Sensor1 settings successfully configured.")
+                logging.info("Temperature Sensor #1 successfully configured.")
             else:
-                logging.error("Temperature controller Sensor1 configuration failed.")
-                sys.exit()   
+                logging.error("Temperature Sensor #1 configuration failed.")
+                sys.exit()
+
+            if self.configure_heat_sink_sensor() is True:
+                logging.info("Temperature sensor #2 successfully configured.")
+            else:
+                logging.error("Temperature sensor #2 configuration failed.")
+                sys.exit()
+
+            if self.set_heat_sink_steinhart_coeffs() is True:
+                logging.info("Successfully updated steinhard coefficients for temperature sensor #2.")
+            else:
+                logging.error("Failed to update steinhard coefficients for temperature sensor #2.")
+                sys.exit()         
 
             if self.set_fan_modes() is True:
                 logging.info("Temperature controller Fan settings successfully configured.")
             else:
                 logging.error("Temperature controller Fan configuration failed.")
                 sys.exit()      
+
+            if self.check_peltiers() is True:
+                logging.info("Peltier current draw is within expected range.")
+            else:
+                logging.error("Check peltiers for possible damage before attempting to initialise the controller again.")
+                sys.exit() 
 
         else:
             logging.info("No serial connection to temperature controller established.")
@@ -328,27 +355,67 @@ class peltier:
         else:
             return False
         
-    def set_steinhart_coeffs(self) -> list[float]:
-        if (self.register_write(59, self.A_coeff) is True) and (self.register_write(60, self.B_coeff) is True) and (self.register_write(61, self.C_coeff) is True):
+    def configure_heat_sink_sensor(self, mode: int = 12) -> bool:
+        # 2 = to activate Steinhart calculation
+        # 3 = to activate Zoom mode (internal control of digital pot). Have this bit set to achieve maximal resolution.
+        # 4 = to activate PT mode 
+
+        # To revisit best mode and values to use
+
+        # Also set alarms on over and under
+
+        if (self.register_write(56, mode) is True) and (self.register_write(73, self.max_temp + 5) is True) and (self.register_write(74, self.min_temp - 5) is True):
             return True
         else:
             return False
         
-    def get_steinhart_coeffs(self) -> list[float]:
-        A = self.register_read(59)
-        B = self.register_read(60)
-        C = self.register_read(61)
-
-        return [A, B, C]
+    def set_main_steinhart_coeffs(self) -> list[float]:
+        if (self.register_write(59, self.A_coeff_1) is True) and (self.register_write(60, self.B_coeff_1) is True) and (self.register_write(61, self.C_coeff_1) is True):
+            return True
+        else:
+            return False
+        
+    def set_heat_sink_steinhart_coeffs(self) -> list[float]:
+        if (self.register_write(62, self.A_coeff_2) is True) and (self.register_write(63, self.B_coeff_2) is True) and (self.register_write(64, self.C_coeff_2) is True):
+            return True
+        else:
+            return False
     
     def get_t1_mode(self) -> int:
         return self.register_read(55)
+    
+    def get_t2_mode(self) -> int:
+        return self.register_read(65)
                 
     def get_tc_value(self) -> float:
         return self.register_read(106)
     
     def get_t1_value(self) -> float:
         return self.register_read(100)
+    
+    def get_t2_value(self) -> float:
+        return self.register_read(101)
+    
+    def get_main_current(self) -> float:
+        return self.register_read(152)
+    
+    def check_peltiers(self) -> bool:
+        logging.info("Checking Peltiers..")
+
+        # Set to min temperature to trigger 100% Tc
+        self.set_temperature(self.min_temp)
+        self.set_run_flag()
+
+        time.sleep(0.5)
+        current = self.get_main_current()
+
+        self.clear_run_flag()
+
+        if (abs(current) >= self.expected_current_range[0]) and (abs(current) <= self.expected_current_range[1]):
+            return True
+        else:
+            logging.error(f"Peltier current draw of {current}A is outside of expected range.")
+            return False
     
     def wait_until_temperature(self, value: float, sample_rate: float = 2, plot: bool = False, plot_width: int = 100) -> bool:
         self.set_temperature(value)
@@ -360,7 +427,7 @@ class peltier:
         if plot is True:
             plt.ion()
 
-            fig = plt.figure(figsize=(14, 8))
+            fig = plt.figure(figsize=(16, 10))
             ax = fig.add_subplot(111)
             
             plt.title(f"Target Temp: {value}degsC, Sample Rate: {sample_rate}Hz")
@@ -370,10 +437,12 @@ class peltier:
             plt.grid(which="both")
 
             error = [0] * plot_width
+            dT = [0] * plot_width
             drive = [0] * plot_width
             samples = range(1, plot_width+1)
             line1, = ax.plot(samples, error, 'r-', label="Temperature Error K")
             line2, = ax.plot(samples, drive, 'g-', label="Driver Power %")
+            line3, = ax.plot(samples, dT, 'g-', label="Driver Power %")
             plt.legend(loc="upper right")
 
         # Turn controller ON
@@ -383,17 +452,25 @@ class peltier:
 
             if plot is True:
                 # Append and loose first element
-                curr = self.get_t1_value()
+                control = self.get_t1_value()
+                sink = self.get_t2_value()
+                curr = self.get_main_current()
                 plt.title(f"Target Temp: {value}degsC, Sample Rate: {sample_rate}Hz")
-                plt.suptitle(f"Live Data: Temperature = {round(curr,2)}degsC, Elapsed Time = {round(time.time() - global_start,2)}s")
-                error.append(value - curr)
+                plt.suptitle(f"Live Data: Control Temperature = {round(control,2)}degsC, Heat Sink Temperature = {sink}degsC, Main Current = {curr}A, Elapsed Time = {round(time.time() - global_start,2)}s")
+
+                error.append(value - control)
                 error = error[-plot_width:]
 
                 drive.append(self.get_tc_value())
                 drive = drive[-plot_width:]
 
+                dT.append(abs(control - sink))
+                dT = dT[-plot_width:]
+
                 line1.set_ydata(error)
                 line2.set_ydata(drive)
+                line3.set_ydata(dT)
+                
                 fig.canvas.draw()
                 fig.canvas.flush_events()
                 
