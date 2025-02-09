@@ -86,7 +86,7 @@ class peltier:
                 logging.error("Temperature controller regulator configuration failed.")
                 sys.exit()
 
-            if self.set_tc_parameters() is True:
+            if self.set_tc_dead_band() is True:
                 logging.info("Temperature controller Tc settings successfully configured.")
             else:
                 logging.error("Temperature controller Tc configuration failed.")
@@ -278,11 +278,11 @@ class peltier:
         else:
             return n
         
-    def set_tc_parameters(self, max_percent: int = 100) -> bool:
-        if (self.register_write(6, self.clamp(max_percent, 0, 100)) is True) and (self.register_write(7, self.clamp(self.dead_band, 0, 100)) is True):
-            return True
-        else:
-            return False
+    def set_max_tc(self, max: float = 100) -> bool:
+        return self.register_write(6, self.clamp(max, 0, 100))
+        
+    def set_tc_dead_band(self) -> bool:
+        return self.register_write(7, self.clamp(self.dead_band, 0, 100))
 
         # Dead band is limiting the signal around zero value. 
         # Good to adjust if we do not like fast switching from one voltage direction to the other
@@ -303,14 +303,14 @@ class peltier:
 
     def set_temperature(self, temp: float) -> None:
         if temp < self.temp_threshold:
-            if self.set_pid_parameters(self.cool_Kp, self.cool_Ki, self.cool_Kd) is True:
-                logging.info("Temperature controller PID settings successfully set to cooling mode.")
+            if (self.set_pid_parameters(self.cool_Kp, self.cool_Ki, self.cool_Kd) is True) and (self.set_max_tc(self.cool_tc_max) is True):
+                logging.info("Temperature controller PID settings set to cooling mode.")
             else:
                 logging.error("Failed to set temperature controller PID settings to cooling mode.")
                 sys.exit()
         else:
-            if self.set_pid_parameters(self.heat_Kp, self.heat_Ki, self.heat_Kd) is True:
-                logging.info("Temperature controller PID settings successfully set to heating mode.")
+            if (self.set_pid_parameters(self.heat_Kp, self.heat_Ki, self.heat_Kd) is True) and (self.set_max_tc(self.heat_tc_max) is True):
+                logging.info("Temperature controller PID settings set to heating mode.")
             else:
                 logging.error("Failed to set temperature controller PID settings to heating mode.")
                 sys.exit()
@@ -400,7 +400,7 @@ class peltier:
         return self.register_read(152)
     
     def check_peltiers(self) -> bool:
-        logging.info("Checking Peltiers..")
+        logging.info("Checking peltiers..")
 
         # Set to min temperature to trigger 100% Tc
         self.set_temperature(self.min_temp)
@@ -456,7 +456,7 @@ class peltier:
                 sink = self.get_t2_value()
                 curr = self.get_main_current()
                 plt.title(f"Target Temp: {value}degsC, Sample Rate: {sample_rate}Hz")
-                plt.suptitle(f"Live Data: Control Temperature = {round(control,2)}degsC, Heat Sink Temperature = {sink}degsC, Main Current = {curr}A, Elapsed Time = {round(time.time() - global_start,2)}s")
+                plt.suptitle(f"Live Data: Control Temperature = {round(control,2)}degsC, Heat Sink Temperature = {round(sink,2)}degsC, Main Current = {round(curr,2)}A, Elapsed Time = {round(time.time() - global_start,2)}s")
 
                 error.append(value - control)
                 error = error[-plot_width:]
@@ -470,7 +470,7 @@ class peltier:
                 line1.set_ydata(error)
                 line2.set_ydata(drive)
                 line3.set_ydata(dT)
-                
+
                 fig.canvas.draw()
                 fig.canvas.flush_events()
                 
@@ -482,7 +482,8 @@ class peltier:
             # Check if steady state timeout reached
             end_time = time.time() - local_start
             if end_time >= self.steady_state:
-                logging.info(f"Temperature controller successfully reached {value}degsC in {time.time() - global_start}s.")
+                logging.info(f"Temperature controller successfully reached {value}degsC in {time.time() - global_start}s")
+                logging.info(f"Final peltier current is {round(self.get_main_current(),2)}A.")
 
                 # Turn controller OFF
                 self.clear_run_flag()
