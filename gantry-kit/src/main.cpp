@@ -49,7 +49,7 @@ const float HOMING_SPEED = 50.0 * MICROSTEPS; //microsteps/s
 
 const float MAX_ACCEL = 350.0 * MICROSTEPS; //microsteps/s2
 
-const float Z_STAGE_SPEED = 1600.0 * MICROSTEPS; //microsteps/s
+const float Z_STAGE_SPEED = 1400.0 * MICROSTEPS; //microsteps/s
 const float Z_HOMING_SPEED = 150 * MICROSTEPS; //microsteps/s
 const float Z_ACCEL = 500.0 * MICROSTEPS; //microsteps/s2
 

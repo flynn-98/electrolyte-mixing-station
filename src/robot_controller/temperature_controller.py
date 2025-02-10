@@ -20,9 +20,9 @@ class peltier:
         self.max_temp = 60 #degsC
         self.min_temp = -40 #degsC
 
-        self.input_voltage = 12.0 #V
-        self.max_current = 10.0 #A
-        self.expected_current_range = [3.5, 4.5] #A, 2x peltiers at 100%
+        self.input_voltage = 18.0 #V
+        self.max_current = 11.0 #A
+        self.minimum_current = 6.0 #A, 2x peltiers at 100%
 
         self.fan_current = 0.5 #A
         self.fan_voltage = 12.0
@@ -42,20 +42,20 @@ class peltier:
         self.steady_state = 10 #s
         self.timeout = 1800 #s
 
-        # Heating control
-        self.heat_Kp = 15
+        # Heating/Normal control
+        self.heat_Kp = 12
         self.heat_Ki = 0.1
         self.heat_Kd = 0
         self.heat_tc_max = 60
 
-        # Cooling control
-        self.cool_Kp = 20
-        self.cool_Ki = 1
+        # Sub-Zero Cooling control
+        self.cool_Kp = 12
+        self.cool_Ki = 0.1
         self.cool_Kd = 0
         self.cool_tc_max = 100
 
-        self.temp_threshold = 20 #degsC
-        self.dead_band = 5 #+-% to prevent rapid switching
+        self.temp_threshold = 8 #degsC, to set heating or cooling parameters
+        self.dead_band = 8 #+-% to prevent rapid switching
 
         if self.sim is False:
             logging.info("Configuring temperature controller serial port..")
@@ -69,6 +69,7 @@ class peltier:
 
             if self.ser.isOpen() is False:
                 self.ser.open()
+            
 
             # Unknown if this occurs on start up!
             if self.handshake() is True:
@@ -77,25 +78,30 @@ class peltier:
                 logging.error("Failed to establish serial connection to temperature controller.")   
                 sys.exit()
 
-            # Clear run flat
-            self.clear_run_flag()
+            if self.check_peltiers() is True:
+                logging.info("Peltier current draw is as high as expected.")
+            else:
+                logging.error("Check peltiers for possible damage before attempting to initialise the regulator again.")
+                sys.exit()
+
+
 
             if self.set_regulator_mode() is True:
-                logging.info("Temperature controller regulator settings successfully configured.")
+                logging.info("Temperature regulator PID mode successfully configured.")
             else:
-                logging.error("Temperature controller regulator configuration failed.")
+                logging.error("Temperature regulator configuration failed.")
                 sys.exit()
 
             if self.set_tc_dead_band() is True:
-                logging.info("Temperature controller Tc settings successfully configured.")
+                logging.info("Temperature regulator dead band successfully configured.")
             else:
-                logging.error("Temperature controller Tc configuration failed.")
+                logging.error("Temperature regulator dead band configuration failed.")
                 sys.exit()
 
             if self.set_alarm_settings() is True:
-                logging.info("Temperature controller alarm settings successfully configured.")
+                logging.info("Temperature regulator alarm settings successfully configured.")
             else:
-                logging.error("Temperature controller alarm configuration failed.")
+                logging.error("Temperature regulator alarm configuration failed.")
                 sys.exit()
 
             if self.configure_main_sensor() is True:
@@ -117,16 +123,10 @@ class peltier:
                 sys.exit()         
 
             if self.set_fan_modes() is True:
-                logging.info("Temperature controller Fan settings successfully configured.")
+                logging.info("Temperature regulator Fan settings successfully configured.")
             else:
-                logging.error("Temperature controller Fan configuration failed.")
+                logging.error("Temperature regulator Fan configuration failed.")
                 sys.exit()      
-
-            if self.check_peltiers() is True:
-                logging.info("Peltier current draw is within expected range.")
-            else:
-                logging.error("Check peltiers for possible damage before attempting to initialise the controller again.")
-                sys.exit() 
 
         else:
             logging.info("No serial connection to temperature controller established.")
@@ -279,6 +279,7 @@ class peltier:
             return n
         
     def set_max_tc(self, max: float = 100) -> bool:
+        # 100 is default register value
         return self.register_write(6, self.clamp(max, 0, 100))
         
     def set_tc_dead_band(self) -> bool:
@@ -300,6 +301,9 @@ class peltier:
             return True
         else:
             return False
+        
+    def set_power(self, power: float = 0) -> bool:
+        return self.register_write(0, power)
 
     def set_temperature(self, temp: float) -> None:
         if temp < self.temp_threshold:
@@ -402,26 +406,36 @@ class peltier:
     def check_peltiers(self) -> bool:
         logging.info("Checking peltiers..")
 
-        # Set to min temperature to trigger 100% Tc
-        self.set_temperature(self.min_temp)
+        # Set to power mode
+        if self.set_regulator_mode(mode=1) is False:
+            logging.error("Temperature controller regulator configuration failed.")
+            sys.exit()
+        
+        # Set power to 100
+        if self.set_power(power=100) is True:
+            logging.info("Regulator power set to 100%.")
+        else:
+            logging.error("Failed to set regulator power to 100%.")
+            sys.exit()
+
         self.set_run_flag()
 
-        time.sleep(0.5)
+        time.sleep(1.0)
         current = self.get_main_current()
 
         self.clear_run_flag()
 
-        if (abs(current) >= self.expected_current_range[0]) and (abs(current) <= self.expected_current_range[1]):
+        if (abs(current) > self.minimum_current):
             return True
         else:
-            logging.error(f"Peltier current draw of {current}A is outside of expected range.")
+            logging.error(f"Peltier current draw of {current}A is lower than expected.")
             return False
     
     def wait_until_temperature(self, value: float, sample_rate: float = 2, plot: bool = False, plot_width: int = 100) -> bool:
         if self.sim is True:
             return True
         
-        self.set_temperature(value)
+        self.set_power(value)
         global_start = time.time()
 
         # Turn controller ON
