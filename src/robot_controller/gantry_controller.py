@@ -58,7 +58,7 @@ class gantry:
         if self.sim is False:
             self.ser.close()
 
-    def move(self, x: float, y: float, z: float, accurately: bool = False) -> None:
+    def move(self, x: float, y: float, z: float, accurately: bool = True) -> None:
         if accurately is False:
             msg = f"move({x},{y},{z})"
         else:

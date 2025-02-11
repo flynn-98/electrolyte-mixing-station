@@ -44,7 +44,7 @@ const float STEPS_REV = 200.0;
 const float MICROSTEPS = 4.0;
 
 const float STAGE_SPEED = 1000.0 * MICROSTEPS; //microsteps/s
-const float ROPE_SPEED = 50.0 * MICROSTEPS; //microsteps/s
+const float TENSION_SPEED = 50.0 * MICROSTEPS; //microsteps/s
 const float HOMING_SPEED = 50.0 * MICROSTEPS; //microsteps/s
 
 const float MAX_ACCEL = 350.0 * MICROSTEPS; //microsteps/s2
@@ -63,8 +63,8 @@ const int servoStart = 20; // +Home
 const int servoEnd = 50; // +Home
 
 // Parameters for pipette rack
-const float tension_rotations = 0.2;
-const float pinch_rotations = 0.08;
+const float tension_rotations = 1.0;
+const float release_rotations = -0.2;
 
 // Define steppers with pins (STEP, DIR)
 AccelStepper X_MOTOR(AccelStepper::DRIVER, X_STEP, X_DIR); 
@@ -125,32 +125,8 @@ void relayOff() {
     delay(200);
 };
 
-void pullRope(float rotations) {
-    relayOn();
-
-    steps = motorDir[3] * MICROSTEPS * STEPS_REV * rotations;
-
-    E_MOTOR.move(steps);
-    E_MOTOR.runToPosition();
-};
-
-void pinchPipettes() {
-    pullRope(pinch_rotations);
-
-    // Report back to PC
-    Serial.println("Pipettes successfully pinched");
-};
-
-void releasePipettes() {
-    pullRope(-1 * pinch_rotations);
-
-    // Report back to PC
-    Serial.println("Pipettes successfully released");
-};
-
-void tensionRope() {
-    pullRope(tension_rotations);
-    pullRope(-1 * pinch_rotations);
+long revsToSteps(float rotations) {
+    return motorDir[3] * MICROSTEPS * STEPS_REV * rotations;
 };
 
 long mmToSteps(float milli, bool horizontal, int motor) {
@@ -167,9 +143,47 @@ long mmToSteps(float milli, bool horizontal, int motor) {
     return steps;
 };
 
-void motorsRun() {
-    relayOn();
+void pinchPipettes() {
+    Z_MOTOR.setMaxSpeed(Z_HOMING_SPEED);
 
+    E_MOTOR.move(revsToSteps(tension_rotations/4));
+    E_MOTOR.runToPosition();
+
+    // Move z stage slowly whilst releasing pipette
+    E_MOTOR.move(revsToSteps(3*tension_rotations/4));
+    Z_MOTOR.moveTo(mmToSteps(4*jointLimit[1][2]/5, false, 2));
+
+    // Pull on pipettes whilst lifting z stage
+    while ( (E_MOTOR.distanceToGo() != 0) || (Z_MOTOR.distanceToGo() != 0) ) {
+        E_MOTOR.run();
+        Z_MOTOR.run();
+    }
+
+    Z_MOTOR.setMaxSpeed(Z_STAGE_SPEED);
+
+    // Run to top surface for homing
+    Z_MOTOR.moveTo(mmToSteps(drift, false, 2));
+    Z_MOTOR.runToPosition();
+
+    // Move to home position
+    Z_MOTOR.move(mmToSteps(home[2], false, 2));
+    Z_MOTOR.runToPosition();
+
+    Z_MOTOR.setCurrentPosition(0);
+
+    // Report back to PC
+    Serial.println("Pipettes successfully pinched");
+};
+
+void releasePipettes() {
+    E_MOTOR.move(revsToSteps(release_rotations));
+    E_MOTOR.runToPosition();
+
+    // Report back to PC
+    Serial.println("Pipettes successfully released");
+};
+
+void motorsRun() {
     // Run until complete (Z motor moves first to avoid clashes)
     Z_MOTOR.runToPosition();
 
@@ -292,8 +306,6 @@ void gantryMove(float x, float y, float z) {
 };
 
 void zQuickHome() {
-    relayOn();
-
     // To be used during pipette picking and collecting, where z errors may occur
     Z_MOTOR.moveTo(mmToSteps(drift, false, 2));
     Z_MOTOR.runToPosition();
@@ -308,7 +320,7 @@ void zQuickHome() {
 
 void gantryZero() {
     // Move X to middle of workspace to avoid pipette rack
-    X_MOTOR.moveTo(mmToSteps(jointLimit[1][0] / 2, true, 0));
+    X_MOTOR.moveTo(mmToSteps(jointLimit[1][0]/2, true, 0));
     Y_MOTOR.moveTo(0);
     Z_MOTOR.moveTo(0);
 
@@ -368,7 +380,7 @@ void setup() {
   Y_MOTOR.setAcceleration(MAX_ACCEL);
   Z_MOTOR.setAcceleration(Z_ACCEL);
 
-  E_MOTOR.setMaxSpeed(ROPE_SPEED);
+  E_MOTOR.setMaxSpeed(TENSION_SPEED);
   E_MOTOR.setAcceleration(MAX_ACCEL);
 
   X_MOTOR.setMaxSpeed(STAGE_SPEED);
@@ -382,7 +394,6 @@ void setup() {
 
   Serial.begin(9600);
   mixer.write(servoHome);
-  tensionRope();
 
   relayOff();
   
@@ -395,9 +406,10 @@ void loop() {
 
     // Wait until data received from PC, via Serial (USB)
     if (Serial.available() > 0) {
-        LastCall = ceil( millis() / 1000 );
-        // data structure to receive = action(var1, var2..)
+        // Turn on motor power when command received
+        relayOn();
 
+        // data structure to receive = action(var1, var2..)
         // Read until open bracket to extract action, continue based on which action was requested
         action = Serial.readStringUntil('(');
 
@@ -450,6 +462,9 @@ void loop() {
             // Report back to PC if confused
             Serial.println("Unknown command");
         }
+
+        // Start idle counter after action complete
+        LastCall = ceil( millis() / 1000 );
     }
     else {
         // Check how long since last call, move to Home if too long

@@ -56,12 +56,12 @@ class electrolyte_mixer:
 
         # Move above pipette rack
         logging.info(f"Moving to Pipette #{pipette_no}..")
-        self.gantry.move(x + self.pipette_lead_in, y, 0, accurately=True)
-        self.gantry.move(x, y, 0, accurately=True)
+        self.gantry.move(x + self.pipette_lead_in, y, 0)
+        self.gantry.move(x, y, 0)
 
         # Move into pipette rack
         logging.info("Dropping to collect pipette..")
-        self.gantry.move(x, y, self.pipette_pick_height, accurately=True)
+        self.gantry.move(x, y, self.pipette_pick_height)
 
         # Update active pipette variable 
         with open(self.pipette_file, 'w') as filehandler:
@@ -73,7 +73,7 @@ class electrolyte_mixer:
 
         # Move into pipette rack
         logging.info("Moving away from pipette rack..")
-        self.gantry.move(x + self.pipette_lead_in, y, 0, accurately=True)
+        self.gantry.move(x + self.pipette_lead_in, y, 0)
 
     def return_pipette(self) -> None:
         # Turn pump off just in case
@@ -93,21 +93,18 @@ class electrolyte_mixer:
 
         # Move above pipette rack (first to lead in location to avoid clash)
         logging.info(f"Moving to Pipette #{active_pipette}..")
-        self.gantry.move(x + self.pipette_lead_in, y, 0, accurately=True)
-        self.gantry.move(x, y, 0, accurately=True)
+        self.gantry.move(x + self.pipette_lead_in, y, 0)
+        self.gantry.move(x, y, 0)
 
         # Move into pipette rack
         logging.info(f"Delivering Pipette #{active_pipette} to rack..")
-        self.gantry.move(x, y, self.pipette_pick_height, accurately=True)
+        self.gantry.move(x, y, self.pipette_pick_height)
 
-        # Move into pipette rack
+        logging.info("Pinching and raising pipette module..")
         self.gantry.pinch()
-        logging.info("Pipette ready for removal..")
-
-        # Move above pipette rack
-        logging.info("Raising pipette module..")
-        self.gantry.zQuickHome()
+        #self.gantry.zQuickHome()
         self.gantry.release()
+        logging.info("Pipettes released.")
 
         with open(self.pipette_file, 'w') as filehandler:
                 filehandler.write("0")
