@@ -1,5 +1,6 @@
 import logging
 import random
+import sys
 
 import serial
 
@@ -10,6 +11,10 @@ logging.basicConfig(level = logging.INFO)
 class mass_reader:
     def __init__(self, COM: str, sim: bool = False) -> None:
         self.sim = sim
+
+        # Mass balance checks
+        self.minor_mass_error = 10 # %, error if exceeded
+        self.critical_mass_error = 50 # %, error if exceeded
 
         if self.sim is False:
             logging.info("Configuring mass balance serial port..")
@@ -56,3 +61,21 @@ class mass_reader:
     def tare(self) -> None:
         # Send char to trigger tare
         self.ser.write("t".encode())
+
+    def check_mass_change(self, expected_mass: float, starting_mass: float) -> None:
+        mass_change = self.get_mass() - starting_mass
+        error = mass_change - expected_mass
+
+        percent = (100 * abs(error) / expected_mass)
+        
+        if self.sim is False:
+            if percent > self.critical_mass_error:
+                logging.error(f"Mass balance detected critical error: {mass_change}g detected at test cell but expected {expected_mass}g.")
+                sys.exit()
+            elif percent > self.minor_mass_error:
+                logging.error(f"Mass balance detected minor error: {mass_change}g detected at test cell but expected {expected_mass}g.")
+            else:
+                logging.info(f"Mass balance detected no significant error: {mass_change}g detected at test cell for expected {expected_mass}g.")
+
+        else:
+            logging.info(f"Mass balance detected no significant error: {mass_change}g detected at test cell for expected {expected_mass}g.")

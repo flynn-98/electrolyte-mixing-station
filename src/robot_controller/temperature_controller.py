@@ -156,6 +156,9 @@ class peltier:
                 return True
             else:
                 return False
+        
+        else:
+            return True
 
     def set_run_flag(self) -> None:
         msg = "$W"
@@ -209,7 +212,7 @@ class peltier:
 
             logging.info("Status: " + self.get_data())
         
-    def register_write(self, REGISTER_NUMBER: int, VALUE: int) -> bool:
+    def register_write(self, REGISTER_NUMBER: int, VALUE: int | float) -> bool:
         # Command set is built up by: Start char - command - data - stop char
         # Start Char "$""
         # Command "R41=" - register reference =
@@ -247,7 +250,7 @@ class peltier:
         else:
             return True
         
-    def register_read(self, REGISTER_NUMBER: int) -> float:
+    def register_read(self, REGISTER_NUMBER: int) -> float | int:
         if self.sim is False:
             msg = f"$R{REGISTER_NUMBER}?"
             self.ser.write((msg+'\r').encode('ascii'))
@@ -373,13 +376,13 @@ class peltier:
         else:
             return False
         
-    def set_main_steinhart_coeffs(self) -> list[float]:
+    def set_main_steinhart_coeffs(self) -> bool:
         if (self.register_write(59, self.A_coeff_1) is True) and (self.register_write(60, self.B_coeff_1) is True) and (self.register_write(61, self.C_coeff_1) is True):
             return True
         else:
             return False
         
-    def set_heat_sink_steinhart_coeffs(self) -> list[float]:
+    def set_heat_sink_steinhart_coeffs(self) -> bool:
         if (self.register_write(62, self.A_coeff_2) is True) and (self.register_write(63, self.B_coeff_2) is True) and (self.register_write(64, self.C_coeff_2) is True):
             return True
         else:

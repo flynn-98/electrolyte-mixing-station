@@ -1,6 +1,6 @@
 import argparse
 
-from robot_controller import mixing_station
+from robot_controller import pipette_controller, scheduler
 
 
 def run_experiment() -> None:
@@ -12,17 +12,17 @@ def run_experiment() -> None:
     args=parser.parse_args()
 
     if args.resume is False:
-        instance = mixing_station.scheduler(device_name=args.device_name, csv_filename="electrolyte_recipe.csv", home=args.home)
+        instance = scheduler.experiment(device_name=args.device_name, csv_filename="electrolyte_recipe.csv", home=args.home)
     else:
-        instance = mixing_station.scheduler(device_name=args.device_name, csv_filename="current_state.csv", home=args.home)
+        instance = scheduler.experiment(device_name=args.device_name, csv_filename="current_state.csv", home=args.home)
     
     instance.run(args.repeats)
 
 def test_pipette() -> None:
-    parser=argparse.ArgumentParser(description="Input variables for Pipette Test")
-    parser.add_argument("--device_name", help="Used to locate the device data by matching with Device ID")
+    parser=argparse.ArgumentParser(description="Try out Pipette variables for aspiration and dispense")
+    parser.add_argument("--port", help="Smart Pump Module COM port address.")
 
     args=parser.parse_args()
 
-    instance = mixing_station.scheduler(device_name=args.device_name, csv_filename=None) 
+    instance = pipette_controller.pipette(COM=args.device_name) 
     instance.aspiration_test()

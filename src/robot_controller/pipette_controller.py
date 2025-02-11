@@ -9,7 +9,7 @@ import serial
 logging.basicConfig(level = logging.INFO)
 
 class pipette:
-    def __init__(self, COM: str, sim: bool = False, maximum_power: float = 450, charge_pressure: float = 20, Kp: int = 2, Ki: int = 30, Kd: int = 0) -> None:
+    def __init__(self, COM: str, sim: bool = False, maximum_power: float = 350, charge_pressure: float = 30, Kp: int = 2, Ki: int = 30, Kd: int = 0) -> None:
         self.sim = sim
 
         self.max_dose = 50 # ul
@@ -41,7 +41,7 @@ class pipette:
                 logging.error("Disc pump initialisation failed!")
                 sys.exit()
             
-            if self.configure_pid() is True:
+            if self.configure_pid_settings() is True:
                 logging.info("Disc pump drive mode succesfully configured.")
             else:
                 logging.error("Disc pump drive mode configuration failed.")
@@ -303,3 +303,53 @@ class pipette:
     def dispense(self, check: bool = True) -> None:
         self.set_pressure(0) # To dispense as quickly as possible to remove all liquid
         self.pump_off(check)
+
+    def aspiration_test(self) -> None:
+        # Used for testing only => No logging
+
+        try:
+            charge_pressure = float(input("Enter charge pressure (mbar): "))
+        except Exception as ex:
+            charge_pressure = self.charge_pressure
+            print(ex)
+            print(f"Charge Pressure set to {charge_pressure}mbar.")
+
+        # Charge pipette
+        self.pump_on()
+        self.set_pressure(charge_pressure, check=True)
+        print("Pipette charged.")
+
+        try:
+            aspirate_volume = float(input("Enter Aspirate Volume (uL): "))
+        except Exception as ex:
+            aspirate_volume = 10
+            print(ex)
+            print(f"Aspirate Volume set to {aspirate_volume}uL.")
+
+        try:
+            aspirate_constant = float(input("Enter Aspirate Constant (mbar/uL): "))
+        except Exception as ex:
+            aspirate_constant = 0.5
+            print(ex)
+            print(f"Aspirate Constant set to {aspirate_constant}mbar/uL.")
+
+        try:
+            aspirate_speed = float(input("Enter Aspirate Speed (uL/s): "))
+        except Exception as ex:
+            aspirate_speed = 10
+            print(ex)
+            print(f"Aspirate Speed set to {aspirate_speed}uL/s.")
+
+        # Aspirate pipette
+        self.aspirate(aspirate_volume, aspirate_constant, aspirate_speed, poly=False, check=True)
+
+        print("Aspiration complete.")
+        print(f"{aspirate_volume}uL extracted.")
+
+        _ = input("Press any key to Dispense")
+
+         # Dispense pipette
+        self.dispense()
+        print("Dispense complete.")
+
+        self.close_ser()
