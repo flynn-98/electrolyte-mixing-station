@@ -292,6 +292,8 @@ void gantryMove(float x, float y, float z) {
 };
 
 void zQuickHome() {
+    relayOn();
+
     // To be used during pipette picking and collecting, where z errors may occur
     Z_MOTOR.moveTo(mmToSteps(drift, false, 2));
     Z_MOTOR.runToPosition();
