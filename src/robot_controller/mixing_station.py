@@ -42,15 +42,15 @@ class scheduler:
                             ]
         
         # Pipette locations 1 -> 9 (mm)
-        self.pipette_x_location = 15 #mm
-        self.pipette_locations = [[self.pipette_x_location, 135], [self.pipette_x_location, 119], 
-                              [self.pipette_x_location, 103], [self.pipette_x_location, 87], 
-                              [self.pipette_x_location, 71], [self.pipette_x_location, 55], 
-                              [self.pipette_x_location, 39], [self.pipette_x_location,23], 
-                              [self.pipette_x_location, 7]
+        self.pipette_x_location = 17 #mm
+        self.pipette_locations = [[self.pipette_x_location, 135], [self.pipette_x_location, 119.4 ], 
+                              [self.pipette_x_location, 103.8], [self.pipette_x_location, 88.2], 
+                              [self.pipette_x_location, 72.6], [self.pipette_x_location, 57], 
+                              [self.pipette_x_location, 41.4], [self.pipette_x_location, 25.8], 
+                              [self.pipette_x_location, 10.2]
                             ]
-        self.pipette_pick_height = -49 #mm from CAD - to be tuned
-        self.pipette_lead_in = 14 #mm to position pipette to the right of rack when returning pipette (avoid clash)
+        self.pipette_pick_height = -48 #mm from CAD - to be tuned
+        self.pipette_lead_in = 12 #mm to position pipette to the right of rack when returning pipette (avoid clash)
 
         # File to store last known active pipette for recovery
         self.pipette_file = "data/variables/active_pipette.txt" # 1-9, 0 = not active        
@@ -59,7 +59,7 @@ class scheduler:
         self.pot_area = math.pi * 2.78**2 / 4 #cm2
 
         self.chamber_location = [125, 96] # mm
-        self.dispense_height = -10 #mm
+        self.dispense_height = 0 #mm
 
         # Mass balance checks
         self.max_mass_error = 0.2 # grams, error if exceeded
