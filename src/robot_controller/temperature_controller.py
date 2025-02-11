@@ -20,11 +20,11 @@ class peltier:
         self.max_temp = 60 #degsC
         self.min_temp = -40 #degsC
 
-        self.input_voltage = 18.0 #V
-        self.max_current = 11.0 #A
-        self.minimum_current = 6.0 #A, 2x peltiers at 100%
+        self.input_voltage = 12.0 #V
+        self.max_current = 5.0 #A
+        self.minimum_current = 3.5 #A, 2x peltiers at 100%
 
-        self.fan_current = 0.5 #A
+        self.fan_current = 0.3 #A
         self.fan_voltage = 12.0
 
         # Thermisistor Steinhart coefficients NTC1
@@ -43,19 +43,15 @@ class peltier:
         self.timeout = 1800 #s
 
         # Heating/Normal control
-        self.heat_Kp = 12
-        self.heat_Ki = 0.1
-        self.heat_Kd = 0
-        self.heat_tc_max = 60
+        self.Kp = 5
+        self.Ki = 0
+        self.Kd = 0
 
-        # Sub-Zero Cooling control
-        self.cool_Kp = 12
-        self.cool_Ki = 0.1
-        self.cool_Kd = 0
-        self.cool_tc_max = 100
+        self.heat_tc_max = 100
+        self.cool_mode = False
 
-        self.temp_threshold = 8 #degsC, to set heating or cooling parameters
-        self.dead_band = 8 #+-% to prevent rapid switching
+        self.temp_threshold = 20 #degsC, to set heating or cooling parameters
+        self.dead_band = 6 #+-% to prevent rapid switching
 
         if self.sim is False:
             logging.info("Configuring temperature controller serial port..")
@@ -84,18 +80,22 @@ class peltier:
                 logging.error("Check peltiers for possible damage before attempting to initialise the regulator again.")
                 sys.exit()
 
-
-
             if self.set_regulator_mode() is True:
                 logging.info("Temperature regulator PID mode successfully configured.")
             else:
                 logging.error("Temperature regulator configuration failed.")
                 sys.exit()
 
-            if self.set_tc_dead_band() is True:
-                logging.info("Temperature regulator dead band successfully configured.")
+            if (self.set_pid_parameters(self.Kp, self.Ki, self.Kd) is True):
+                logging.info("Temperature regulator PID constants set.")
             else:
-                logging.error("Temperature regulator dead band configuration failed.")
+                logging.error("Failed to set temperature controller PID settings to cooling mode.")
+                sys.exit()
+
+            if (self.set_tc_dead_band() is True) and (self.set_max_tc() is True):
+                logging.info("Temperature regulator Tc settings successfully configured.")
+            else:
+                logging.error("Temperature regulator Tc configuration failed.")
                 sys.exit()
 
             if self.set_alarm_settings() is True:
@@ -281,7 +281,10 @@ class peltier:
         else:
             return n
         
-    def set_max_tc(self, max: float = 100) -> bool:
+    def get_cooling_tc(self, temp: float) -> int:
+        return int(self.clamp(59.7 + -1.66 * temp + 0.0148 * temp**2 + 8.06e-04 * temp**3, 0, 100))
+        
+    def set_max_tc(self, max: float = 50) -> bool:
         # 100 is default register value
         return self.register_write(6, self.clamp(max, 0, 100))
         
@@ -292,8 +295,8 @@ class peltier:
         # Good to adjust if we do not like fast switching from one voltage direction to the other
         # This helps to save the life of the peltier modules
 
-    def set_pid_parameters(self, p: float, i: float, d: float, i_lim: float = 100) -> bool:
-        if (self.register_write(1, p) is True) and (self.register_write(2, i) is True) and (self.register_write(3, d) is True) and (self.register_write(8, self.clamp(i_lim, 0, 100)) is True):
+    def set_pid_parameters(self, p: float, i: float, d: float) -> bool:
+        if (self.register_write(1, p) is True) and (self.register_write(2, i) is True) and (self.register_write(3, d) is True):
             return True
         else:
             return False
@@ -309,17 +312,15 @@ class peltier:
         return self.register_write(0, power)
 
     def set_temperature(self, temp: float) -> None:
-        if temp < self.temp_threshold:
-            if (self.set_pid_parameters(self.cool_Kp, self.cool_Ki, self.cool_Kd) is True) and (self.set_max_tc(self.cool_tc_max) is True):
-                logging.info("Temperature controller PID settings set to cooling mode.")
-            else:
-                logging.error("Failed to set temperature controller PID settings to cooling mode.")
-                sys.exit()
+        if temp <= self.temp_threshold:
+            self.cool_mode = False
+            logging.info("Temperature regulator set to cooling mode.")
         else:
-            if (self.set_pid_parameters(self.heat_Kp, self.heat_Ki, self.heat_Kd) is True) and (self.set_max_tc(self.heat_tc_max) is True):
-                logging.info("Temperature controller PID settings set to heating mode.")
+            self.cool_mode = False
+            if self.set_max_tc(self.heat_tc_max) is True:
+                logging.info("Temperature regulator set to heating mode.")
             else:
-                logging.error("Failed to set temperature controller PID settings to heating mode.")
+                logging.error("Failed to set temperature regulator to heating mode.")
                 sys.exit()
 
         if self.register_write(0, self.clamp(temp, self.min_temp, self.max_temp)) is True:
@@ -434,17 +435,25 @@ class peltier:
             logging.error(f"Peltier current draw of {current}A is lower than expected.")
             return False
     
-    def wait_until_temperature(self, value: float, sample_rate: float = 2, plot: bool = False, plot_width: int = 100) -> bool:
+    def wait_until_temperature(self, value: float, sample_rate: float = 1) -> bool:
         if self.sim is True:
             return True
         
-        self.set_power(value)
+        self.set_temperature(value)
         global_start = time.time()
 
         # Turn controller ON
         self.set_run_flag()
 
-        while (time.time() - global_start) < self.timeout:                
+        while (time.time() - global_start) < self.timeout:
+
+            temperature = self.get_t1_value()
+
+            if (self.cool_mode is True) and (temperature < self.temp_threshold):
+                # Set max Tc based on current temperature
+                if self.set_max_tc(self.get_cooling_tc(temperature)) is False:
+                    logging.error("Failed to set temperature regulator max Tc during cooling mode.")
+
             local_start = time.time()
 
             while (abs(value - self.get_t1_value()) < self.allowable_error) and (time.time() - local_start < self.steady_state):
@@ -508,21 +517,28 @@ class peltier:
         self.set_run_flag()
 
         while (time.time() - global_start) < self.timeout:
-            
+
+            temperature = self.get_t1_value()
+
+            if (self.cool_mode is True) and (temperature < self.temp_threshold):
+                # Set max Tc based on current temperature
+                if self.set_max_tc(self.get_cooling_tc(temperature)) is False:
+                    logging.error("Failed to set temperature regulator max Tc during cooling mode.")
+                    sys.exit()                    
+
             # Append and loose first element
-            control = self.get_t1_value()
             sink = self.get_t2_value()
             curr = self.get_main_current()
             plt.title(f"Target Temp: {value}degsC, Sample Rate: {sample_rate}Hz")
-            plt.suptitle(f"Live Data: Control Temperature = {round(control,2)}degsC, Heat Sink Temperature = {round(sink,2)}degsC, Main Current = {round(curr,2)}A, Elapsed Time = {round(time.time() - global_start,2)}s")
+            plt.suptitle(f"Live Data: Control Temperature = {round(temperature,2)}degsC, Heat Sink Temperature = {round(sink,2)}degsC, Main Current = {round(curr,2)}A, Elapsed Time = {round(time.time() - global_start,2)}s")
 
-            error.append(value - control)
+            error.append(value - temperature)
             error = error[-plot_width:]
 
             drive.append(self.get_tc_value())
             drive = drive[-plot_width:]
 
-            dT.append(abs(control - sink))
+            dT.append(abs(temperature - sink))
             dT = dT[-plot_width:]
 
             line1.set_ydata(error)
