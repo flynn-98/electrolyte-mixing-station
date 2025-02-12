@@ -79,12 +79,12 @@ Servo mixer;
 const float pad_thickness = 1.0; //mm 
 const float x_shift = 14.0; //mm (home position shift in X direction, to avoid unwanted clash)
 
-const float home[3] = {-167.9 + pad_thickness + x_shift, 1.5 - pad_thickness, -0.5}; 
+const float home[3] = {-167.9 + pad_thickness + x_shift, 1.5 - pad_thickness, 0}; 
 
 // Joint Limits (mm), also taken from CAD model
 const float jointLimit[2][3] = {
     {0, 0, 0}, 
-    {165.0 - x_shift, 141.0, -49}
+    {165.0 - x_shift, 141.0, -49.5}
 };
 
 // Overshoot value used during Homing, any gantry drift +- this value will be corrected (in theory!)
@@ -143,6 +143,19 @@ long mmToSteps(float milli, bool horizontal, int motor) {
     return steps;
 };
 
+void zQuickHome() {
+    // To be used during pipette picking and collecting, where z errors may occur
+    Z_MOTOR.moveTo(mmToSteps(drift, false, 2));
+    Z_MOTOR.runToPosition();
+
+    Z_MOTOR.move(mmToSteps(home[2], false, 2));
+    Z_MOTOR.runToPosition();
+
+    Z_MOTOR.setCurrentPosition(0);
+
+    Serial.println("Z Motor Homed");
+};
+
 void pinchPipettes() {
     Z_MOTOR.setMaxSpeed(Z_HOMING_SPEED);
 
@@ -160,16 +173,7 @@ void pinchPipettes() {
     }
 
     Z_MOTOR.setMaxSpeed(Z_STAGE_SPEED);
-
-    // Run to top surface for homing
-    Z_MOTOR.moveTo(mmToSteps(drift, false, 2));
-    Z_MOTOR.runToPosition();
-
-    // Move to home position
-    Z_MOTOR.move(mmToSteps(home[2], false, 2));
-    Z_MOTOR.runToPosition();
-
-    Z_MOTOR.setCurrentPosition(0);
+    zQuickHome();
 
     // Report back to PC
     Serial.println("Pipettes successfully pinched");
@@ -303,19 +307,6 @@ void gantryMove(float x, float y, float z) {
     
     // Report back to PC
     Serial.println("Move complete in " + String(ElapsedTime) + "s");
-};
-
-void zQuickHome() {
-    // To be used during pipette picking and collecting, where z errors may occur
-    Z_MOTOR.moveTo(mmToSteps(drift, false, 2));
-    Z_MOTOR.runToPosition();
-
-    Z_MOTOR.move(mmToSteps(home[2], false, 2));
-    Z_MOTOR.runToPosition();
-
-    Z_MOTOR.setCurrentPosition(0);
-
-    Serial.println("Z Motor Homed");
 };
 
 void gantryZero() {

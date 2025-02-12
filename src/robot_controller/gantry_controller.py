@@ -10,7 +10,7 @@ class gantry:
         self.sim = sim
 
         # To be tuned if needed
-        self.x_correction = -1.5 #mm 
+        self.x_correction = -1.0 #mm 
         self.y_correction = 1.5 #mm
 
         if self.sim is False:

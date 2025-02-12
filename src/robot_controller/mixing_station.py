@@ -28,13 +28,13 @@ class electrolyte_mixer:
                               [self.pipette_x_location, 41.4], [self.pipette_x_location, 25.8], 
                               [self.pipette_x_location, 10.2]
                             ]
-        self.pipette_pick_height = -48 #mm from CAD - to be tuned
+        self.pipette_pick_height = -47.5 #mm from CAD - to be tuned
         self.pipette_lead_in = 12 #mm to position pipette to the right of rack when returning pipette (avoid clash)
 
         # File to store last known active pipette for recovery
         self.pipette_file = "data/variables/active_pipette.txt" # 1-9, 0 = not active        
         
-        self.pot_base_height = -69.5 # CAD value (minus a little to ensure submersion)
+        self.pot_base_height = -70 # CAD value (minus a little to ensure submersion)
         self.pot_area = math.pi * 2.78**2 / 4 #cm2
 
         self.chamber_location = [125, 96] # mm
