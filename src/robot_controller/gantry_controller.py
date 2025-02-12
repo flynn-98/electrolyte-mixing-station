@@ -10,8 +10,8 @@ class gantry:
         self.sim = sim
 
         # To be tuned if needed
-        self.x_correction = -1 #mm 
-        self.y_correction = 1 #mm
+        self.x_correction = -1.5 #mm 
+        self.y_correction = 1.5 #mm
 
         if self.sim is False:
             logging.info("Configuring gantry kit serial port..")

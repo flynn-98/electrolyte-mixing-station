@@ -22,7 +22,7 @@ class peltier:
 
         self.input_voltage = 12.0 #V
         self.max_current = 5.0 #A
-        self.minimum_current = 3.5 #A, 2x peltiers at 100%
+        self.minimum_current = 2.5 #A, 2x peltiers at 100%
 
         self.fan_current = 0.3 #A
         self.fan_voltage = 12.0
@@ -47,7 +47,7 @@ class peltier:
         self.Ki = 0
         self.Kd = 0
 
-        self.heat_tc_max = 100
+        self.heat_tc_max = 75
         self.cool_mode = False
 
         self.temp_threshold = 20 #degsC, to set heating or cooling parameters
@@ -282,6 +282,7 @@ class peltier:
             return n
         
     def get_cooling_tc(self, temp: float) -> int:
+        # Varies by +5% from hot side temperatures between 23-32degsC, kept at lower assuming reduced heating by lower PWM
         return int(self.clamp(59.7 + -1.66 * temp + 0.0148 * temp**2 + 8.06e-04 * temp**3, 0, 100))
         
     def set_max_tc(self, max: float = 50) -> bool:
@@ -310,23 +311,6 @@ class peltier:
         
     def set_power(self, power: float = 0) -> bool:
         return self.register_write(0, power)
-
-    def set_temperature(self, temp: float) -> None:
-        if temp <= self.temp_threshold:
-            self.cool_mode = False
-            logging.info("Temperature regulator set to cooling mode.")
-        else:
-            self.cool_mode = False
-            if self.set_max_tc(self.heat_tc_max) is True:
-                logging.info("Temperature regulator set to heating mode.")
-            else:
-                logging.error("Failed to set temperature regulator to heating mode.")
-                sys.exit()
-
-        if self.register_write(0, self.clamp(temp, self.min_temp, self.max_temp)) is True:
-            logging.info(f"Peltier target temperature set to {temp}degsC.")
-        else:
-            logging.error("Failed to set peltier target temperature.")
 
     def set_fan_modes(self, mode: int = 4) -> bool:
         # Always OFF = 0
@@ -434,6 +418,23 @@ class peltier:
         else:
             logging.error(f"Peltier current draw of {current}A is lower than expected.")
             return False
+
+    def set_temperature(self, temp: float) -> None:
+        if temp <= self.temp_threshold:
+            self.cool_mode = True
+            logging.info("Temperature regulator set to cooling mode.")
+        else:
+            self.cool_mode = False
+            if self.set_max_tc(self.heat_tc_max) is True:
+                logging.info("Temperature regulator set to heating mode.")
+            else:
+                logging.error("Failed to set temperature regulator to heating mode.")
+                sys.exit()
+
+        if self.register_write(0, self.clamp(temp, self.min_temp, self.max_temp)) is True:
+            logging.info(f"Peltier target temperature set to {temp}degsC.")
+        else:
+            logging.error("Failed to set peltier target temperature.")
     
     def wait_until_temperature(self, value: float, sample_rate: float = 1) -> bool:
         if self.sim is True:
