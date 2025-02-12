@@ -21,10 +21,10 @@ class peltier:
         self.min_temp = -40 #degsC
 
         self.input_voltage = 12.0 #V
-        self.max_current = 5.0 #A
-        self.minimum_current = 2.5 #A, 2x peltiers at 100%
+        self.max_current = 8.0 #A
+        self.min_current = 2.5 #A, 2x peltiers at 100%
 
-        self.fan_current = 0.3 #A
+        self.fan_current = 1.6 #A
         self.fan_voltage = 12.0
 
         # Thermisistor Steinhart coefficients NTC1
@@ -40,15 +40,16 @@ class peltier:
         # Steady state temperature
         self.allowable_error = 0.5 #degsC
         self.steady_state = 10 #s
-        self.timeout = 1800 #s
+        self.timeout = 18000 #s
 
         # Heating/Normal control
-        self.Kp = 5
+        self.Kp = 15
         self.Ki = 0
         self.Kd = 0
 
-        self.heat_tc_max = 75
         self.cool_mode = False
+        self.dT_max = 25
+        self.reduced_tc = 90
 
         self.temp_threshold = 20 #degsC, to set heating or cooling parameters
         self.dead_band = 6 #+-% to prevent rapid switching
@@ -74,12 +75,6 @@ class peltier:
                 logging.error("Failed to establish serial connection to temperature controller.")   
                 sys.exit()
 
-            if self.check_peltiers() is True:
-                logging.info("Peltier current draw is as high as expected.")
-            else:
-                logging.error("Check peltiers for possible damage before attempting to initialise the regulator again.")
-                sys.exit()
-
             if self.set_regulator_mode() is True:
                 logging.info("Temperature regulator PID mode successfully configured.")
             else:
@@ -98,10 +93,16 @@ class peltier:
                 logging.error("Temperature regulator Tc configuration failed.")
                 sys.exit()
 
-            if self.set_alarm_settings() is True:
-                logging.info("Temperature regulator alarm settings successfully configured.")
+            if self.set_voltage_alarm_settings() is True:
+                logging.info("Temperature regulator voltage alarm settings successfully configured.")
             else:
-                logging.error("Temperature regulator alarm configuration failed.")
+                logging.error("Temperature regulator voltage alarm configuration failed.")
+                sys.exit()
+
+            if self.set_current_alarm_settings() is True:
+                logging.info("Temperature regulator current alarm settings successfully configured.")
+            else:
+                logging.error("Temperature regulator current alarm configuration failed.")
                 sys.exit()
 
             if self.configure_main_sensor() is True:
@@ -281,11 +282,12 @@ class peltier:
         else:
             return n
         
-    def get_cooling_tc(self, temp: float) -> int:
-        # Varies by +5% from hot side temperatures between 23-32degsC, kept at lower assuming reduced heating by lower PWM
-        return int(self.clamp(59.7 + -1.66 * temp + 0.0148 * temp**2 + 8.06e-04 * temp**3, 0, 100))
+    def get_cooling_tc(self, control_temp: float) -> int:
+        # Varies by +5% from hot side temperatures between 23-32degsC, kept at lower assuming reduced heating by lower PWM - 59.7
+        return int(self.clamp(59.7 + -1.66 * control_temp + 0.0148 * control_temp**2 + 8.06e-04 * control_temp**3, 0, 100))
+
         
-    def set_max_tc(self, max: float = 50) -> bool:
+    def set_max_tc(self, max: float = 100) -> bool:
         # 100 is default register value
         return self.register_write(6, self.clamp(max, 0, 100))
         
@@ -308,9 +310,6 @@ class peltier:
             return True
         else:
             return False
-        
-    def set_power(self, power: float = 0) -> bool:
-        return self.register_write(0, power)
 
     def set_fan_modes(self, mode: int = 4) -> bool:
         # Always OFF = 0
@@ -324,11 +323,17 @@ class peltier:
         else:
             return False
         
-    def set_alarm_settings(self) -> bool:
+    def set_voltage_alarm_settings(self) -> bool:
         # Set alarms for over and under voltage
-        # Main current over
+        if (self.register_write(45, self.input_voltage + 1) is True) and (self.register_write(46, self.input_voltage - 1) is True):
+            return True
+        else:
+            return False
+        
+    def set_current_alarm_settings(self) -> bool:
+        # Main current under and over
         # Fan current over
-        if (self.register_write(45, self.input_voltage + 1) is True) and (self.register_write(46, self.input_voltage - 1) is True) and (self.register_write(47, self.max_current) is True) and (self.register_write(49, self.fan_current) is True) and (self.register_write(51, self.fan_current) is True):
+        if (self.register_write(47, self.max_current) is True) and (self.register_write(48, self.min_current) is True) and (self.register_write(49, self.fan_current) is True) and (self.register_write(51, self.fan_current) is True):
             return True
         else:
             return False
@@ -390,34 +395,6 @@ class peltier:
     
     def get_main_current(self) -> float:
         return self.register_read(152)
-    
-    def check_peltiers(self) -> bool:
-        logging.info("Checking peltiers..")
-
-        # Set to power mode
-        if self.set_regulator_mode(mode=1) is False:
-            logging.error("Temperature controller regulator configuration failed.")
-            sys.exit()
-        
-        # Set power to 100
-        if self.set_power(power=100) is True:
-            logging.info("Regulator power set to 100%.")
-        else:
-            logging.error("Failed to set regulator power to 100%.")
-            sys.exit()
-
-        self.set_run_flag()
-
-        time.sleep(1.0)
-        current = self.get_main_current()
-
-        self.clear_run_flag()
-
-        if (abs(current) > self.minimum_current):
-            return True
-        else:
-            logging.error(f"Peltier current draw of {current}A is lower than expected.")
-            return False
 
     def set_temperature(self, temp: float) -> None:
         if temp <= self.temp_threshold:
@@ -425,7 +402,7 @@ class peltier:
             logging.info("Temperature regulator set to cooling mode.")
         else:
             self.cool_mode = False
-            if self.set_max_tc(self.heat_tc_max) is True:
+            if self.set_max_tc() is True:
                 logging.info("Temperature regulator set to heating mode.")
             else:
                 logging.error("Failed to set temperature regulator to heating mode.")
@@ -520,6 +497,8 @@ class peltier:
         while (time.time() - global_start) < self.timeout:
 
             temperature = self.get_t1_value()
+            sink = self.get_t2_value()
+            curr = self.get_main_current()
 
             if (self.cool_mode is True) and (temperature < self.temp_threshold):
                 # Set max Tc based on current temperature
@@ -528,8 +507,6 @@ class peltier:
                     sys.exit()                    
 
             # Append and loose first element
-            sink = self.get_t2_value()
-            curr = self.get_main_current()
             plt.title(f"Target Temp: {value}degsC, Sample Rate: {sample_rate}Hz")
             plt.suptitle(f"Live Data: Control Temperature = {round(temperature,2)}degsC, Heat Sink Temperature = {round(sink,2)}degsC, Main Current = {round(curr,2)}A, Elapsed Time = {round(time.time() - global_start,2)}s")
 
