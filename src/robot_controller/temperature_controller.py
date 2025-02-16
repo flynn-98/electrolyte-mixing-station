@@ -1,7 +1,9 @@
 import logging
+import os
 import random
 import sys
 import time
+from csv import DictWriter
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -412,7 +414,7 @@ class peltier:
     
     def wait_until_temperature(self, value: float, sample_rate: float = 1, keep_on: bool = False) -> tuple[bool, float, float]:
         if self.sim is True:
-            return True, 1.0, 1.0
+            return True, 0.0, 0.0
         
         self.set_temperature(value)
         global_start = time.time()
@@ -443,16 +445,16 @@ class peltier:
             # Check if steady state timeout reached
             end_time = time.time() - local_start
             if end_time >= self.steady_state:
-                mean = float(stats.mean())
-                std = float(stats.std())
+                mean = round(stats.mean(), 2)
+                std = round(stats.std(), 3)
 
-                logging.info(f"Temperature controller successfully reached {value}C in {time.time() - global_start}s (mean = {round(mean,2)}C, std = {round(std,3)}C)")
+                logging.info(f"Temperature controller successfully reached {value}C in {time.time() - global_start}s (mean = {mean}C, std = {std}C)")
 
                 # Turn controller OFF
                 if keep_on is False:
                     self.clear_run_flag()
 
-                return True, mean, std
+                return True, float(mean), float(std)
             
             time.sleep(1 / sample_rate)
             
@@ -461,19 +463,29 @@ class peltier:
 
         # Turn controller OFF
         self.clear_run_flag()
-        return False, 0, 0
+        return False, 0.0, 0.0
     
     def cycle_through_temperatures(self, start_temp: float = 60.0, end_temp: float = -40.0, points: int = 11, report: bool = False) -> None:
         logging.info(f"Cycling through {points} temperatures from {start_temp}C to {end_temp}C.")
 
+        file_exists = os.path.exists(self.report_file)
+
         for val in np.linspace(start_temp, end_temp, points):
             result, mean, std = self.wait_until_temperature(val)
+            
             if result is False:
                 logging.error("Failed to cycle through temperature set points.")
                 sys.exit()
+
             elif report is True:
                 with open(self.report_file, 'a') as file:
-                    file.write(f"{val},{mean},{std}")
+                    writer = DictWriter(file, fieldnames=['Temperature Target', 'Mean Result', 'STD'])
+                    
+                    if file_exists is False:
+                        writer.writeheader()
+                        file_exists = True
+
+                    writer.writerow({'Temperature Target': val, 'Mean Result': mean, 'STD': std})
     
     def plot_live_temperature_control(self, value: float, sample_rate: float = 1) -> bool:
         if self.sim is True:
