@@ -17,8 +17,8 @@ class peltier:
 
         #self.ready_chars = '\r' + '\n' + '>' + ' '
 
-        self.max_temp = 60 #degsC
-        self.min_temp = -40 #degsC
+        self.max_temp = 60 #C
+        self.min_temp = -40 #C
 
         self.input_voltage = 12.0 #V
         self.max_current = 8.0 #A
@@ -38,9 +38,9 @@ class peltier:
         self.C_coeff_2 = 8.3896e-8
 
         # Steady state temperature
-        self.allowable_error = 0.5 #degsC
-        self.steady_state = 10 #s
-        self.timeout = 18000 #s
+        self.allowable_error = 0.5 #C
+        self.steady_state = 30 #s
+        self.timeout = 7200 #s
 
         # Heating/Normal control
         self.Kp = 15
@@ -48,11 +48,11 @@ class peltier:
         self.Kd = 0
 
         self.cool_mode = False
-        self.dT_max = 25
-        self.reduced_tc = 90
 
-        self.temp_threshold = 20 #degsC, to set heating or cooling parameters
+        self.temp_threshold = 20 #C, to set heating or cooling parameters
         self.dead_band = 6 #+-% to prevent rapid switching
+
+        self.report_file = "data/results/temperature_report.csv"
 
         if self.sim is False:
             logging.info("Configuring temperature controller serial port..")
@@ -67,8 +67,6 @@ class peltier:
             if self.ser.isOpen() is False:
                 self.ser.open()
             
-
-            # Unknown if this occurs on start up!
             if self.handshake() is True:
                 logging.info("Serial connection to temperature controller established.")
             else:
@@ -283,10 +281,9 @@ class peltier:
             return n
         
     def get_cooling_tc(self, control_temp: float) -> int:
-        # Varies by +5% from hot side temperatures between 23-32degsC, kept at lower assuming reduced heating by lower PWM - 59.7
-        return int(self.clamp(59.7 + -1.66 * control_temp + 0.0148 * control_temp**2 + 8.06e-04 * control_temp**3, 0, 100))
+        # Varies by +5% from hot side temperatures between 23-32C, kept at lower assuming reduced heating by lower PWM - 59.7
+        return int(59.7 + -1.66 * control_temp + 0.0148 * control_temp**2 + 8.06e-04 * control_temp**3)
 
-        
     def set_max_tc(self, max: float = 100) -> bool:
         # 100 is default register value
         return self.register_write(6, self.clamp(max, 0, 100))
@@ -409,13 +406,13 @@ class peltier:
                 sys.exit()
 
         if self.register_write(0, self.clamp(temp, self.min_temp, self.max_temp)) is True:
-            logging.info(f"Peltier target temperature set to {temp}degsC.")
+            logging.info(f"Peltier target temperature set to {temp}C.")
         else:
             logging.error("Failed to set peltier target temperature.")
     
-    def wait_until_temperature(self, value: float, sample_rate: float = 1) -> bool:
+    def wait_until_temperature(self, value: float, sample_rate: float = 1, keep_on: bool = False) -> tuple[bool, float, float]:
         if self.sim is True:
-            return True
+            return True, 1.0, 1.0
         
         self.set_temperature(value)
         global_start = time.time()
@@ -426,45 +423,59 @@ class peltier:
         while (time.time() - global_start) < self.timeout:
 
             temperature = self.get_t1_value()
+            stats = np.empty((1,))
 
             if (self.cool_mode is True) and (temperature < self.temp_threshold):
                 # Set max Tc based on current temperature
-                if self.set_max_tc(self.get_cooling_tc(temperature)) is False:
-                    logging.error("Failed to set temperature regulator max Tc during cooling mode.")
+                pass
+
+                #if self.set_max_tc(self.get_cooling_tc(temperature)) is False:
+                #    logging.error("Failed to set temperature regulator max Tc during cooling mode.")
 
             local_start = time.time()
 
-            while (abs(value - self.get_t1_value()) < self.allowable_error) and (time.time() - local_start < self.steady_state):
+            while (abs(value - temperature) < self.allowable_error) and (time.time() - local_start < self.steady_state):
+                temperature = self.get_t1_value()
+                stats = np.append(stats, np.array([temperature]), axis=0)
+
                 time.sleep(1 / sample_rate)
 
             # Check if steady state timeout reached
             end_time = time.time() - local_start
             if end_time >= self.steady_state:
-                logging.info(f"Temperature controller successfully reached {value}degsC in {time.time() - global_start}s")
-                logging.info(f"Final peltier current is {round(self.get_main_current(),2)}A.")
+                mean = float(stats.mean())
+                std = float(stats.std())
+
+                logging.info(f"Temperature controller successfully reached {value}C in {time.time() - global_start}s (mean = {round(mean,2)}C, std = {round(std,3)}C)")
 
                 # Turn controller OFF
-                self.clear_run_flag()
-                return True
+                if keep_on is False:
+                    self.clear_run_flag()
+
+                return True, mean, std
             
             time.sleep(1 / sample_rate)
             
-        logging.error(f"Temperature controller timed out trying to reach {value}degsC.")
+        logging.error(f"Temperature controller timed out trying to reach {value}C.")
         logging.info(f"Final peltier current is {round(self.get_main_current(),2)}A.")
 
         # Turn controller OFF
         self.clear_run_flag()
-        return False
+        return False, 0, 0
     
-    def cycle_through_temperatures(self, start_temp: float = 60.0, end_temp: float = -40.0, points: int = 11, plot: bool = False) -> None:
-        logging.info(f"Cycling through {points} temperatures from {start_temp}degsC to {end_temp}degsC.")
+    def cycle_through_temperatures(self, start_temp: float = 60.0, end_temp: float = -40.0, points: int = 11, report: bool = False) -> None:
+        logging.info(f"Cycling through {points} temperatures from {start_temp}C to {end_temp}C.")
 
-        for val in np.linspace(start_temp, end_temp, points, plot):
-            if self.wait_until_temperature(val) is False:
+        for val in np.linspace(start_temp, end_temp, points):
+            result, mean, std = self.wait_until_temperature(val)
+            if result is False:
                 logging.error("Failed to cycle through temperature set points.")
                 sys.exit()
+            elif report is True:
+                with open(self.report_file, 'a') as file:
+                    file.write(f"{val},{mean},{std}")
     
-    def plot_live_temperature_control(self, value: float, sample_rate: float = 2, plot_width: int = 100) -> bool:
+    def plot_live_temperature_control(self, value: float, sample_rate: float = 1) -> bool:
         if self.sim is True:
             return True
         
@@ -472,20 +483,22 @@ class peltier:
         global_start = time.time()
 
         plt.ion()
+        plot_width = self.timeout * sample_rate
 
-        fig = plt.figure(figsize=(16, 10))
+        fig = plt.figure(figsize=(10, 20))
         ax = fig.add_subplot(111)
             
-        plt.title(f"Target Temp: {value}degsC, Sample Rate: {sample_rate}Hz")
+        plt.title(f"Target Temp: {value}C, Sample Rate: {sample_rate}Hz")
         plt.suptitle("Live Data:")
         plt.xlabel("Samples")
-        plt.ylim([self.min_temp - self.max_temp, self.max_temp - self.min_temp])
+        plt.ylim([-100, 100])
         plt.grid(which="both")
 
         error = [0] * plot_width
         dT = [0] * plot_width
         drive = [0] * plot_width
         samples = range(1, plot_width+1)
+
         line1, = ax.plot(samples, error, 'r-', label="Temperature Error K")
         line2, = ax.plot(samples, drive, 'g-', label="Drive Power %")
         line3, = ax.plot(samples, dT, 'b-', label="dT K")
@@ -507,8 +520,8 @@ class peltier:
                     sys.exit()                    
 
             # Append and loose first element
-            plt.title(f"Target Temp: {value}degsC, Sample Rate: {sample_rate}Hz")
-            plt.suptitle(f"Live Data: Control Temperature = {round(temperature,2)}degsC, Heat Sink Temperature = {round(sink,2)}degsC, Main Current = {round(curr,2)}A, Elapsed Time = {round(time.time() - global_start,2)}s")
+            plt.title(f"Target Temp: {value}C, Sample Rate: {sample_rate}Hz")
+            plt.suptitle(f"Live Data: Control Temperature = {round(temperature,2)}C, Heat Sink Temperature = {round(sink,2)}C, Main Current = {round(curr,2)}A, Elapsed Time = {round(time.time() - global_start,2)}s")
 
             error.append(value - temperature)
             error = error[-plot_width:]
@@ -534,7 +547,7 @@ class peltier:
             # Check if steady state timeout reached
             end_time = time.time() - local_start
             if end_time >= self.steady_state:
-                logging.info(f"Temperature controller successfully reached {value}degsC in {time.time() - global_start}s")
+                logging.info(f"Temperature controller successfully reached {value}C in {time.time() - global_start}s")
                 logging.info(f"Final peltier current is {round(self.get_main_current(),2)}A.")
 
                 # Turn controller OFF
@@ -543,7 +556,7 @@ class peltier:
             
             time.sleep(1 / sample_rate)
             
-        logging.error(f"Temperature controller timed out trying to reach {value}degsC.")
+        logging.error(f"Temperature controller timed out trying to reach {value}C.")
         logging.info(f"Final peltier current is {round(self.get_main_current(),2)}A.")
 
         # Turn controller OFF
