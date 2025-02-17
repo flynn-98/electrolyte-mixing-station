@@ -12,6 +12,9 @@ class electrolyte_mixer:
         self.gantry = gantry_controller.gantry(gantry_port, gantry_sim)            
         self.pipette = pipette_controller.pipette(pipette_port, pipette_sim)
 
+        # To be set by scheduler from hardcoded values
+        self.workspace_height_correction = 0
+
         # Pot locations 1 -> 10 (mm), pot 10 is for washing
         self.pot_locations = [[41, 0], [75, 0], 
                               [109, 0], [143, 0], 
@@ -28,13 +31,14 @@ class electrolyte_mixer:
                               [self.pipette_x_location, 41.4], [self.pipette_x_location, 25.8], 
                               [self.pipette_x_location, 10.2]
                             ]
-        self.pipette_pick_height = -47.5 #mm from CAD - to be tuned
-        self.pipette_lead_in = 12 #mm to position pipette to the right of rack when returning pipette (avoid clash)
+        
+        self.pipette_pick_height = -47.5 #mm (from CAD)
+        self.pipette_lead_in = 12 #mm to position pipette to the right of rack (in X direction) when returning pipette
 
         # File to store last known active pipette for recovery
         self.pipette_file = "data/variables/active_pipette.txt" # 1-9, 0 = not active        
         
-        self.pot_base_height = -70 # CAD value (minus a little to ensure submersion)
+        self.pot_base_height = -70 #mm (from CAD)
         self.pot_area = math.pi * 2.78**2 / 4 #cm2
 
         self.chamber_location = [125, 96] # mm
@@ -43,6 +47,10 @@ class electrolyte_mixer:
         # Home if requested (will also happen during recovery)
         if home is True:
             self.gantry.softHome()
+
+    def correct_workspace_heights(self) -> None:
+         self.pot_base_height += self.workspace_height_correction
+         self.pipette_pick_height += self.workspace_height_correction
 
     def move_to_start(self) -> None:
         # Add to start of all loops involving gantry motion

@@ -16,7 +16,7 @@ def run_experiment() -> None:
     else:
         instance = scheduler.experiment(device_name=args.device_name, csv_filename="current_state.csv", home=args.home)
     
-    instance.run(args.repeats)
+    instance.run()
 
 def test_pipette() -> None:
     parser=argparse.ArgumentParser(description="Try out Pipette variables for aspiration and dispense")

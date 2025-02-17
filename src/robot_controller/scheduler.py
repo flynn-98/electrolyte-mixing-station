@@ -22,7 +22,7 @@ logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
 class experiment:
     def __init__(self, device_name: str, csv_filename: str | None = None, home: bool = False) -> None:
         # Read device data JSON
-        self.json_file = "data/devices/mixing_stations.json"
+        self.json_file = "data/devices/hardcoded_values.json"
         device_data = self.read_json(device_name)
 
         # Establish serial connections
@@ -33,6 +33,15 @@ class experiment:
 
         # Retrieve any requried variables from controllers
         self.max_dose = self.mixer.pipette.get_max_dose()
+
+        # Retrieve hardcoded values
+        self.mixer.gantry.x_correction = device_data["X_Gantry_Shift"]
+        self.mixer.gantry.y_correction = device_data["Y_Gantry_Shift"]
+
+        self.mixer.workspace_height_correction = device_data["Z_Workspace_Shift"]
+        self.mixer.correct_workspace_heights()
+
+        logging.info("Retrieved hardcoded values for " + device_name + ".")
 
         # Declare variables for CSV read
         self.df = pd.DataFrame()

@@ -1,16 +1,19 @@
 { "Mixing Stations" : [
         {
             "ID" : "microtron_01",
-            "Gantry_Address" : "/dev/ttyACM0",
+            "Gantry_Address" : "/dev/cu.usbmodem11101",
             "Pipette_Address" : "/dev/ttyUSB0",
             "Fluid_Address": "/dev/ttyACM1",
             "Mass_Address": "/dev/ttyACM2",
             "Temp_Address": "/dev/ttyACM3",
             "Gantry_Active": true,
-            "Pipette_Active": true,
-            "Fluid_Active": true,
+            "Pipette_Active": false,
+            "Fluid_Active": false,
             "Mass_Active": false,
-            "Temp_Active": false
+            "Temp_Active": false,
+            "X_Gantry_Shift": -1.0,
+            "Y_Gantry_Shift": 1.5,
+            "Z_Workspace_Shift": 0
         },
         {
             "ID" : "microtron_02",
@@ -23,7 +26,10 @@
             "Pipette_Active": true,
             "Fluid_Active": true,
             "Mass_Active": false,
-            "Temp_Active": false
+            "Temp_Active": false,
+            "X_Gantry_Shift": -1.0,
+            "Y_Gantry_Shift": 1.5,
+            "Z_Workspace_Shift": 0
         },
         {
             "ID" : "simulation",
@@ -36,7 +42,10 @@
             "Pipette_Active": false,
             "Fluid_Active": false,
             "Mass_Active": false,
-            "Temp_Active": false
+            "Temp_Active": false,
+            "X_Gantry_Shift": 0,
+            "Y_Gantry_Shift": 0,
+            "Z_Workspace_Shift": 0
         }
     ]
 }
