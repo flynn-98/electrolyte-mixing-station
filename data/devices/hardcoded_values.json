@@ -25,7 +25,7 @@
             "Gantry_Active": true,
             "Pipette_Active": true,
             "Fluid_Active": true,
-            "Mass_Active": false,
+            "Mass_Active": true,
             "Temp_Active": false,
             "X_Gantry_Shift": -1.0,
             "Y_Gantry_Shift": 1.5,

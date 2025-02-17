@@ -251,7 +251,7 @@ class experiment:
                 starting_mass = self.mass_balance.get_mass()
 
                 # Pump electrolyte to next stage
-                self.fluid_handler.add_electrolyte(volume, tube_length=100)
+                self.fluid_handler.add_electrolyte(volume, tube_length=100, overpump=1.5)
 
                 # New mass reading
                 mass_change = self.mass_balance.get_mass() - starting_mass

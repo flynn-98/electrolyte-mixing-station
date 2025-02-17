@@ -68,7 +68,7 @@ Servo mixer;
 const float motorDir = 1;
 
 // Maximum time in Loop before idle mode (s)
-const unsigned long idleTime = 30;
+const unsigned long idleTime = 10;
 
 float vol = 0;
 unsigned long StartTime;
@@ -196,7 +196,7 @@ Serial.println("Fluid Handling Kit Ready");
 
 void loop() {
     // Main code here, to run repeatedly on a loop 
-    delay(100);
+    delay(500);
 
     // Wait until data received from PC, via Serial (USB)
     if (Serial.available() > 0) {
@@ -234,6 +234,9 @@ void loop() {
             // Report back to PC if confused
             Serial.println("Unknown command");
         }
+
+        // Start idle counter after action complete
+        LastCall = ceil( millis() / 1000 );
     }
     else {
         // Check how long since last call, move to Home if too long

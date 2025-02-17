@@ -95,7 +95,7 @@ const float drift = 2; //mm
 const float motorDir[4] = {1, 1, -1, 1};
 
 // Maximum time in Loop before idle mode (s)
-const unsigned long HomeTime = 30;
+const unsigned long HomeTime = 10;
 
 // Define variables to change during Loop
 float x = 0;
@@ -393,7 +393,7 @@ void setup() {
 
 void loop() {
     // Main code here, to run repeatedly on a loop 
-    delay(100);
+    delay(500);
 
     // Wait until data received from PC, via Serial (USB)
     if (Serial.available() > 0) {
