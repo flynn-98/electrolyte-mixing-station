@@ -222,7 +222,7 @@ class experiment:
         plt.grid(visible=True, which="both", axis="both")
         plt.show()
 
-    def tune(self, pot_number: int = 1, aspirate_volume: list[float] = [1.0, 50.0], asp_const: list[float] = [0.3, 0.8], container_volume: float = 35, asp_speed: float = 0, density: float = 1.0, N: int = 5, M: int = 5) -> None:
+    def tune(self, pot_number: int = 1, asp_const: list[float] = [0.3, 0.8], aspirate_volume: list[float] = [10.0, 200.0], container_volume: float = 35, asp_speed: float = 0, density: float = 1.0, N: int = 3, M: int = 6) -> None:
         now = datetime.now()
         logging.info(f"Tuning will perform a total of {N*M} aspirations: " + now.strftime("%d/%m/%Y %H:%M:%S"))
 
@@ -261,7 +261,7 @@ class experiment:
                 errors[i][j] = mass_change - target_mass
 
                 # Empty cell once complete
-                self.fluid_handler.empty_cell(volume, tube_length=100)
+                # self.fluid_handler.empty_cell(volume, tube_length=100)
 
         # Save results
         pd.DataFrame(errors, index=constants, columns=volumes).to_csv(f"data/results/aspiration_tuning_{asp_speed}_uL_s.csv", index=True)  
