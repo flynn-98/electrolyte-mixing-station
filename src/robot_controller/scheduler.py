@@ -229,8 +229,8 @@ class experiment:
             plt.plot(volumes, results[:,n], label = f"{constants[n]}mbar/uL")
     
         plt.legend()
-        plt.xlabel("Total Volume uL")
-        plt.ylabel("Error ml")
+        plt.xlabel("Target Volume uL")
+        plt.ylabel("Error uL")
         plt.grid(visible=True, which="both", axis="both")
         plt.show()
 
@@ -271,11 +271,10 @@ class experiment:
                 self.fluid_handler.add_electrolyte(volume, tube_length=500, overpump=1.5)
 
                 # New mass reading
-                mass_change = self.mass_balance.get_mass() - starting_mass
-                target_mass = volume * density * 1e-3
+                change = 1e3 * (self.mass_balance.get_mass() - starting_mass) / density
 
                 # Record error
-                errors[i][j] = mass_change - target_mass
+                errors[i][j] = change - volume # uL
 
                 # Empty cell once complete
                 # self.fluid_handler.empty_cell(volume, tube_length=100)
