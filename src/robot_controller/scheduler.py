@@ -181,7 +181,7 @@ class experiment:
         starting_mass = self.mass_balance.get_mass()
 
         # Pump electrolyte to next stage
-        total_vol = self.df["Dose Volume (uL)"].sum()/1000
+        total_vol = self.df["Dose Volume (uL)"].sum()
         self.fluid_handler.add_electrolyte(total_vol)
 
         # Mass Balance checks

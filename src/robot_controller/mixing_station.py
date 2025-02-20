@@ -38,11 +38,11 @@ class electrolyte_mixer:
         # File to store last known active pipette for recovery
         self.pipette_file = "data/variables/active_pipette.txt" # 1-9, 0 = not active        
         
-        self.pot_base_height = -70 #mm (from CAD)
+        self.pot_base_height = -68.5 #mm (from CAD)
         self.pot_area = math.pi * 2.78**2 / 4 #cm2
 
-        self.chamber_location = [125, 96] # mm
-        self.dispense_height = 0 #mm
+        self.chamber_location = [125, 98] # mm
+        self.dispense_height = -10 #mm
 
         # Home if requested (will also happen during recovery)
         if home is True:

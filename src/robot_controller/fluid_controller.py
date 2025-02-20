@@ -53,18 +53,19 @@ class fluid_handler:
             self.ser.close()
 
     def add_electrolyte(self, fluid_vol: float, tube_length: float = 300.0, overpump: float = 1.05) -> None:
-        logging.info(f"Pumping {fluid_vol}mL of electrolyte to test cell..")
+        # Fluid volume in uL -> sent volume in mL
+        logging.info(f"Pumping {fluid_vol}uL of electrolyte to test cell..")
         tube_vol = math.pi * tube_length * 1e-3 # 2mm ID tubing (Area = Pi)
-        vol = overpump * (fluid_vol+tube_vol) #ml
+        vol = overpump * (fluid_vol / 1000 + tube_vol) #ml
         
         if self.sim is False:
             self.ser.write(f"addElectrolyte({vol})".encode())
             self.get_response()
 
     def clean_cell(self, fluid_vol: float = 2.0, tube_length: float = 300.0, overpump: float = 1.0) -> None:
-        logging.info(f"Pumping {fluid_vol}mL of cleaning solution to test cell..")
+        logging.info(f"Pumping {fluid_vol}uL of cleaning solution to test cell..")
         tube_vol = math.pi * tube_length * 1e-3 # 2mm ID tubing (Area = Pi)
-        vol = overpump * (fluid_vol+tube_vol) #ml
+        vol = overpump * (fluid_vol / 1000 + tube_vol) #ml
         
         if self.sim is False:
             self.ser.write(f"cleanCell({vol})".encode())
@@ -73,9 +74,9 @@ class fluid_handler:
             self.empty_cell(fluid_vol)
 
     def empty_cell(self, fluid_vol: float, tube_length: float = 300.0, overpump: float = 1.2) -> None:
-        logging.info(f"Pumping {fluid_vol}mL from test cell to waste..")
+        logging.info(f"Pumping {fluid_vol}uL from test cell to waste..")
         tube_vol = math.pi * tube_length * 1e-3 # 2mm ID tubing (Area = Pi)
-        vol = overpump * (fluid_vol+tube_vol) #ml
+        vol = overpump * (fluid_vol / 1000 + tube_vol) #ml
         
         if self.sim is False:
             self.ser.write(f"emptyCell({vol})".encode())
