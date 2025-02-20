@@ -228,11 +228,11 @@ class experiment:
         plt.grid(visible=True, which="both", axis="both")
         plt.show()
 
-    def tune(self, pot_number: int = 1, asp_const: list[float] = [0.3, 0.8], aspirate_volume: list[float] = [10.0, 200.0], container_volume: float = 35, asp_speed: float = 0, density: float = 1.0, N: int = 3, M: int = 6) -> None:
+    def tune(self, pot_number: int, asp_const: list[float], aspirate_volume: list[float], container_volume: float, asp_speed: float, density: float, N: int, M: int) -> None:
         now = datetime.now()
         logging.info(f"Tuning will perform a total of {N*M} aspirations: " + now.strftime("%d/%m/%Y %H:%M:%S"))
 
-        errors = np.empty((N,M))
+        errors = np.zeros((N,M))
         constants = np.linspace(asp_const[0], asp_const[1], N) # i -> N
         volumes = np.linspace(aspirate_volume[0], aspirate_volume[1], M) # j -> M
         
@@ -272,8 +272,10 @@ class experiment:
                 # Empty cell once complete
                 # self.fluid_handler.empty_cell(volume, tube_length=100)
 
-        # Save results
-        pd.DataFrame(errors, index=constants, columns=volumes).to_csv(f"data/results/aspiration_tuning_{asp_speed}_uL_s.csv", index=True)  
+            # Save results
+            pd.DataFrame(errors, index=constants, columns=volumes).to_csv(f"data/results/aspiration_tuning_{asp_speed}_uL_s.csv", index=True)
+
+        # Plot results
         self.plot_aspiration_results(errors, volumes, constants, asp_speed)
 
         # Get minimum error variables
