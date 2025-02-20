@@ -216,8 +216,9 @@ class experiment:
             logging.info(f"Creating electrolyte mixture #{n+1}..")
             self.run()
 
-    def plot_aspiration_results(self, results: np.ndarray, volumes: np.ndarray, constants: np.ndarray, speed: float) -> None:
+    def plot_aspiration_results(self, path: str, volumes: np.ndarray, constants: np.ndarray, speed: float) -> None:
         plt.title(f'Results of Aspiration Tuning: {speed}uL/s')
+        results = pd.read_csv(path).to_numpy()
 
         for n in range(len(volumes)):
             plt.plot(constants, results[n,:], label = f"{volumes[n]}uL")
@@ -231,6 +232,8 @@ class experiment:
     def tune(self, pot_number: int, asp_const: list[float], aspirate_volume: list[float], container_volume: float, asp_speed: float, density: float, N: int, M: int) -> None:
         now = datetime.now()
         logging.info(f"Tuning will perform a total of {N*M} aspirations: " + now.strftime("%d/%m/%Y %H:%M:%S"))
+
+        path = f"data/results/aspiration_tuning_{asp_speed}_uL_s.csv"
 
         errors = np.zeros((N,M))
         constants = np.linspace(asp_const[0], asp_const[1], N) # i -> N
@@ -273,10 +276,10 @@ class experiment:
                 # self.fluid_handler.empty_cell(volume, tube_length=100)
 
             # Save results
-            pd.DataFrame(errors, index=constants, columns=volumes).to_csv(f"data/results/aspiration_tuning_{asp_speed}_uL_s.csv", index=True)
+            pd.DataFrame(errors, index=constants, columns=volumes).to_csv(path, index=True)
 
         # Plot results
-        self.plot_aspiration_results(errors, volumes, constants, asp_speed)
+        self.plot_aspiration_results(path, volumes, constants, asp_speed)
 
         # Get minimum error variables
         i_min, j_min = np.unravel_index(np.absolute(errors).argmin(), errors.shape)
