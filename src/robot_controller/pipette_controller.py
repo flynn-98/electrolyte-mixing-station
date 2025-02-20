@@ -9,10 +9,10 @@ import serial
 logging.basicConfig(level = logging.INFO)
 
 class pipette:
-    def __init__(self, COM: str, sim: bool = False, maximum_power: float = 350, charge_pressure: float = 30, Kp: int = 2, Ki: int = 30, Kd: int = 0) -> None:
+    def __init__(self, COM: str, sim: bool = False, maximum_power: float = 250, charge_pressure: float = 30, Kp: int = 2, Ki: int = 20, Kd: int = 0) -> None:
         self.sim = sim
 
-        self.max_dose = 50 # ul
+        self.max_dose = 100 # ul
         self.max_pressure = 160 # mbar
         self.charge_pressure = charge_pressure # mbar
         self.max_power = maximum_power #mW
@@ -306,6 +306,8 @@ class pipette:
 
     def aspiration_test(self) -> None:
         # Used for testing only => No logging
+        if self.ser.isOpen() is False:
+                self.ser.open()
 
         try:
             charge_pressure = float(input("Enter charge pressure (mbar): "))
