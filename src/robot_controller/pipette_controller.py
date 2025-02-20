@@ -12,7 +12,7 @@ class pipette:
     def __init__(self, COM: str, sim: bool = False, maximum_power: float = 250, charge_pressure: float = 30, Kp: int = 2, Ki: int = 20, Kd: int = 0) -> None:
         self.sim = sim
 
-        self.max_dose = 150 # ul
+        self.max_dose = 200 # ul
         self.max_pressure = 160 # mbar
         self.charge_pressure = charge_pressure # mbar
         self.max_power = maximum_power #mW
