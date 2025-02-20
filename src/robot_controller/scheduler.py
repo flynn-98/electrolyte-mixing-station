@@ -216,15 +216,20 @@ class experiment:
             logging.info(f"Creating electrolyte mixture #{n+1}..")
             self.run()
 
-    def plot_aspiration_results(self, path: str, volumes: np.ndarray, constants: np.ndarray, speed: float) -> None:
+    def plot_aspiration_results(self, path: str, speed: float) -> None:
         plt.title(f'Results of Aspiration Tuning: {speed}uL/s')
-        results = pd.read_csv(path).to_numpy()
 
-        for n in range(len(volumes)):
-            plt.plot(constants, results[n,:], label = f"{volumes[n]}uL")
+        df = pd.read_csv(path)
+        results = df.to_numpy()
+
+        volumes = df.columns.values()
+        constants = df.index.values()
+
+        for n in range(len(constants)):
+            plt.plot(volumes, results[:,n], label = f"{constants[n]}mbar/uL")
     
         plt.legend()
-        plt.xlabel("Aspirate Constant mbar/uL")
+        plt.xlabel("Total Volume uL")
         plt.ylabel("Error ml")
         plt.grid(visible=True, which="both", axis="both")
         plt.show()
@@ -279,7 +284,7 @@ class experiment:
             pd.DataFrame(errors, index=constants, columns=volumes).to_csv(path, index=True)
 
         # Plot results
-        self.plot_aspiration_results(path, volumes, constants, asp_speed)
+        self.plot_aspiration_results(path, asp_speed)
 
         # Get minimum error variables
         i_min, j_min = np.unravel_index(np.absolute(errors).argmin(), errors.shape)

@@ -284,7 +284,8 @@ class peltier:
         
     def get_cooling_tc(self, control_temp: float) -> int:
         # Varies by +5% from hot side temperatures between 23-32C, kept at lower assuming reduced heating by lower PWM - 59.7
-        return int(59.7 + -1.66 * control_temp + 0.0148 * control_temp**2 + 8.06e-04 * control_temp**3)
+        # return int(59.7 + -1.66 * control_temp + 0.0148 * control_temp**2 + 8.06e-04 * control_temp**3)
+        return 100
 
     def set_max_tc(self, max: float = 100) -> bool:
         # 100 is default register value
@@ -504,7 +505,7 @@ class peltier:
         plt.suptitle("Live Data:")
         plt.xlabel("Samples")
         plt.ylim([-100, 100])
-        plt.grid(which="both")
+        plt.grid(visible=True, which="both", axis="both")
 
         error = [0] * plot_width
         dT = [0] * plot_width
