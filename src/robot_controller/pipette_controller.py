@@ -17,10 +17,10 @@ class pipette:
         self.charge_pressure = charge_pressure # mbar
         self.max_power = maximum_power #mW
 
-        self.pressure_error_criteria = 0.5 # roughly 1ul
+        self.pressure_error_criteria = 1.0 # roughly 2ul
 
         self.timeout = 5 # Maximum rise/fall time (s)
-        self.time_resolution = 0.016 # s
+        self.time_resolution = 0.02 # s
 
         if self.sim is False:
             logging.info("Configuring pipette serial port..")

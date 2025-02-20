@@ -156,6 +156,9 @@ class experiment:
                 else:
                     dose = self.max_dose
 
+                if math.floor(dose) == 0:
+                    continue
+
                 # Aspirate using data from relevant df row, increment pot co ordinates
                 pot_volume = self.mixer.collect_volume(dose, pot_volume, relevant_row["Name"], i+1, relevant_row["Aspirate Constant (mbar/uL)"], relevant_row["Aspirate Speed (uL/s)"])
 
@@ -243,7 +246,10 @@ class experiment:
                         dose = last_dose
                     else:
                         dose = self.max_dose
-                        
+
+                    if math.floor(dose) == 0:
+                        continue 
+                    
                     container_volume = self.mixer.collect_volume(dose, container_volume, "_", pot_number, const, asp_speed)
                     self.mixer.deliver_volume()
 
@@ -251,7 +257,7 @@ class experiment:
                 starting_mass = self.mass_balance.get_mass()
 
                 # Pump electrolyte to next stage
-                self.fluid_handler.add_electrolyte(volume, tube_length=100, overpump=1.5)
+                self.fluid_handler.add_electrolyte(volume, tube_length=500, overpump=1.5)
 
                 # New mass reading
                 mass_change = self.mass_balance.get_mass() - starting_mass

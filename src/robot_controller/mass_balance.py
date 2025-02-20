@@ -1,6 +1,7 @@
 import logging
 import random
 import sys
+import time
 
 import serial
 
@@ -15,6 +16,8 @@ class mass_reader:
         # Mass balance checks
         self.minor_mass_error = 10 # %, error if exceeded
         self.critical_mass_error = 50 # %, error if exceeded
+
+        self.timeout = 2 #s 
 
         if self.sim is False:
             logging.info("Configuring mass balance serial port..")
@@ -47,10 +50,10 @@ class mass_reader:
     def get_mass(self) -> float:
         if self.sim is False:
             # Send char to trigger stable value to be sent
-            self.ser.write("s".encode())
 
             while self.ser.in_waiting == 0:
-                pass
+                self.ser.write("s".encode())
+                time.sleep(self.timeout)
 
             readout = self.ser.readline().decode().rstrip().replace("g", "").replace(" ", "")
             
