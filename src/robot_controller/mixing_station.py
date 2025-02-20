@@ -42,7 +42,7 @@ class electrolyte_mixer:
         self.pot_area = math.pi * 2.78**2 / 4 #cm2
 
         self.chamber_location = [125, 98] # mm
-        self.dispense_height = -10 #mm
+        self.dispense_height = -0 #mm
 
         # Home if requested (will also happen during recovery)
         if home is True:

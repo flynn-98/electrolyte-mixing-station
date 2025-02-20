@@ -17,6 +17,8 @@ class mass_reader:
         self.minor_mass_error = 10 # %, error if exceeded
         self.critical_mass_error = 50 # %, error if exceeded
 
+        self.correction = 52 #g left behind in mixing chamber
+
         self.timeout = 2 #s 
 
         if self.sim is False:
@@ -66,6 +68,9 @@ class mass_reader:
         self.ser.write("t".encode())
 
     def check_mass_change(self, expected_mass: float, starting_mass: float) -> None:
+        # Correction accounts for mass left behind in mixing chamber
+        expected_mass -= self.correction
+
         mass_change = self.get_mass() - starting_mass
         error = mass_change - expected_mass
 

@@ -34,6 +34,9 @@ class experiment:
         # Retrieve any requried variables from controllers
         self.max_dose = self.mixer.pipette.get_max_dose()
 
+        # Set any required variables for controllers
+        self.mass_balance.correction = 52 #g
+
         # Retrieve hardcoded values
         self.mixer.gantry.x_correction = device_data["X_Gantry_Shift"]
         self.mixer.gantry.y_correction = device_data["Y_Gantry_Shift"]
