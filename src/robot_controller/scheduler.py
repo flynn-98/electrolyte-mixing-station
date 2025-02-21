@@ -219,14 +219,16 @@ class experiment:
     def plot_aspiration_results(self, path: str, speed: float) -> None:
         plt.title(f'Results of Aspiration Tuning: {speed}uL/s')
 
-        df = pd.read_csv(path)
+        df = pd.read_csv(path, index_col=0)
         results = df.to_numpy()
 
-        volumes = df.columns.values()
-        constants = df.index.values()
+        volumes = df.columns.to_numpy()
+        print(volumes)
+        constants = df.index.to_numpy()
+        print(constants)
 
         for n in range(len(constants)):
-            plt.plot(volumes, results[:,n], label = f"{constants[n]}mbar/uL")
+            plt.plot(volumes, results[n,:], label = f"{constants[n]}mbar/uL")
     
         plt.legend()
         plt.xlabel("Target Volume uL")
