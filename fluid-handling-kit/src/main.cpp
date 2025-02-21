@@ -46,8 +46,8 @@ const float STEPS_REV = 200.0;
 const float MICROSTEPS = 4.0;
 const float GEAR_RATIO = 1.0;
 
-const float PUMP_SPEED = 500.0 * MICROSTEPS * GEAR_RATIO; //microsteps/s
-const float MAX_ACCEL = 350.0 * MICROSTEPS * GEAR_RATIO; //microsteps/s2
+const float PUMP_SPEED = 200.0 * MICROSTEPS * GEAR_RATIO; //microsteps/s
+const float MAX_ACCEL = 100.0 * MICROSTEPS * GEAR_RATIO; //microsteps/s2
 
 // For Pump stepper motor
 const float ML_REV = 0.1; //ml/rev

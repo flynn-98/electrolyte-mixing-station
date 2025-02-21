@@ -236,7 +236,7 @@ class experiment:
         plt.grid(visible=True, which="both", axis="both")
         plt.show()
 
-    def tune(self, pot_number: int, asp_const: list[float], aspirate_volume: list[float], container_volume: float, asp_speed: float, density: float, N: int, M: int) -> None:
+    def tune(self, pot_number: int, asp_const: list[float], aspirate_volume: list[float], container_volume: float, asp_speed: float, density: float, N: int, M: int, move_electrolyte: bool = False) -> None:
         now = datetime.now()
         logging.info(f"Tuning will perform a total of {N*M} aspirations: " + now.strftime("%d/%m/%Y %H:%M:%S"))
 
@@ -254,6 +254,9 @@ class experiment:
                 doses = math.floor(volume // self.max_dose) + 1
                 last_dose = volume % self.max_dose
 
+                # Take mass balance reading
+                starting_mass = self.mass_balance.get_mass()
+
                 for k in range(doses):
                     if k == doses-1:
                         dose = last_dose
@@ -266,27 +269,25 @@ class experiment:
                     container_volume = self.mixer.collect_volume(dose, container_volume, "_", pot_number, const, asp_speed)
                     self.mixer.deliver_volume()
 
-                # Take mass balance reading
-                starting_mass = self.mass_balance.get_mass()
-
-                # Pump electrolyte to next stage
-                self.fluid_handler.add_electrolyte(volume, tube_length=500, overpump=1.5)
+                if move_electrolyte is True: 
+                    # Pump electrolyte to next stage
+                    self.fluid_handler.add_electrolyte(volume, tube_length=500, overpump=1.3)
 
                 # New mass reading
                 change = 1e3 * (self.mass_balance.get_mass() - starting_mass) / density
 
                 # Record error
-                errors[i][j] = change - volume # uL
+                if move_electrolyte is True: 
+                    errors[i][j] = math.floor(change - (volume - self.mass_balance.correction)) # uL
+                else:
+                    errors[i][j] = math.floor(change - volume) # uL
 
-                # Empty cell once complete
-                # self.fluid_handler.empty_cell(volume, tube_length=100)
-
-            # Save results
-            pd.DataFrame(errors, index=constants, columns=volumes).to_csv(path, index=True)
+                # Save results
+                pd.DataFrame(errors, index=constants, columns=volumes).to_csv(path, index=True)
 
         # Plot results
         self.plot_aspiration_results(path, asp_speed)
 
         # Get minimum error variables
         i_min, j_min = np.unravel_index(np.absolute(errors).argmin(), errors.shape)
-        logging.info(f"RESULT: Minimum error of {errors[i_min, j_min]}g using {constants[i_min]}mbar/uL and {volumes[j_min]}uL.")
+        logging.info(f"RESULT: Minimum error of {errors[i_min, j_min]}uL using {constants[i_min]}mbar/uL and {volumes[j_min]}uL.")
