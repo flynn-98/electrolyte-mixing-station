@@ -77,8 +77,11 @@ class pipette:
         return self.charge_pressure
     
     def get_aspiration_pressure(self, volume: float) -> float:
-        # Place holder for constant as function of volume (mbar/ul seems to decrease slightly for smaller volumes)
-        return round(0.3589 * volume, 2)
+        # Constant as function of volume (mbar/ul seems to decrease slightly for smaller volumes)
+        if volume >= 100:
+            return round(0.3589 * volume, 2)
+        else:
+            return round(0.3532 * volume, 2)
     
     def register_write(self, REGISTER_NUMBER: int, VALUE: float) -> bool:
         # The PCB responds to “write” commands by echoing the command back. 
