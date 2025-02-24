@@ -41,8 +41,8 @@ class electrolyte_mixer:
         self.pot_base_height = -68 #mm (from CAD)
         self.pot_area = math.pi * 2.78**2 / 4 #cm2
 
-        self.chamber_location = [125, 98] # mm
-        self.dispense_height = -10 #mm
+        self.chamber_location = [125, 140] #[125, 98] # mm
+        self.dispense_height = -30 #mm
 
         # Home if requested (will also happen during recovery)
         if home is True:
@@ -117,7 +117,7 @@ class electrolyte_mixer:
         with open(self.pipette_file, 'w') as filehandler:
                 filehandler.write("0")
 
-    def collect_volume(self, aspirate_volume: float, starting_volume: float, name: str, pot_no: int, aspirate_constant: float, aspirate_speed: float) -> float:
+    def collect_volume(self, aspirate_volume: float, starting_volume: float, name: str, pot_no: int, aspirate_speed: float) -> float:
         new_volume = round(starting_volume - aspirate_volume * 1e-3, 4) #ml
 
         x, y = self.pot_locations[pot_no-1][0], self.pot_locations[pot_no-1][1]
@@ -138,7 +138,7 @@ class electrolyte_mixer:
         self.gantry.move(x, y, z)
 
         # Aspirate pipette
-        self.pipette.aspirate(aspirate_volume, aspirate_constant, aspirate_speed, poly=False, check=True)
+        self.pipette.aspirate(aspirate_volume, aspirate_speed, poly=False, check=True)
 
         logging.info("Aspiration complete.")
         logging.info(f"{aspirate_volume}uL extracted, {new_volume}mL remaining..")

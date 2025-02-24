@@ -163,7 +163,7 @@ class experiment:
                     continue
 
                 # Aspirate using data from relevant df row, increment pot co ordinates
-                pot_volume = self.mixer.collect_volume(dose, pot_volume, relevant_row["Name"], i+1, relevant_row["Aspirate Constant (mbar/uL)"], relevant_row["Aspirate Speed (uL/s)"])
+                pot_volume = self.mixer.collect_volume(dose, pot_volume, relevant_row["Name"], i+1, relevant_row["Aspirate Speed (uL/s)"])
 
                 # Move to mixing chamber and dispense
                 self.mixer.deliver_volume()

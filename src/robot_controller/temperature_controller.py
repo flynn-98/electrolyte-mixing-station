@@ -24,7 +24,7 @@ class peltier:
 
         self.input_voltage = 12.0 #V
         self.max_current = 8.0 #A
-        self.min_current = 2.5 #A, 2x peltiers at 100%
+        self.min_current = 0.5 #A, 2x peltiers at 100%
 
         self.fan_current = 1.6 #A
         self.fan_voltage = 12.0
@@ -52,7 +52,7 @@ class peltier:
         self.cool_mode = False
 
         self.temp_threshold = 20 #C, to set heating or cooling parameters
-        self.dead_band = 6 #+-% to prevent rapid switching
+        self.dead_band = 5 #+-% to prevent rapid switching
 
         self.report_file = "data/results/temperature_report.csv"
 

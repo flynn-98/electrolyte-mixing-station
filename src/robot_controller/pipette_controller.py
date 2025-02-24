@@ -9,15 +9,15 @@ import serial
 logging.basicConfig(level = logging.INFO)
 
 class pipette:
-    def __init__(self, COM: str, sim: bool = False, maximum_power: float = 250, charge_pressure: float = 30, Kp: int = 2, Ki: int = 20, Kd: int = 0) -> None:
+    def __init__(self, COM: str, sim: bool = False, maximum_power: float = 275, charge_pressure: float = 30, Kp: int = 1, Ki: int = 20, Kd: int = 0) -> None:
         self.sim = sim
 
-        self.max_dose = 160 # ul
+        self.max_dose = 200 # ul
         self.max_pressure = 160 # mbar
         self.charge_pressure = charge_pressure # mbar
         self.max_power = maximum_power #mW
 
-        self.pressure_error_criteria = 1.0 # roughly 2ul
+        self.pressure_error_criteria = 0.5 # roughly 1ul
 
         self.timeout = 5 # Maximum rise/fall time (s)
         self.time_resolution = 0.02 # s
@@ -53,13 +53,16 @@ class pipette:
                 logging.error("Disc pump PID configuration failed.")
                 sys.exit()
 
-            self.gauge = self.get_gauge() #mbar
+            self.gauge = self.get_pressure() #mbar
+
+            if (self.gauge > self.charge_pressure / 4):
+                logging.error("Disc pump gauge pressure is greater than 25% of charge pressure.")
 
         else:
             logging.info("No serial connection to pipette established.")
             self.gauge = 0 #mbar
 
-        logging.info(f"Disc pump gauge pressure set as {self.gauge}mbar.")
+        logging.info(f"Disc pump gauge pressure is {self.gauge}mbar.")
 
     def get_data(self) -> str:
         while self.ser.in_waiting == 0:
@@ -72,6 +75,10 @@ class pipette:
     
     def get_charge_pressure(self) -> float:
         return self.charge_pressure
+    
+    def get_aspiration_pressure(self, volume: float) -> float:
+        # Place holder for constant as function of volume (mbar/ul seems to decrease slightly for smaller volumes)
+        return round(0.3589 * volume, 2)
     
     def register_write(self, REGISTER_NUMBER: int, VALUE: float) -> bool:
         # The PCB responds to “write” commands by echoing the command back. 
@@ -148,12 +155,9 @@ class pipette:
                 return True
             else:
                 return False
-
-    def get_gauge(self) -> float:
-        return self.register_read(39)
     
     def get_pressure(self) -> float:
-        return self.register_read(39) - self.gauge
+        return self.register_read(39)
 
     def pump_on(self) -> None:
         if self.register_write(0, 1) is True:
@@ -218,7 +222,7 @@ class pipette:
         # R/W register 23 for set point
         # mbar is default unit
 
-        value = round(value + self.gauge, 3) # Increment by gauge pressure such that set_pressure(0) turns pump off
+        value = round(value, 2) # Increment by gauge pressure such that set_pressure(0) turns pump off
 
         if value > self.max_pressure:
             logging.error(f"Requested pressure of {value}mbar exceeds maximum.")
@@ -233,13 +237,13 @@ class pipette:
             value = 0
 
         if self.register_write(23, value) is True:
-            logging.info(f"Pipette target gauge pressure set to {value - self.gauge}mbar.")
+            logging.info(f"Pipette target gauge pressure set to {value}mbar.")
         else:
-            logging.error(f"Failed to set pipette target gauge pressure to {value - self.gauge}mbar.")
+            logging.error(f"Failed to set pipette target gauge pressure to {value}mbar.")
             sys.exit()
 
         if check is True:
-            self.check_pressure(value - self.gauge)
+            self.check_pressure(value)
 
     def charge_pipette(self) -> None:
         self.set_pressure(self.charge_pressure, check=True)
@@ -255,9 +259,7 @@ class pipette:
 
         return C_0 + C_3 * np.power(time, 3) + C_4 * np.power(time, 4) + C_5 * np.power(time, 5)
 
-    def aspirate(self, aspirate_volume: float, aspirate_constant: float, aspirate_speed: float, poly: bool = False, check: bool = True) -> None:
-        charge_pressure = self.get_pressure()
-
+    def aspirate(self, aspirate_volume: float, aspirate_speed: float, poly: bool = False, check: bool = True) -> None:
         if aspirate_volume > self.max_dose:
             logging.error(f"Requested dose of {aspirate_volume}uL exceeds maximum.")
             logging.info(f"Dose reduced to maximum of {self.max_dose}uL.")
@@ -270,21 +272,22 @@ class pipette:
 
             aspirate_volume = 0
         
-        diff = aspirate_constant * aspirate_volume
-        aspirate_pressure = diff + charge_pressure # Pressure diff is from charge pressure
+        #diff = aspirate_constant * aspirate_volume
+        diff = self.get_aspiration_pressure(aspirate_volume)
+        aspirate_pressure = diff + self.charge_pressure # Pressure diff is from charge pressure
 
         if aspirate_speed != 0:
             rise_time = aspirate_volume / aspirate_speed # Seconds
 
-            logging.info(f"Rising to aspiration pressure of {aspirate_pressure}mbar in {rise_time}s, from charged pressure of {charge_pressure}mbar.")
+            logging.info(f"Rising to aspiration pressure of {aspirate_pressure}mbar in {rise_time}s, from charged pressure of {self.charge_pressure}mbar.")
             N = math.ceil(rise_time / (2.3 * self.time_resolution)) + 2 # Nyquist * smallest time step of SPM (no point changing pressure at any higher frequency)
             dT = rise_time / (N-1)
 
             if N > 2:
                 if poly is False:
-                    path = np.linspace(charge_pressure, aspirate_pressure, N)
+                    path = np.linspace(self.charge_pressure, aspirate_pressure, N)
                 else:
-                    path = self.get_poly_equation(charge_pressure, diff, rise_time, N)
+                    path = self.get_poly_equation(self.charge_pressure, diff, rise_time, N)
 
                 for set_point in path:
                     self.set_pressure(set_point)
