@@ -80,7 +80,7 @@ class experiment:
                         'Dose Volume (uL)': float,
                         'Container Volume (mL)': float,
                         'Density (g/mL)': float,
-                        'Aspirate Constant (mbar/uL)': float,
+                        'Aspirate Scalar': float,
                         'Aspirate Speed (uL/s)': float,
                     }
         
