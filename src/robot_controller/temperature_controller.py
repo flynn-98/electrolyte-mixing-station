@@ -20,7 +20,7 @@ class peltier:
         #self.ready_chars = '\r' + '\n' + '>' + ' '
 
         self.max_temp = 60 #C
-        self.min_temp = -40 #C
+        self.min_temp = -10 #C
 
         self.input_voltage = 12.0 #V
         self.max_current = 8.0 #A
@@ -50,6 +50,7 @@ class peltier:
         self.Kd = 0
 
         self.cool_mode = False
+        self.run_flag = False
 
         self.temp_threshold = 20 #C, to set heating or cooling parameters
         self.dead_band = 5 #+-% to prevent rapid switching
@@ -164,24 +165,26 @@ class peltier:
     def set_run_flag(self) -> None:
         msg = "$W"
 
-        if self.sim is False:
+        if self.sim is False and self.run_flag is False:
             self.ser.write((msg+'\r').encode('ascii'))
             repeat = self.get_data().split(" ")[1]
 
             if self.get_data() == "Run" and repeat == msg:
                 logging.info("Temperature controller Run flag set.")
+                self.run_flag = True
             else:
                 logging.error("Failed to set temperature controller Run flag.")
 
     def clear_run_flag(self) -> None:
         msg = "$Q"
 
-        if self.sim is False:
+        if self.sim is False and self.run_flag is True:
             self.ser.write((msg+'\r').encode('ascii'))
             repeat = self.get_data().split(" ")[1]
 
             if self.get_data() == "Stop" and repeat == msg:
                 logging.info("Temperature controller Run flag cleared.")
+                self.run_flag = False
             else:   
                 logging.error("Failed to clear temperature controller Run flag.")
 
@@ -419,27 +422,34 @@ class peltier:
         else:
             logging.error("Failed to set peltier target temperature.")
     
-    def wait_until_temperature(self, value: float, sample_rate: float = 1, keep_on: bool = False) -> tuple[bool, float, float]:
+    def wait_until_temperature(self, value: float, sample_rate: float = 1, keep_on: bool = True) -> tuple[bool, float, float]:
         if self.sim is True:
             return True, 0.0, 0.0
         
         self.set_temperature(value)
         global_start = time.time()
 
-        # Turn controller ON
-        self.set_run_flag()
-
         while (time.time() - global_start) < self.timeout:
 
             temperature = self.get_t1_value()
+
+            # Allow temperature to drop naturally if current temp is greater than target and target is above threshold
+            if (self.cool_mode is False) and (temperature > value):
+                # Turn controller Off (if not already)
+                self.clear_run_flag()
+                time.sleep(1 / sample_rate)
+
+                continue # Skip all else
+            else:
+                # Turn controller ON (if not already)
+                self.set_run_flag()
+            
             stats = np.empty((1,))
 
             if (self.cool_mode is True) and (temperature < self.temp_threshold):
                 # Set max Tc based on current temperature
-                pass
-
-                #if self.set_max_tc(self.get_cooling_tc(temperature)) is False:
-                #    logging.error("Failed to set temperature regulator max Tc during cooling mode.")
+                if self.set_max_tc(self.get_cooling_tc(temperature)) is False:
+                    logging.error("Failed to set temperature regulator max Tc during cooling mode.")
 
             local_start = time.time()
 
@@ -450,14 +460,13 @@ class peltier:
                 time.sleep(1 / sample_rate)
 
             # Check if steady state timeout reached
-            end_time = time.time() - local_start
-            if end_time >= self.steady_state:
+            if (time.time() - local_start) >= self.steady_state:
                 mean = round(stats.mean(), 2)
                 std = round(stats.std(), 3)
 
                 logging.info(f"Temperature controller successfully reached {value}C in {time.time() - global_start}s (mean = {mean}C, std = {std}C)")
 
-                # Turn controller OFF
+                # Turn controller OFF if required
                 if keep_on is False:
                     self.clear_run_flag()
 
@@ -472,7 +481,7 @@ class peltier:
         self.clear_run_flag()
         return False, 0.0, 0.0
     
-    def cycle_through_temperatures(self, start_temp: float = 60.0, end_temp: float = -40.0, points: int = 11, report: bool = False) -> None:
+    def cycle_through_temperatures(self, start_temp: float = 60.0, end_temp: float = -10.0, points: int = 8, report: bool = False) -> None:
         logging.info(f"Cycling through {points} temperatures from {start_temp}C to {end_temp}C.")
 
         file_exists = os.path.exists(self.report_file)
@@ -574,8 +583,7 @@ class peltier:
                 time.sleep(1 / sample_rate)
 
             # Check if steady state timeout reached
-            end_time = time.time() - local_start
-            if end_time >= self.steady_state:
+            if (time.time() - local_start) >= self.steady_state:
                 logging.info(f"Temperature controller successfully reached {value}C in {time.time() - global_start}s")
                 logging.info(f"Final peltier current is {round(self.get_main_current(),2)}A.")
 
