@@ -76,12 +76,9 @@ class pipette:
     def get_charge_pressure(self) -> float:
         return self.charge_pressure
     
-    def get_aspiration_pressure(self, volume: float) -> float:
-        # Constant as function of volume (mbar/ul seems to decrease slightly for smaller volumes)
-        if volume >= 100:
-            return round(0.3589 * volume, 2)
-        else:
-            return round(0.3532 * volume, 2)
+    def get_aspiration_pressure(self, volume: float, scalar: float = 1.0) -> float:
+        # Constant as function of volume (1/2.64 = 0.38mbar/ul)
+        return round(scalar * (volume - 1.42) / 2.64, 2)
     
     def register_write(self, REGISTER_NUMBER: int, VALUE: float) -> bool:
         # The PCB responds to “write” commands by echoing the command back. 
@@ -177,7 +174,7 @@ class pipette:
             sys.exit()
 
         if check is True:
-            self.check_pressure(0)
+            self.check_pressure(self.gauge)
 
     def get_power(self) -> float:
         power = self.register_read(5)
@@ -262,7 +259,7 @@ class pipette:
 
         return C_0 + C_3 * np.power(time, 3) + C_4 * np.power(time, 4) + C_5 * np.power(time, 5)
 
-    def aspirate(self, aspirate_volume: float, aspirate_speed: float, poly: bool = False, check: bool = True) -> None:
+    def aspirate(self, aspirate_volume: float, aspirate_scalar: float, aspirate_speed: float, poly: bool = True, check: bool = True) -> None:
         if aspirate_volume > self.max_dose:
             logging.error(f"Requested dose of {aspirate_volume}uL exceeds maximum.")
             logging.info(f"Dose reduced to maximum of {self.max_dose}uL.")
@@ -276,7 +273,7 @@ class pipette:
             aspirate_volume = 0
         
         #diff = aspirate_constant * aspirate_volume
-        diff = self.get_aspiration_pressure(aspirate_volume)
+        diff = self.get_aspiration_pressure(aspirate_volume, aspirate_scalar)
         aspirate_pressure = diff + self.charge_pressure # Pressure diff is from charge pressure
 
         if aspirate_speed != 0:
@@ -307,7 +304,6 @@ class pipette:
             self.set_pressure(aspirate_pressure, check)
     
     def dispense(self, check: bool = True) -> None:
-        self.set_pressure(0) # To dispense as quickly as possible to remove all liquid
         self.pump_off(check)
 
     def aspiration_test(self) -> None:

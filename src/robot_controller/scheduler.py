@@ -221,12 +221,12 @@ class experiment:
         results = df.to_numpy()
 
         volumes = df.columns.to_numpy()
-        speeds = df.index.to_numpy()
+        scalars = df.index.to_numpy()
 
         plt.title(f'Results of Aspiration Tuning: {volumes[0]} - {volumes[-1]}uL')
 
-        for n in range(len(speeds)):
-            plt.plot(volumes, results[n,:], label = f"{speeds[n]}uL/s")
+        for n in range(len(scalars)):
+            plt.plot(volumes, results[n,:], label = f"{scalars[n]}")
     
         plt.legend()
         plt.xlabel("Target Volume uL")
@@ -234,21 +234,21 @@ class experiment:
         plt.grid(visible=True, which="both", axis="both")
         plt.show()
 
-    def tune(self, pot_number: int, asp_speed: list[float], aspirate_volume: list[float], container_volume: float, density: float, N: int, M: int, move_electrolyte: bool = False) -> None:
+    def tune(self, pot_number: int, aspirate_scalars: list[float], aspirate_volume: list[float], container_volume: float, density: float, N: int, M: int, asp_speed: float = 100.0, move_electrolyte: bool = False) -> None:
         now = datetime.now()
         logging.info(f"Tuning will perform a total of {N*M} aspirations: " + now.strftime("%d/%m/%Y %H:%M:%S"))
+        self.mixer.move_to_start()
 
         path = f"data/results/aspiration_tuning_results.csv"
 
         errors = np.zeros((N,M))
-        speeds = np.linspace(asp_speed[0], asp_speed[1], N) # i -> N
+        scalars = np.linspace(aspirate_scalars[0], aspirate_scalars[1], N) # i -> N
         volumes = np.linspace(aspirate_volume[0], aspirate_volume[1], M) # j -> M
-        
-        for i, speed in enumerate(speeds):
-            for j, volume in enumerate(volumes):
-                logging.info(f"Aspirating {volume}uL using parameters {speed}uL/s..")
-                self.mixer.move_to_start()
 
+        for i, scalar in enumerate(scalars):
+            for j, volume in enumerate(volumes):
+                logging.info(f"Aspirating {volume}uL using parameter {scalar}..")
+                
                 doses = math.floor(volume // self.max_dose) + 1
                 last_dose = volume % self.max_dose
 
@@ -264,7 +264,7 @@ class experiment:
                     if math.floor(dose) == 0:
                         continue 
                     
-                    container_volume = self.mixer.collect_volume(dose, container_volume, "_", pot_number, speed)
+                    container_volume = self.mixer.collect_volume(dose, container_volume, "_", pot_number, scalar, asp_speed)
                     self.mixer.deliver_volume()
 
                 if move_electrolyte is True: 
@@ -281,11 +281,11 @@ class experiment:
                     errors[i][j] = math.floor(change - volume) # uL
 
                 # Save results
-                pd.DataFrame(errors, index=speeds, columns=volumes).to_csv(path, index=True)
+                pd.DataFrame(errors, index=scalars, columns=volumes).to_csv(path, index=True)
 
         # Plot results
         self.plot_aspiration_results(path)
 
         # Get minimum error variables
         i_min, j_min = np.unravel_index(np.absolute(errors).argmin(), errors.shape)
-        logging.info(f"RESULT: Minimum error of {errors[i_min, j_min]}uL using {speeds[i_min]}uL/s and {volumes[j_min]}uL.")
+        logging.info(f"RESULT: Minimum error of {errors[i_min, j_min]}uL using {scalars[i_min]}uL/s and {volumes[j_min]}uL.")
