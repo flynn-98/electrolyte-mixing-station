@@ -395,6 +395,12 @@ class peltier:
     
     def get_main_current(self) -> float:
         return self.register_read(152)
+    
+    def get_fan1_current(self) -> float:
+        return self.register_read(153)
+    
+    def get_fan2_current(self) -> float:
+        return self.register_read(154)
 
     def set_temperature(self, temp: float) -> None:
         if temp <= self.temp_threshold:
@@ -510,11 +516,13 @@ class peltier:
         error = [0] * plot_width
         dT = [0] * plot_width
         drive = [0] * plot_width
+        fan = [0] * plot_width
         samples = range(1, plot_width+1)
 
         line1, = ax.plot(samples, error, 'r-', label="Temperature Error K")
         line2, = ax.plot(samples, drive, 'g-', label="Drive Power %")
         line3, = ax.plot(samples, dT, 'b-', label="dT K")
+        line4, = ax.plot(samples, fan, 'k-', label="Total Fan Current A")
         plt.legend(loc="upper right")
 
         # Turn controller ON
@@ -525,6 +533,7 @@ class peltier:
             temperature = self.get_t1_value()
             sink = self.get_t2_value()
             curr = self.get_main_current()
+            fan_curr = self.get_fan1_current() + self.get_fan2_current()
 
             if (self.cool_mode is True) and (temperature < self.temp_threshold):
                 # Set max Tc based on current temperature
@@ -534,7 +543,7 @@ class peltier:
 
             # Append and loose first element
             plt.title(f"Target Temp: {value}C, Sample Rate: {sample_rate}Hz")
-            plt.suptitle(f"Live Data: Control Temperature = {round(temperature,2)}C, Heat Sink Temperature = {round(sink,2)}C, Main Current = {round(curr,2)}A, Elapsed Time = {round(time.time() - global_start,2)}s")
+            plt.suptitle(f"Live Data: Control Temperature = {round(temperature,2)}C, Heat Sink Temperature = {round(sink,2)}C, Main Current = {round(curr,2)}A, Fan Current = {round(fan_curr,2)}A, Elapsed Time = {round(time.time() - global_start,2)}s")
 
             error.append(value - temperature)
             error = error[-plot_width:]
@@ -545,9 +554,13 @@ class peltier:
             dT.append(abs(temperature - sink))
             dT = dT[-plot_width:]
 
+            fan.append(fan_curr)
+            fan = fan[-plot_width:]
+
             line1.set_ydata(error)
             line2.set_ydata(drive)
             line3.set_ydata(dT)
+            line4.set_ydata(fan)
 
             fig.canvas.draw()
             fig.canvas.flush_events()
