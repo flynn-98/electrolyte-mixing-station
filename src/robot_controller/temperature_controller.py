@@ -567,6 +567,9 @@ class peltier:
                 
             local_start = time.time()
 
+            #self.get_status()
+            #self.clear_status()
+
             while (abs(value - self.get_t1_value()) < self.allowable_error) and (time.time() - local_start < self.steady_state):
                 time.sleep(1 / sample_rate)
 

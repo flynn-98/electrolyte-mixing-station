@@ -9,11 +9,13 @@ import serial
 logging.basicConfig(level = logging.INFO)
 
 class pipette:
-    def __init__(self, COM: str, sim: bool = False, maximum_power: float = 275, charge_pressure: float = 30, Kp: int = 1, Ki: int = 20, Kd: int = 0) -> None:
+    def __init__(self, COM: str, sim: bool = False, maximum_power: float = 275, charge_pressure: float = 30, aspirate_speed: float = 100, Kp: int = 1, Ki: int = 20, Kd: int = 0) -> None:
         self.sim = sim
 
         self.max_dose = 200 # ul
         self.max_pressure = 160 # mbar
+        self.aspirate_speed = aspirate_speed # uL/s
+
         self.charge_pressure = charge_pressure # mbar
         self.max_power = maximum_power #mW
 
@@ -78,7 +80,7 @@ class pipette:
     
     def get_aspiration_pressure(self, volume: float, scalar: float = 1.0) -> float:
         # Constant as function of volume (1/2.64 = 0.38mbar/ul)
-        return round(scalar * (volume - 1.42) / 2.64, 2)
+        return round(scalar * (volume - 1.42) / 2.72165, 2)
     
     def register_write(self, REGISTER_NUMBER: int, VALUE: float) -> bool:
         # The PCB responds to “write” commands by echoing the command back. 
@@ -248,18 +250,7 @@ class pipette:
     def charge_pipette(self) -> None:
         self.set_pressure(self.charge_pressure, check=True)
 
-    def get_poly_equation(self, xi: float, diff: float, T: float, N: int) -> np.ndarray:
-        time = np.linspace(0, T, N)
-
-        # polynomial coefficients
-        C_0 = xi
-        C_3 = diff * 10 / pow(T, 3)
-        C_4 = diff * -15 / pow(T, 4)
-        C_5 = diff * 6 / pow(T, 5)
-
-        return C_0 + C_3 * np.power(time, 3) + C_4 * np.power(time, 4) + C_5 * np.power(time, 5)
-
-    def aspirate(self, aspirate_volume: float, aspirate_scalar: float, aspirate_speed: float, poly: bool = True, check: bool = True) -> None:
+    def aspirate(self, aspirate_volume: float, aspirate_scalar: float, aspirate_speed: float = 100.0, check: bool = True) -> None:
         if aspirate_volume > self.max_dose:
             logging.error(f"Requested dose of {aspirate_volume}uL exceeds maximum.")
             logging.info(f"Dose reduced to maximum of {self.max_dose}uL.")
@@ -284,10 +275,7 @@ class pipette:
             dT = rise_time / (N-1)
 
             if N > 2:
-                if poly is False:
-                    path = np.linspace(self.charge_pressure, aspirate_pressure, N)
-                else:
-                    path = self.get_poly_equation(self.charge_pressure, diff, rise_time, N)
+                path = np.linspace(self.charge_pressure, aspirate_pressure, N)
 
                 for set_point in path:
                     self.set_pressure(set_point)
@@ -326,21 +314,21 @@ class pipette:
         try:
             aspirate_volume = float(input("Enter Aspirate Volume (uL): "))
         except Exception as ex:
-            aspirate_volume = 10
+            aspirate_volume = 50
             print(ex)
             print(f"Aspirate Volume set to {aspirate_volume}uL.")
 
         try:
             aspirate_constant = float(input("Enter Aspirate Constant (mbar/uL): "))
         except Exception as ex:
-            aspirate_constant = 0.5
+            aspirate_constant = 0.4
             print(ex)
             print(f"Aspirate Constant set to {aspirate_constant}mbar/uL.")
 
         try:
             aspirate_speed = float(input("Enter Aspirate Speed (uL/s): "))
         except Exception as ex:
-            aspirate_speed = 10
+            aspirate_speed = 100
             print(ex)
             print(f"Aspirate Speed set to {aspirate_speed}uL/s.")
 

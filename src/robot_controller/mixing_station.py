@@ -117,7 +117,7 @@ class electrolyte_mixer:
         with open(self.pipette_file, 'w') as filehandler:
                 filehandler.write("0")
 
-    def collect_volume(self, aspirate_volume: float, starting_volume: float, name: str, pot_no: int, aspirate_scalar: float, aspirate_speed: float = 100.0) -> float:
+    def collect_volume(self, aspirate_volume: float, starting_volume: float, name: str, pot_no: int, aspirate_scalar: float, aspirate_speed: float) -> float:
         new_volume = round(starting_volume - aspirate_volume * 1e-3, 4) #ml
 
         x, y = self.pot_locations[pot_no-1][0], self.pot_locations[pot_no-1][1]

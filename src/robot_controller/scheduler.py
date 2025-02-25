@@ -163,7 +163,7 @@ class experiment:
                     continue
 
                 # Aspirate using data from relevant df row, increment pot co ordinates
-                pot_volume = self.mixer.collect_volume(dose, pot_volume, relevant_row["Name"], i+1, relevant_row["Aspirate Speed (uL/s)"])
+                pot_volume = self.mixer.collect_volume(dose, pot_volume, relevant_row["Name"], i+1, relevant_row["Aspirate Scalar"], relevant_row["Aspirate Speed (uL/s)"])
 
                 # Move to mixing chamber and dispense
                 self.mixer.deliver_volume()
@@ -234,7 +234,7 @@ class experiment:
         plt.grid(visible=True, which="both", axis="both")
         plt.show()
 
-    def tune(self, pot_number: int, aspirate_scalars: list[float], aspirate_volume: list[float], container_volume: float, density: float, N: int, M: int, asp_speed: float = 100.0, move_electrolyte: bool = False) -> None:
+    def tune(self, pot_number: int, aspirate_scalars: list[float], aspirate_volume: list[float], container_volume: float, density: float, N: int, M: int, aspirate_speed: float = 100.0, move_electrolyte: bool = False) -> None:
         now = datetime.now()
         logging.info(f"Tuning will perform a total of {N*M} aspirations: " + now.strftime("%d/%m/%Y %H:%M:%S"))
         self.mixer.move_to_start()
@@ -264,7 +264,7 @@ class experiment:
                     if math.floor(dose) == 0:
                         continue 
                     
-                    container_volume = self.mixer.collect_volume(dose, container_volume, "_", pot_number, scalar, asp_speed)
+                    container_volume = self.mixer.collect_volume(dose, container_volume, "_", pot_number, scalar, aspirate_speed)
                     self.mixer.deliver_volume()
 
                 if move_electrolyte is True: 
