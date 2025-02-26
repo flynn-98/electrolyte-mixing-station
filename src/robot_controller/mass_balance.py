@@ -49,13 +49,25 @@ class mass_reader:
         if self.sim is False:
             self.ser.close()
 
-    def get_mass(self) -> float:
+    def get_mass(self) -> float:        
         if self.sim is False:
-            # Send char to trigger stable value to be sent
+            # Wait for balance to settle in case fluid is moving
+            time.sleep(3)
+            received = False
 
-            while self.ser.in_waiting == 0:
+            while received is False:
+                # Send char to trigger stable value to be sent
+                logging.info("Requesting mass balance reading..")
                 self.ser.write("s".encode())
-                time.sleep(self.timeout)
+
+                start = time.time()
+                while (self.ser.in_waiting == 0) and (time.time() - start < self.timeout):
+                    time.sleep(0.2)
+
+                if self.ser.in_waiting > 0:
+                    received = True
+                else:
+                    logging.error("Mass balance request timed out.")
 
             readout = self.ser.readline().decode().rstrip().replace("g", "").replace(" ", "")
             
