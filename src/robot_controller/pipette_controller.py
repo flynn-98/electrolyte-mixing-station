@@ -257,7 +257,7 @@ class pipette:
 
     def blow_out_pipette(self) -> None:
         self.charge_pipette(check=False)
-        time.sleep(0.2)
+        time.sleep(0.5)
         self.pump_off()
         time.sleep(1)
 
@@ -304,6 +304,7 @@ class pipette:
     
     def dispense(self, check: bool = True) -> None:
         self.pump_off(check)
+        self.blow_out_pipette()
 
     def aspiration_test(self) -> None:
         # Used for testing only => No logging
