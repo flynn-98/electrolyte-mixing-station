@@ -259,7 +259,7 @@ class pipette:
         self.charge_pipette(check=False)
         time.sleep(0.5)
         self.pump_off()
-        time.sleep(1)
+        time.sleep(0.5)
 
     def aspirate(self, aspirate_volume: float, aspirate_scalar: float, aspirate_speed: float = 100.0, check: bool = True) -> None:
         if aspirate_volume > self.max_dose:
