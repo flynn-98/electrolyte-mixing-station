@@ -57,8 +57,12 @@ class pipette:
 
             self.gauge = self.get_pressure() #mbar
 
-            if (self.gauge > self.charge_pressure / 4):
-                logging.error("Disc pump gauge pressure is greater than 25% of charge pressure.")
+            if (self.gauge > self.charge_pressure * 0.15):
+                logging.error("Disc pump gauge pressure is greater than 15% of charge pressure.")
+                logging.info("Attempting to relieve pressure..")
+
+                self.blow_out_pipette()
+                self.gauge = self.get_pressure() #mbar
 
         else:
             logging.info("No serial connection to pipette established.")
@@ -247,8 +251,15 @@ class pipette:
         if check is True:
             self.check_pressure(value)
 
-    def charge_pipette(self) -> None:
-        self.set_pressure(self.charge_pressure, check=True)
+    def charge_pipette(self, check: bool = True) -> None:        
+        self.pump_on()
+        self.set_pressure(self.charge_pressure, check=check)
+
+    def blow_out_pipette(self) -> None:
+        self.charge_pipette(check=False)
+        time.sleep(0.2)
+        self.pump_off()
+        time.sleep(1)
 
     def aspirate(self, aspirate_volume: float, aspirate_scalar: float, aspirate_speed: float = 100.0, check: bool = True) -> None:
         if aspirate_volume > self.max_dose:

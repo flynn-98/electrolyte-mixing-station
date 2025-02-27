@@ -127,7 +127,7 @@ class electrolyte_mixer:
         self.gantry.move(x, y, 0)
 
         # Charge pipette
-        self.pipette.pump_on()
+        self.pipette.blow_out_pipette()
         self.pipette.charge_pipette()
         logging.info("Pipette charged.")
 
