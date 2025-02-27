@@ -228,8 +228,8 @@ class pipette:
         # R/W register 23 for set point
         # mbar is default unit
 
-        value = round(value, 2) # Increment by gauge pressure such that set_pressure(0) turns pump off
-
+        value = round(value, 2)
+        
         if value > self.max_pressure:
             logging.error(f"Requested pressure of {value}mbar exceeds maximum.")
             logging.info(f"Target pressure reduced to maximum of {self.max_pressure}mbar.")
@@ -243,9 +243,9 @@ class pipette:
             value = 0
 
         if self.register_write(23, value) is True:
-            logging.info(f"Pipette target gauge pressure set to {value}mbar.")
+            logging.info(f"Pipette target pressure set to {value}mbar.")
         else:
-            logging.error(f"Failed to set pipette target gauge pressure to {value}mbar.")
+            logging.error(f"Failed to set pipette target pressure to {value}mbar.")
             sys.exit()
 
         if check is True:
