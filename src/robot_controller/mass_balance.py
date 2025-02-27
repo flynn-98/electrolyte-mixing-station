@@ -31,16 +31,16 @@ class mass_reader:
 
             logging.info("Attempting to open mass balance serial port..")            
 
-            try:
-                if self.ser.isOpen() is False:
-                    self.ser.open()
+            if self.ser.isOpen() is False:
+                self.ser.open()
 
-                self.tare()
+            self.tare()
+
+            if self.get_mass() == 0.0:
                 logging.info("Serial connection to mass balance established.")
-            except Exception as ex:
-                logging.error(ex)
+            else:
                 logging.error("Failed to establish serial connection to mass balance.")
-
+                sys.exit()
 
         else:
             logging.info("No serial connection to mass balance established.")
