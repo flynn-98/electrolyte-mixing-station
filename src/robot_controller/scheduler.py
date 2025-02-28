@@ -239,7 +239,7 @@ class experiment:
         logging.info(f"Tuning will perform a total of {N*M} aspirations: " + now.strftime("%d/%m/%Y %H:%M:%S"))
         self.mixer.move_to_start()
 
-        path = f"data/results/aspiration_tuning_results.csv"
+        path = "data/results/aspiration_tuning_results.csv"
 
         errors = np.zeros((N,M))
         scalars = np.linspace(aspirate_scalars[0], aspirate_scalars[1], N) # i -> N
