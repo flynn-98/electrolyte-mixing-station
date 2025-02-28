@@ -525,13 +525,11 @@ class peltier:
         error = [0] * plot_width
         dT = [0] * plot_width
         drive = [0] * plot_width
-        fan = [0] * plot_width
         samples = range(1, plot_width+1)
 
         line1, = ax.plot(samples, error, 'r-', label="Temperature Error K")
         line2, = ax.plot(samples, drive, 'g-', label="Drive Power %")
         line3, = ax.plot(samples, dT, 'b-', label="dT K")
-        line4, = ax.plot(samples, fan, 'k-', label="Total Fan Current A")
         plt.legend(loc="upper right")
 
         # Turn controller ON
@@ -563,13 +561,9 @@ class peltier:
             dT.append(abs(temperature - sink))
             dT = dT[-plot_width:]
 
-            fan.append(fan_curr)
-            fan = fan[-plot_width:]
-
             line1.set_ydata(error)
             line2.set_ydata(drive)
             line3.set_ydata(dT)
-            line4.set_ydata(fan)
 
             fig.canvas.draw()
             fig.canvas.flush_events()
