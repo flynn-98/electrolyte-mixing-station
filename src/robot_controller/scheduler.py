@@ -218,20 +218,38 @@ class experiment:
 
     def plot_aspiration_results(self, path: str) -> None:
         df = pd.read_csv(path, index_col=0)
-        results = df.to_numpy()
+        results = df.to_numpy(dtype=float)
 
-        volumes = df.columns.to_numpy()
-        scalars = df.index.to_numpy()
+        volumes = df.columns.to_numpy(dtype=float)
+        scalars = df.index.to_numpy(dtype=float)
 
-        plt.title(f'Results of Aspiration Tuning: {volumes[0]} - {volumes[-1]}uL')
+        # Normalise error by number of doses
+        normalised_results = np.copy(results)
+        for i in range(len(volumes)):
+            doses = math.floor(volumes[i] // self.max_dose) + 1
+            normalised_results[:,i] = results[:,i] / doses
+
+        fig, [ax1, ax2] = plt.subplots(1, 2, figsize=(12,6))
+        fig.suptitle(f'Results of Aspiration Tuning: {volumes[0]} - {volumes[-1]}uL')
 
         for n in range(len(scalars)):
-            plt.plot(volumes, results[n,:], label = f"{scalars[n]}")
+            print(results[n,:])
+            ax1.plot(volumes, results[n,:], label = f"{scalars[n]}")
     
-        plt.legend()
-        plt.xlabel("Target Volume uL")
-        plt.ylabel("Error uL")
-        plt.grid(visible=True, which="both", axis="both")
+        ax1.legend()
+        ax1.set_xlabel("Target Volume (uL)")
+        ax1.set_ylabel("Accumulated Error (uL)")
+        ax1.grid(visible=True, which="both", axis="both")
+
+        for n in range(len(scalars)):
+            print(normalised_results[n,:])
+            ax2.plot(volumes, normalised_results[n,:], label = f"{scalars[n]}")
+    
+        ax2.legend()
+        ax2.set_xlabel("Target Volume (uL)")
+        ax2.set_ylabel("Dose Normalised Error (uL)")
+        ax2.grid(visible=True, which="both", axis="both")
+
         plt.show()
 
     def tune(self, pot_number: int, aspirate_scalars: list[float], aspirate_volume: list[float], container_volume: float, density: float, N: int, M: int, aspirate_speed: float = 100.0, move_electrolyte: bool = False) -> None:
