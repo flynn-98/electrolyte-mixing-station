@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 
 import pandas as pd
@@ -34,6 +35,9 @@ class squidstat:
         self.experiment = None
         self.channel = channel
 
+        self.mode_file = "data/variables/test_mode.txt"
+        self.list_file = "data/variables/test_list.txt"
+
         self.ac_columns = [
                 "Timestamp",
                 "Frequency [Hz]",
@@ -62,8 +66,39 @@ class squidstat:
                 "Substep Number",
             ]
         
+        self.modes = {
+            "0. EIS_Potentiostatic \n": self.build_EIS_potentiostatic_experiment,
+            "1. Cyclic_Voltammetry \n": self.build_cyclic_voltammetry_experiment,
+            "2. Constant_Current \n": self.build_constant_current_experiment,
+            "3. Constant_Potential \n": self.build_constant_potential_experiment,
+            "4. Constant_Power \n": self.build_constant_power_experiment,
+            "5. Constant_Resistance \n": self.build_constant_resistance_experiment,
+            "6. DC_Current_Sweep \n": self.build_DC_current_sweep_experiment,
+            "7. DC_Potential_Sweep \n": self.build_DC_potential_sweep_experiment,
+            "8. Differential_Pulse_Voltammetry \n": self.build_diff_pulse_voltammetry_experiment,
+            "9. Normal_Pulse_Voltammetry \n": self.build_normal_pulse_voltammetry_experiment,
+            "10. Square_Wave_Voltammetry \n": self.build_square_wave_experiment,
+            "11. EIS_Galvanostatic \n": self.build_EIS_galvanostatic_experiment,
+            "12. Open_Circuit_Potential \n": self.build_OCP_experiment,
+        }
+        
         # Create dataframes
         self.reset_dataframes()
+
+        # Populate list file
+        with open(self.list_file, 'w+') as filehandler:
+            filehandler.writelines(list(self.modes))
+
+        # Populate mode file if not exists
+        if not os.path.exists(self.mode_file):
+            with open(self.mode_file, 'w+') as filehandler:
+                filehandler.write("0")
+
+        print("************************************")
+        print("Remember to set the desired Squidstat test mode in the following location: " + self.mode_file)
+        print("See the complete list of test modes in the same directory: " + self.list_file)
+        print("************************************")
+        input("Press any key to continue.")
         
         if self.sim is False:
             # Attach functions to call during events
@@ -87,22 +122,34 @@ class squidstat:
             self.handler.experimentNewElementStarting.connect(self.increment_elements)
             self.handler.experimentStopped.connect(self.handle_experiment_stopped)
 
-    def reset_dataframes(self) -> None:
-        logging.info("Resetting AC and DC dataframes..")
+    def take_measurements(self) -> tuple[pd.DataFrame, pd.DataFrame]:
+        # Build chosen analysis method (read from variables)
+        if os.path.exists(self.mode_file):
+            with open(self.mode_file, 'r') as filehandler:
+                analysis_method = int(filehandler.read())
+        else:
+            logging.error("No test mode set.")
+            sys.exit()
 
-        # Clear AC and DC data dataframes
-        self.ac_data = pd.DataFrame(columns=self.ac_columns)
-        self.dc_data = pd.DataFrame(columns=self.dc_columns)
-        self.elements = pd.DataFrame(columns=self.step_colums)     
+        # Run experiment build function from dict
+        build_experiment = list(self.modes.values())[analysis_method]
+
+        build_experiment()
+        self.run_experiment()
+
+        ac_data, dc_data = self.get_data()
+        self.reset_dataframes()
+        self.close_experiment() 
+
+        return ac_data, dc_data
 
     def get_data(self) -> tuple[pd.DataFrame, pd.DataFrame]:
-        # Return the AC and DC data as pandas dataframes. If no data is available, return None for the respective dataframe.
-        
         logging.info("Checking if Squidstat data is available..")
 
         if (self.ac_data.empty is True) and (self.dc_data.empty is True):
             logging.error("No data available!")
             return self.ac_data, self.dc_data
+        
         elif self.ac_data.empty is True:  
             logging.info("Only DC data found.")
             return None, self.dc_data
@@ -114,6 +161,56 @@ class squidstat:
         else:
             logging.info("AC and DC data found.")
             return self.ac_data, self.dc_data
+
+    def reset_dataframes(self) -> None:
+        logging.info("Resetting AC and DC dataframes..")
+
+        # Clear AC and DC data dataframes
+        self.ac_data = pd.DataFrame(columns=self.ac_columns)
+        self.dc_data = pd.DataFrame(columns=self.dc_columns)
+        self.elements = pd.DataFrame(columns=self.step_colums)
+
+    def upload_experiment(self) -> bool:
+        # Internal function, to be run after the element (measurement) has been appended to the experiment
+
+        logging.info("Uploading experiment to Squidstat..")
+        error = self.handler.uploadExperimentToChannel(self.channel, self.experiment)
+
+        if error != 0:
+            logging.error("Failed to upload experiment to Squidstat: " + error.message())
+            return False
+        else:
+            return True
+
+    def trigger_experiment(self) -> bool:
+        # Internal function, to be run after upload_experiment
+        error = self.handler.startUploadedExperiment(self.channel)
+
+        if error != 0:
+            logging.error("Failed to start experiment: " + error.message())
+            return False
+        else:
+            return True
+
+    def run_experiment(self) -> bool:
+        # Run an experiment on the potentiostat. Remember to define the experiment first, 
+        # For instance using setup_potentiostaticEIS() or setup_CV().
+        logging.info("Attempting to begin Squidstat experiment..")
+
+        if self.experiment is not None: 
+            if self.sim is False:
+                self.upload_experiment()
+                self.trigger_experiment()
+                self.app.exec_()
+        else:
+            logging.error("No experiment has been built!")
+
+    def close_experiment(self) -> None:
+        # Close the experiment on the potentiostat and release the Qt application.
+
+        logging.info("Closing experiment..")
+        if self.sim is False:
+            self.app.quit()
 
     def increment_dc_data(self, channel: int, data) -> None:
         # Append incoming data to dataframe
@@ -173,56 +270,7 @@ class squidstat:
 
     def handle_experiment_stopped(self, channel: int) -> None:
         logging.info(f"Experiment completed on channel {channel}.")
-        self.app.quit()
-
-    def upload_experiment(self) -> bool:
-        # Internal function, to be run after the element (measurement) has been appended to the experiment
-
-        logging.info("Uploading experiment to Squidstat..")
-        error = self.handler.uploadExperimentToChannel(self.channel, self.experiment)
-
-        if error != 0:
-            logging.error("Failed to upload experiment to Squidstat: " + error.message())
-            return False
-        else:
-            return True
-
-    def trigger_experiment(self) -> bool:
-        # Internal function, to be run after upload_experiment
-        error = self.handler.startUploadedExperiment(self.channel)
-
-        if error != 0:
-            logging.error("Failed to start experiment: " + error.message())
-            return False
-        else:
-            return True
-
-    def run_experiment(self) -> bool:
-        # Run an experiment on the potentiostat. Remember to define the experiment first, 
-        # For instance using setup_potentiostaticEIS() or setup_CV().
-        logging.info("Attempting to begin experiment..")
-
-        if self.experiment is not None: 
-            if self.sim is False:
-                self.upload_experiment()
-                self.trigger_experiment()
-                self.app.exec_()
-        else:
-            logging.error("No experiment has been built!")
-
-    def close_experiment(self) -> tuple[pd.DataFrame, pd.DataFrame]:
-        # Close the experiment on the potentiostat and release the Qt application.
-        # Remember to call get_data() before calling this function to retrieve the data.
-
-        ac_data, dc_data = self.get_data()
-        self.reset_dataframes()
-
-        # Close the experiment on the potentiostat and release the Qt application.
-        logging.info("Closing experiment..")
-        if self.sim is False:
-            self.app.quit()
-
-        return ac_data, dc_data
+        #self.app.quit()
     
     def append_element(self, experiment, element, number_of_runs: int = 1) -> None:
         if experiment.appendElement(element, number_of_runs) is True:

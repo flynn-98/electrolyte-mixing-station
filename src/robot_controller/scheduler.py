@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from robot_controller import fluid_controller, mass_balance, mixing_station, temperature_controller
+from robot_controller import fluid_controller, mass_balance, mixing_station, test_cell
 
 # Save logs to file
 logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
@@ -28,7 +28,8 @@ class experiment:
         # Establish serial connections
         self.fluid_handler = fluid_controller.fluid_handler(device_data["Fluid_Address"], not device_data["Fluid_Active"])
         self.mass_balance = mass_balance.mass_reader(device_data["Mass_Address"], not device_data["Mass_Active"])
-        self.peltier = temperature_controller.peltier(device_data["Temp_Address"], not device_data["Temp_Active"])
+        
+        self.test_cell = test_cell.analytics(squid_port=device_data["Squid_Address"], temp_port=device_data["Temp_Address"], squid_sim=not device_data["Squid_Active"], temp_sim=not device_data["Temp_Active"])
         self.mixer = mixing_station.electrolyte_mixer(gantry_port=device_data["Gantry_Address"], pipette_port=device_data["Pipette_Address"], gantry_sim=not device_data["Gantry_Active"], pipette_sim=not device_data["Pipette_Active"], home=home)
 
         # Retrieve any requried variables from controllers

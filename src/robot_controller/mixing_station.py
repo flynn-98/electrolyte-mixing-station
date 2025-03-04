@@ -72,7 +72,7 @@ class electrolyte_mixer:
         self.gantry.move(x, y, self.pipette_pick_height)
 
         # Update active pipette variable 
-        with open(self.pipette_file, 'w') as filehandler:
+        with open(self.pipette_file, 'w+') as filehandler:
                 filehandler.write(f"{pipette_no}")
 
         # Move into pipette rack
@@ -114,7 +114,7 @@ class electrolyte_mixer:
         self.gantry.release()
         logging.info("Pipettes released.")
 
-        with open(self.pipette_file, 'w') as filehandler:
+        with open(self.pipette_file, 'w+') as filehandler:
                 filehandler.write("0")
 
     def collect_volume(self, aspirate_volume: float, starting_volume: float, name: str, pot_no: int, aspirate_scalar: float, aspirate_speed: float) -> float:

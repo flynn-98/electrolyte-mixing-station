@@ -3,7 +3,6 @@ import os
 import random
 import sys
 import time
-from csv import DictWriter
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -16,8 +15,6 @@ logging.basicConfig(level = logging.INFO)
 class peltier:
     def __init__(self, COM: str, sim: bool = False) -> None:
         self.sim = sim
-
-        #self.ready_chars = '\r' + '\n' + '>' + ' '
 
         self.max_temp = 60 #C
         self.min_temp = -10 #C
@@ -54,8 +51,6 @@ class peltier:
 
         self.temp_threshold = 20 #C, to set heating or cooling parameters
         self.dead_band = 5 #+-% to prevent rapid switching
-
-        self.report_file = "data/results/temperature_report.csv"
 
         if self.sim is False:
             logging.info("Configuring temperature controller serial port..")
@@ -480,28 +475,6 @@ class peltier:
         # Turn controller OFF
         self.clear_run_flag()
         return False, 0.0, 0.0
-    
-    def cycle_through_temperatures(self, start_temp: float = 60.0, end_temp: float = -10.0, points: int = 8, report: bool = False) -> None:
-        logging.info(f"Cycling through {points} temperatures from {start_temp}C to {end_temp}C.")
-
-        file_exists = os.path.exists(self.report_file)
-
-        for val in np.linspace(start_temp, end_temp, points):
-            result, mean, std = self.wait_until_temperature(val)
-            
-            if result is False:
-                logging.error("Failed to cycle through temperature set points.")
-                sys.exit()
-
-            elif report is True:
-                with open(self.report_file, 'a') as file:
-                    writer = DictWriter(file, fieldnames=['Temperature Target', 'Mean Result', 'STD'])
-                    
-                    if file_exists is False:
-                        writer.writeheader()
-                        file_exists = True
-
-                    writer.writerow({'Temperature Target': val, 'Mean Result': mean, 'STD': std})
     
     def plot_live_temperature_control(self, value: float, sample_rate: float = 1) -> bool:
         if self.sim is True:
