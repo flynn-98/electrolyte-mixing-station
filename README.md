@@ -13,7 +13,13 @@ The Electrolyte Mixing Station is a flexible tool, primarily designed to select 
 Build venv in root directory:
 
 ```
-python3 -m venv .venv
+python3.10 -m venv .venv
+```
+
+Upgrade pip:
+
+```
+.venv/bin/pip install --upgrade pip
 ```
 
 Install dependencies into new venv:
