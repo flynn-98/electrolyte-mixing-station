@@ -74,7 +74,8 @@ class squidstat:
                 self.tracker.connectToDeviceOnComPort(COM)
                 self.handler = self.tracker.getInstrumentHandler(instrument)
             except Exception as ex:
-                logging.error("Failed to establish serial connection to Squidstat: " + ex)
+                logging.error("Failed to establish serial connection to Squidstat!")
+                logging.error(ex)
                 sys.exit()
 
             logging.info("Serial connection to Squidstat established.")
@@ -97,18 +98,21 @@ class squidstat:
     def get_data(self) -> tuple[pd.DataFrame, pd.DataFrame]:
         # Return the AC and DC data as pandas dataframes. If no data is available, return None for the respective dataframe.
         
-        logging.info("Checking if potentiostat data is available..")
+        logging.info("Checking if Squidstat data is available..")
 
-        if self.ac_data.empty is True:
-            logging.error("No AC data available!")
-            return None, self.dc_data_list
+        if (self.ac_data.empty is True) and (self.dc_data.empty is True):
+            logging.error("No data available!")
+            return self.ac_data, self.dc_data
+        elif self.ac_data.empty is True:  
+            logging.info("Only DC data found.")
+            return None, self.dc_data
         
         elif self.dc_data.empty is True:
-            logging.error("No DC data available!")
-            return self.ac_data_list, None
+            logging.info("Only AC data found.")
+            return self.ac_data, None
         
         else:
-            logging.info("Returning available AC and DC data..")
+            logging.info("AC and DC data found.")
             return self.ac_data, self.dc_data
 
     def increment_dc_data(self, channel: int, data) -> None:
@@ -171,11 +175,11 @@ class squidstat:
         logging.info(f"Experiment completed on channel {channel}.")
         self.app.quit()
 
-    def upload_experiment(self, experiment) -> bool:
+    def upload_experiment(self) -> bool:
         # Internal function, to be run after the element (measurement) has been appended to the experiment
 
         logging.info("Uploading experiment to Squidstat..")
-        error = self.handler.uploadExperimentToChannel(self.channel, experiment)
+        error = self.handler.uploadExperimentToChannel(self.channel, self.experiment)
 
         if error != 0:
             logging.error("Failed to upload experiment to Squidstat: " + error.message())
@@ -200,7 +204,7 @@ class squidstat:
 
         if self.experiment is not None: 
             if self.sim is False:
-                self.upload_experiment(self.experiment)
+                self.upload_experiment()
                 self.trigger_experiment()
                 self.app.exec_()
         else:
@@ -243,7 +247,11 @@ class squidstat:
             voltage_amplitude,
         )
 
-        self.experiment = experiment.appendElement(element, number_of_runs)
+        if experiment.appendElement(element, number_of_runs) is True:
+            self.experiment = experiment
+        else:
+            logging.error("Failed to build experiment!")
+            sys.exit()
         
     def build_cyclic_voltammetry_experiment(
         self,

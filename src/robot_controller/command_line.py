@@ -34,14 +34,7 @@ def squidstat_example() -> None:
     args=parser.parse_args()
 
     measurement = admiral.squidstat(COM=args.port)
-    measurement.build_EIS_potentiostatic_experiment(
-        start_frequency = 10000,
-        end_frequency = 1000,
-        points_per_decade = 10,
-        voltage_bias = 0.0,
-        voltage_amplitude = 0.1,
-        number_of_runs = 1,
-    )
+    measurement.build_EIS_potentiostatic_experiment()
 
     measurement.run_experiment()
     ac_data, dc_data = measurement.close_experiment()
