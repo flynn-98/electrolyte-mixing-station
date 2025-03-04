@@ -223,6 +223,13 @@ class squidstat:
             self.app.quit()
 
         return ac_data, dc_data
+    
+    def append_element(self, experiment, element, number_of_runs: int = 1) -> None:
+        if experiment.appendElement(element, number_of_runs) is True:
+            self.experiment = experiment
+        else:
+            logging.error("Failed to build experiment!")
+            sys.exit()
 
     def build_EIS_potentiostatic_experiment(
         self,
@@ -247,11 +254,7 @@ class squidstat:
             voltage_amplitude,
         )
 
-        if experiment.appendElement(element, number_of_runs) is True:
-            self.experiment = experiment
-        else:
-            logging.error("Failed to build experiment!")
-            sys.exit()
+        self.append_element(experiment, element, number_of_runs)
         
     def build_cyclic_voltammetry_experiment(
         self,
@@ -278,7 +281,7 @@ class squidstat:
             sampling_interval,
         )
 
-        self.experiment = experiment.appendElement(element, number_of_runs)
+        self.append_element(experiment, element, number_of_runs)
 
     def build_constant_current_experiment(
         self,
@@ -298,7 +301,7 @@ class squidstat:
             duration,
         )
 
-        self.experiment = experiment.appendElement(element)
+        self.append_element(experiment, element)
 
     def build_constant_potential_experiment(
         self,
@@ -318,7 +321,7 @@ class squidstat:
             duration,
         )
         
-        self.experiment = experiment.appendElement(element)
+        self.append_element(experiment, element)
 
     def build_constant_power_experiment(
         self,
@@ -345,7 +348,7 @@ class squidstat:
             sampling_interval,
         )
 
-        self.experiment = experiment.appendElement(element)
+        self.append_element(experiment, element)
 
     def build_constant_resistance_experiment(
         self,
@@ -365,7 +368,7 @@ class squidstat:
             sampling_interval,
         )
 
-        self.experiment = experiment.appendElement(element)
+        self.append_element(experiment, element)
 
     def build_DC_current_sweep_experiment(
         self,
@@ -387,7 +390,7 @@ class squidstat:
             sampling_interval,
         )
 
-        self.experiment = experiment.appendElement(element)
+        self.append_element(experiment, element)
 
     def build_DC_potential_sweep_experiment(
         self,
@@ -409,7 +412,7 @@ class squidstat:
             sampling_interval,
         )
 
-        self.experiment = experiment.appendElement(element)
+        self.append_element(experiment, element)
 
     def build_diff_pulse_voltammetry_experiment(
         self,
@@ -435,7 +438,7 @@ class squidstat:
             pulse_period,
         )
 
-        self.experiment = experiment.appendElement(element)
+        self.append_element(experiment, element)
 
     def build_normal_pulse_voltammetry_experiment(
         self,
@@ -459,7 +462,7 @@ class squidstat:
             pulse_period,
         )
 
-        self.experiment = experiment.appendElement(element)
+        self.append_element(experiment, element)
 
     def build_square_wave_experiment(
         self,
@@ -486,7 +489,7 @@ class squidstat:
             sampling_interval,
         )
 
-        self.experiment = experiment.appendElement(element, number_of_runs)
+        self.append_element(experiment, element, number_of_runs)
 
     def build_EIS_galvanostatic_experiment(
         self,
@@ -511,7 +514,7 @@ class squidstat:
             current_amplitude,
         )
 
-        self.experiment = experiment.appendElement(element, number_of_runs)
+        self.append_element(experiment, element, number_of_runs)
 
     def build_OCP_experiment(
             self, 
@@ -529,4 +532,4 @@ class squidstat:
             sampling_interval,
         )
 
-        self.experiment = experiment.appendElement(element)
+        self.append_element(experiment, element)
