@@ -1,5 +1,4 @@
 import logging
-import os
 import random
 import sys
 import time
@@ -20,10 +19,10 @@ class peltier:
         self.min_temp = -10 #C
 
         self.input_voltage = 12.0 #V
-        self.max_current = 8.0 #A
-        self.min_current = 0.5 #A, 2x peltiers at 100%
+        self.max_current = 7.0 #A
+        self.min_current = 5.0 #A
 
-        self.fan_current = 1.6 #A
+        self.fan_current = 1.0 #A
         self.fan_voltage = 12.0
 
         # Thermisistor Steinhart coefficients NTC1
@@ -41,15 +40,21 @@ class peltier:
         self.steady_state = 30 #s
         self.timeout = 7200 #s
 
-        # Heating/Normal control
-        self.Kp = 15
-        self.Ki = 0
-        self.Kd = 0
+        # Heating/Cooling control
+        self.heating_tc = 60 #%
+        self.heating_Kp = 15
+        self.heating_Ki = 0
+        self.heating_Kd = 0
+
+        self.cooling_tc = 100 #%
+        self.cooling_Kp = 15
+        self.cooling_Ki = 0
+        self.cooling_Kd = 0
 
         self.cool_mode = False
         self.run_flag = False
 
-        self.temp_threshold = 20 #C, to set heating or cooling parameters
+        self.temp_threshold = 18 #C, to set heating or cooling parameters
         self.dead_band = 5 #+-% to prevent rapid switching
 
         if self.sim is False:
@@ -77,16 +82,10 @@ class peltier:
                 logging.error("Temperature regulator configuration failed.")
                 sys.exit()
 
-            if (self.set_pid_parameters(self.Kp, self.Ki, self.Kd) is True):
-                logging.info("Temperature regulator PID constants set.")
+            if (self.set_tc_dead_band() is True):
+                logging.info("Temperature regulator dead band settings successfully configured.")
             else:
-                logging.error("Failed to set temperature controller PID settings to cooling mode.")
-                sys.exit()
-
-            if (self.set_tc_dead_band() is True) and (self.set_max_tc() is True):
-                logging.info("Temperature regulator Tc settings successfully configured.")
-            else:
-                logging.error("Temperature regulator Tc configuration failed.")
+                logging.error("Temperature regulator dead band configuration failed.")
                 sys.exit()
 
             if self.set_voltage_alarm_settings() is True:
@@ -279,13 +278,8 @@ class peltier:
             return maxn
         else:
             return n
-        
-    def get_cooling_tc(self, control_temp: float) -> int:
-        # Varies by +5% from hot side temperatures between 23-32C, kept at lower assuming reduced heating by lower PWM - 59.7
-        # return int(59.7 + -1.66 * control_temp + 0.0148 * control_temp**2 + 8.06e-04 * control_temp**3)
-        return 100
 
-    def set_max_tc(self, max: float = 100) -> bool:
+    def set_max_tc(self, max: float) -> bool:
         # 100 is default register value
         return self.register_write(6, self.clamp(max, 0, 100))
         
@@ -399,23 +393,34 @@ class peltier:
     
     def get_fan2_current(self) -> float:
         return self.register_read(154)
+    
+    def set_heating_mode(self) -> None:
+        self.cool_mode = False
+        if (self.set_max_tc(self.heating_tc) is True) and (self.set_pid_parameters(self.heating_Kp, self.heating_Ki, self.heating_Kd) is True):
+                logging.info("Temperature regulator set to heating mode.")
+        else:
+            logging.error("Failed to set temperature regulator to heating mode.")
+            sys.exit()
+
+    def set_cooling_mode(self) -> None:
+        self.cool_mode = True
+        if (self.set_max_tc(self.cooling_tc) is True) and (self.set_pid_parameters(self.cooling_Kp, self.cooling_Ki, self.cooling_Kd) is True):
+                logging.info("Temperature regulator set to cooling mode.")
+        else:
+            logging.error("Failed to set temperature regulator to cooling mode.")
+            sys.exit()
 
     def set_temperature(self, temp: float) -> None:
-        if temp <= self.temp_threshold:
-            self.cool_mode = True
-            logging.info("Temperature regulator set to cooling mode.")
+        if temp < self.temp_threshold:
+            self.set_cooling_mode()
         else:
-            self.cool_mode = False
-            if self.set_max_tc() is True:
-                logging.info("Temperature regulator set to heating mode.")
-            else:
-                logging.error("Failed to set temperature regulator to heating mode.")
-                sys.exit()
+            self.set_heating_mode()
 
         if self.register_write(0, self.clamp(temp, self.min_temp, self.max_temp)) is True:
             logging.info(f"Peltier target temperature set to {temp}C.")
         else:
             logging.error("Failed to set peltier target temperature.")
+            sys.exit()
     
     def wait_until_temperature(self, value: float, sample_rate: float = 1, keep_on: bool = True) -> tuple[bool, float, float]:
         if self.sim is True:
@@ -440,12 +445,6 @@ class peltier:
                 self.set_run_flag()
             
             stats = np.empty((1,))
-
-            if (self.cool_mode is True) and (temperature < self.temp_threshold):
-                # Set max Tc based on current temperature
-                if self.set_max_tc(self.get_cooling_tc(temperature)) is False:
-                    logging.error("Failed to set temperature regulator max Tc during cooling mode.")
-
             local_start = time.time()
 
             while (abs(value - temperature) < self.allowable_error) and (time.time() - local_start < self.steady_state):
@@ -513,13 +512,7 @@ class peltier:
             temperature = self.get_t1_value()
             sink = self.get_t2_value()
             curr = self.get_main_current()
-            fan_curr = self.get_fan1_current() + self.get_fan2_current()
-
-            if (self.cool_mode is True) and (temperature < self.temp_threshold):
-                # Set max Tc based on current temperature
-                if self.set_max_tc(self.get_cooling_tc(temperature)) is False:
-                    logging.error("Failed to set temperature regulator max Tc during cooling mode.")
-                    sys.exit()                    
+            fan_curr = self.get_fan1_current() + self.get_fan2_current()                 
 
             # Append and loose first element
             plt.title(f"Target Temp: {value}C, Sample Rate: {sample_rate}Hz")
