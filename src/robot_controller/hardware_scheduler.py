@@ -214,8 +214,12 @@ class scheduler:
 
         logging.info("Run complete.")
 
+        return impedance_results
+
     def run_life_test(self, N: int = 1) -> None:
         logging.info(f"Beginning {N}X life test..")
+        self.csv_filename = "life_test.csv"
+        self.read_csv()
 
         for n in range(N):
             logging.info(f"Creating electrolyte mixture #{n+1}..")
