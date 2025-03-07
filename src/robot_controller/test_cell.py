@@ -99,8 +99,8 @@ class measurements:
 
         plt.figure()
         plt.title("EIS Data Results: " + identifier)
-        plt.xlabel("Zreal [ohm]")
-        plt.ylabel("Zimag [ohm]")
+        plt.xlabel("Zreal (Ohms)")
+        plt.ylabel("Zimag (Ohms)")
         plt.scatter(data[3], -data[4]) #Zreal vs -Zimag
         plt.savefig(identifier + ".png")
         plt.close()

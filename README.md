@@ -58,6 +58,14 @@ Download latest *.tar.gz* file from [here](https://scientia.atinary.com/download
 
 You can find documentation for the Atinary SDK [here](https://scientia.atinary.com/documentation/docs/sdlabs_sdk/installation.html).
 
+## Install Atinary SDL Wrapper
+
+The SDL Wrapper is a codebase created by Atinary, for quick and easy set up of optimisation campaigns using a json config file. Install via the following command:
+
+```
+python -m pip install git+https://github.com/Atinary-technologies/sdlabs_wrapper.git
+```
+
 ## Using Platformio to Flash Latest Firmware
 
 Install the [PlatformIO VSCode Extension](https://docs.platformio.org/en/latest/integration/ide/vscode.html) and open a new Pio terminal (found in *Quick Access/Miscellaneous*). Change directory to either *gantry-kit* or *fluid-handling-kit* in the terminal, then connect the the target Arduino Nano via USB and run the following command:
