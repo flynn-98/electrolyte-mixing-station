@@ -38,7 +38,7 @@ class peltier:
         # Steady state temperature
         self.allowable_error = 0.5 #C
         self.steady_state = 30 #s
-        self.timeout = 7200 #s
+        self.timeout = 1800 #s
 
         # Heating/Cooling control
         self.heating_tc = 60 #%

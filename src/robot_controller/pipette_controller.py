@@ -79,12 +79,6 @@ class pipette:
 
         return self.ser.readline().decode()
     
-    def get_max_dose(self) -> float:
-        return self.max_dose
-    
-    def get_charge_pressure(self) -> float:
-        return self.charge_pressure
-    
     def get_aspiration_pressure(self, volume: float, scalar: float = 1.0) -> float:
         # Constant as function of volume (1/2.64 = 0.38mbar/ul)
         if (volume >= self.min_dose * 2):

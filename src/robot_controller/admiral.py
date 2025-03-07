@@ -38,6 +38,9 @@ class squidstat:
         self.mode_file = "data/variables/test_mode.txt"
         self.list_file = "data/variables/test_list.txt"
 
+        self.ac_file_path = "data/results/AC.csv"
+        self.dc_file_path = "data/results/DC.csv"
+
         self.ac_columns = [
                 "Timestamp",
                 "Frequency [Hz]",
@@ -122,7 +125,7 @@ class squidstat:
             self.handler.experimentNewElementStarting.connect(self.increment_elements)
             self.handler.experimentStopped.connect(self.handle_experiment_stopped)
 
-    def take_measurements(self) -> tuple[pd.DataFrame, pd.DataFrame]:
+    def take_measurements(self) -> None:
         # Build chosen analysis method (read from variables)
         if os.path.exists(self.mode_file):
             with open(self.mode_file, 'r') as filehandler:
@@ -137,30 +140,28 @@ class squidstat:
         build_experiment()
         self.run_experiment()
 
-        ac_data, dc_data = self.get_data()
+        self.save_data()
         self.reset_dataframes()
         self.close_experiment() 
 
-        return ac_data, dc_data
-
-    def get_data(self) -> tuple[pd.DataFrame, pd.DataFrame]:
+    def save_data(self) -> None:
         logging.info("Checking if Squidstat data is available..")
 
         if (self.ac_data.empty is True) and (self.dc_data.empty is True):
             logging.error("No data available!")
-            return self.ac_data, self.dc_data
-        
+            
         elif self.ac_data.empty is True:  
             logging.info("Only DC data found.")
-            return None, self.dc_data
+            self.dc_data.to_csv(self.dc_file_path)
         
         elif self.dc_data.empty is True:
             logging.info("Only AC data found.")
-            return self.ac_data, None
+            self.ac_data.to_csv(self.ac_file_path)
         
         else:
             logging.info("AC and DC data found.")
-            return self.ac_data, self.dc_data
+            self.ac_data.to_csv(self.ac_file_path)
+            self.dc_data.to_csv(self.dc_file_path)
 
     def reset_dataframes(self) -> None:
         logging.info("Resetting AC and DC dataframes..")
@@ -170,7 +171,7 @@ class squidstat:
         self.dc_data = pd.DataFrame(columns=self.dc_columns)
         self.elements = pd.DataFrame(columns=self.step_colums)
 
-    def upload_experiment(self) -> bool:
+    def upload_experiment(self) -> None:
         # Internal function, to be run after the element (measurement) has been appended to the experiment
 
         logging.info("Uploading experiment to Squidstat..")
@@ -178,21 +179,17 @@ class squidstat:
 
         if error != 0:
             logging.error("Failed to upload experiment to Squidstat: " + error.message())
-            return False
-        else:
-            return True
+            sys.exit()
 
-    def trigger_experiment(self) -> bool:
+    def trigger_experiment(self) -> None:
         # Internal function, to be run after upload_experiment
         error = self.handler.startUploadedExperiment(self.channel)
 
         if error != 0:
             logging.error("Failed to start experiment: " + error.message())
-            return False
-        else:
-            return True
+            sys.exit()
 
-    def run_experiment(self) -> bool:
+    def run_experiment(self) -> None:
         # Run an experiment on the potentiostat. Remember to define the experiment first, 
         # For instance using setup_potentiostaticEIS() or setup_CV().
         logging.info("Attempting to begin Squidstat experiment..")

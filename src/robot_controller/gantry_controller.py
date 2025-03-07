@@ -9,9 +9,9 @@ class gantry:
     def __init__(self, COM: str, sim: bool = False) -> None:
         self.sim = sim
 
-        # To be tuned if needed
-        self.x_correction = -1.0 #mm 
-        self.y_correction = 1.5 #mm
+        # To be set by scheduler
+        self.x_correction = 0 #mm 
+        self.y_correction = 0 #mm
 
         if self.sim is False:
             logging.info("Configuring gantry kit serial port..")

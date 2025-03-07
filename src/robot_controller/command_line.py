@@ -1,6 +1,6 @@
 import argparse
 
-from robot_controller import admiral, pipette_controller, scheduler
+from robot_controller import admiral, hardware_scheduler, pipette_controller
 
 
 def run_experiment() -> None:
@@ -12,9 +12,9 @@ def run_experiment() -> None:
     args=parser.parse_args()
 
     if args.resume is False:
-        instance = scheduler.experiment(device_name=args.device_name, csv_filename="electrolyte_recipe.csv", home=args.home)
+        instance = hardware_scheduler.experiment(device_name=args.device_name, csv_filename="electrolyte_recipe.csv", home=args.home)
     else:
-        instance = scheduler.experiment(device_name=args.device_name, csv_filename="current_state.csv", home=args.home)
+        instance = hardware_scheduler.experiment(device_name=args.device_name, csv_filename="current_state.csv", home=args.home)
     
     instance.run()
 
@@ -37,7 +37,7 @@ def squidstat_example() -> None:
     measurement.build_EIS_potentiostatic_experiment()
 
     measurement.run_experiment()
-    ac_data, dc_data = measurement.close_experiment()
 
-    print(ac_data)
-    print(dc_data)
+    measurement.save_data()
+    measurement.reset_dataframes()
+    measurement.close_experiment()

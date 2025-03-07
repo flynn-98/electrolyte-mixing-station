@@ -19,7 +19,7 @@ logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
                     force=True,
                     handlers=[logging.FileHandler("mixing_station.log", mode="a"), logging.StreamHandler(sys.stdout)])
 
-class experiment:
+class scheduler:
     def __init__(self, device_name: str, csv_filename: str | None = None, home: bool = False) -> None:
         # Read device data JSON
         self.json_file = "data/devices/hardcoded_values.json"
@@ -29,11 +29,11 @@ class experiment:
         self.fluid_handler = fluid_controller.fluid_handler(device_data["Fluid_Address"], not device_data["Fluid_Active"])
         self.mass_balance = mass_balance.mass_reader(device_data["Mass_Address"], not device_data["Mass_Active"])
         
-        self.test_cell = test_cell.analytics(squid_port=device_data["Squid_Address"], temp_port=device_data["Temp_Address"], squid_sim=not device_data["Squid_Active"], temp_sim=not device_data["Temp_Active"])
+        self.test_cell = test_cell.measurements(squid_port=device_data["Squid_Address"], temp_port=device_data["Temp_Address"], squid_sim=not device_data["Squid_Active"], temp_sim=not device_data["Temp_Active"])
         self.mixer = mixing_station.electrolyte_mixer(gantry_port=device_data["Gantry_Address"], pipette_port=device_data["Pipette_Address"], gantry_sim=not device_data["Gantry_Active"], pipette_sim=not device_data["Pipette_Active"], home=home)
 
         # Retrieve any requried variables from controllers
-        self.max_dose = self.mixer.pipette.get_max_dose()
+        self.max_dose = self.mixer.pipette.max_dose()
 
         # Set any required variables for controllers
         self.mass_balance.correction = 52 #g
@@ -83,6 +83,7 @@ class experiment:
                         'Density (g/mL)': float,
                         'Aspirate Scalar': float,
                         'Aspirate Speed (uL/s)': float,
+                        'Cost (/uL)': float,
                     }
         
         self.df = pd.read_csv(csv_location, header=0, names=df_columns.keys(), index_col=False).astype(df_columns)
@@ -108,11 +109,11 @@ class experiment:
         if self.fluid_handler.ser.isOpen() is True:
                 self.fluid_handler.close_ser()
 
-        if self.peltier.ser.isOpen() is True:
-            self.peltier.close_ser()
+        if self.test_cell.peltier.ser.isOpen() is True:
+            self.test_cell.peltier.close_ser()
 
         if self.mass_balance.ser.isOpen() is True:
-            self.peltier.close_ser()
+            self.mass_balance.close_ser()
 
     def update_dose_volumes(self) -> None:
         # Place holder for API integration
@@ -124,7 +125,10 @@ class experiment:
 
         self.save_csv()
 
-    def run(self) -> None:
+    def run(self, temp: float) -> None:
+        logging.info(f"Setting early temperature target of {temp}C..")
+        self.test_cell.set_temperature_target(temp)
+
         logging.info("Beginning electrolyte mixing..")
         self.mixer.move_to_start()
 
@@ -199,7 +203,7 @@ class experiment:
         self.mass_balance.check_mass_change(total_mass, starting_mass)
 
         # Potentiostat / Temperature control functions
-        self.peltier.cycle_through_temperatures() 
+        impedance_results = self.test_cell.single_temperature_analysis(temp) 
         # Potentiostat
 
         # Empty cell once complete
