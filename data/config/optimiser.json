@@ -1,0 +1,41 @@
+{
+    "optimization_name": "Mixing Station Example",
+    "description": "Optimize example",
+    "sdlabs_group_id": "Atinary",
+    "parameters": [
+        {
+            "name": "param_a",
+            "low_value": 0,
+            "high_value": 2,
+            "type": "continuous"
+        },
+        {
+            "name": "param_b",
+            "low_value": 0,
+            "high_value": 2,
+            "type": "continuous"
+        }
+    ],
+    "multi_objective_function": "chimera",
+    "objectives": [
+        {
+            "name": "conductivity",
+            "goal": "max",
+            "multi_objective_configuration": {
+                "hierarchy": 0,
+                "relative": 10
+            }
+        },
+        {
+            "name": "toxicity",
+            "goal": "min",
+            "multi_objective_configuration": {
+                "hierarchy": 1,
+                "relative": 10
+            }
+        }
+    ],
+    "batch_size": 1,
+    "algorithm": "edboplus",
+    "budget": 20
+}
