@@ -36,11 +36,13 @@ source .venv/bin/activate
 
 ## Setting up SquidstatPyLibrary
 
-Download latest *.whl* file from [here](https://github.com/Admiral-Instruments/AdmiralSquidstatAPI/tree/main/SquidstatLibrary/windows/pythonWrapper/Release). Move the file to the *electrolyte-mixing-station* and run the following command:
+Download latest *.whl* file from [here](https://github.com/Admiral-Instruments/AdmiralSquidstatAPI/tree/main/SquidstatLibrary/windows/pythonWrapper/Release). Move the file to */electrolyte-mixing-station* and run the following command:
 
 ```
 .venv/bin/pip install FILE.whl
 ```
+
+You can find documentation for the SquidstatPyLibrary [here](https://admiral-instruments.github.io/AdmiralSquidstatAPI/md_intro_and_examples_9__python_example.html).
 
 ## Downloading ATEN RS232 to USB Driver
 
@@ -48,11 +50,13 @@ The Laird PID temperature controller uses RS232 to communicate, which requires a
 
 ## Setting up Atinary SDK
 
-Download latest *.tar.gz* file from [here](https://scientia.atinary.com/download/). Move the file to the *electrolyte-mixing-station* and run the following command:
+Download latest *.tar.gz* file from [here](https://scientia.atinary.com/download/). Move the file to */electrolyte-mixing-station* and run the following command:
 
 ```
 .venv/bin/pip install FILE.tar.gz
 ```
+
+You can find documentation for the Atinary SDK [here](https://scientia.atinary.com/documentation/docs/sdlabs_sdk/installation.html).
 
 ## Using Platformio to Flash Latest Firmware
 
