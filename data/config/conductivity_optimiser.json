@@ -1,41 +1,82 @@
 {
     "optimization_name": "Liquid Electrolyte Conductivity",
     "description": "Optimisation of liquid electrolyte composition to maximise ionic conductivity",
+    "sdlabs_account_type": "enterprise",
     "sdlabs_group_id": "CAPeX",
     "parameters": [
         {
-            "name": "param_a",
+            "name": "ZnCl2",
             "low_value": 0,
-            "high_value": 2.5,
-            "type": "continuous"
+            "high_value": 2530,
+            "stride": 5,
+            "type": "discrete"
         },
         {
-            "name": "param_b",
+            "name": "Zn(ClO4)2",
             "low_value": 0,
-            "high_value": 2.5,
-            "type": "continuous"
+            "high_value": 2530,
+            "stride": 5,
+            "type": "discrete"
+        },
+        {
+            "name": "Water",
+            "low_value": 0,
+            "high_value": 2530,
+            "stride": 5,
+            "type": "discrete"
+        },
+        {
+            "name": "Zn(BF4)2",
+            "low_value": 0,
+            "high_value": 2530,
+            "stride": 5,
+            "type": "discrete"
         }
     ],
-    "multi_objective_function": "chimera",
+    "multi_objective_function": "weighted_sum",
     "objectives": [
         {
             "name": "conductivity",
             "goal": "max",
             "multi_objective_configuration": {
-                "hierarchy": 0,
-                "relative": 10
+                "weight": 0.7
             }
         },
         {
-            "name": "toxicity",
+            "name": "cost",
             "goal": "min",
             "multi_objective_configuration": {
-                "hierarchy": 1,
-                "relative": 10
+                "weight": 0.3
             }
         }
     ],
+    "constraints": [
+        {
+            "type": "linear_eq",
+            "definitions": [
+                {
+                    "parameter": "ZnCl2",
+                    "weight": 1
+                },
+                {
+                    "parameter": "Zn(ClO4)2",
+                    "weight": 1
+                },
+                {
+                    "parameter": "Water",
+                    "weight": 1
+                },
+                {
+                    "parameter": "Zn(BF4)2",
+                    "weight": 1
+                }
+            ],
+            "targets": [
+                2530
+            ]
+        }
+    ],
     "batch_size": 1,
-    "algorithm": "edboplus",
+    "algorithm": "falcongpbo",
     "budget": 5
 }

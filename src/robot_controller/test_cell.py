@@ -26,6 +26,8 @@ class measurements:
         self.temp_points = 8
 
         self.epsilon_0 = 8.8541878128e-12 # vacuum permittivity
+        
+        self.test_cell_volume = 2.53 # ml from CAD
 
     def set_temperature_target(self, temp: float) -> None:
         self.peltier.set_temperature(temp)
