@@ -127,7 +127,7 @@ class scheduler:
 
         self.save_csv()
 
-    def run(self, temp: float = 20) -> None:
+    def run(self, temp: float | None = None) -> pd.DataFrame | tuple[float, float]:
         logging.info(f"Setting early temperature target of {temp}C..")
         self.test_cell.set_temperature_target(temp)
 
@@ -205,7 +205,12 @@ class scheduler:
         self.mass_balance.check_mass_change(total_mass, starting_mass)
 
         # Potentiostat / Temperature control functions
-        impedance_results = self.test_cell.single_temperature_analysis(temp) 
+        if temp is None:
+            # returns df of multiple (ohmics res, ionic conductivity)
+            impedance_results = self.test_cell.full_range_temperature_analysis() 
+        else:
+            # returns tuple (ohmics res, ionic conductivity)
+            impedance_results = self.test_cell.single_temperature_analysis(temp) 
         
         # Empty cell
         self.fluid_handler.empty_cell(total_vol)

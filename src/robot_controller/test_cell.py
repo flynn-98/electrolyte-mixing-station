@@ -19,7 +19,6 @@ class measurements:
         self.squid = admiral.squidstat(squid_port, squid_sim)
 
         self.temp_file = "data/results/temperature_report.csv"
-        self.data_file = "data/results/sweep_data.csv"
 
         # Temperature parameters
         self.start_temp = 60.0
@@ -92,7 +91,7 @@ class measurements:
         # Turn off Peltiers
         self.peltier.clear_run_flag()
 
-        pd.DataFrame(data=np.vstack((temperatures, data))).to_csv(self.data_file)
+        return pd.DataFrame(data=np.vstack((temperatures, data)))
 
     def plot_EIS(self, identifier: str = "na") -> None:
         logging.info("Saving EIS plot (Dataset " + identifier + ")..")
