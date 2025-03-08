@@ -36,16 +36,18 @@ class scheduler:
         self.max_dose = self.mixer.pipette.max_dose()
 
         # Set any required variables for controllers
-        self.mass_balance.correction = 52 #g
+        self.mass_balance.correction = 50 #g
 
-        # Retrieve hardcoded values
+        # Retrieve hardcoded values and pass down
         self.mixer.gantry.x_correction = device_data["X_Gantry_Shift"]
         self.mixer.gantry.y_correction = device_data["Y_Gantry_Shift"]
 
         self.mixer.workspace_height_correction = device_data["Z_Workspace_Shift"]
         self.mixer.correct_workspace_heights()
 
-        logging.info("Retrieved hardcoded values for " + device_name + ".")
+        self.test_cell.squid.mode = device_data["Squid_Mode"]
+
+        logging.info("Successfully passed hardcoded values for " + device_name + ".")
 
         # Declare variables for CSV read
         self.df = pd.DataFrame()
@@ -125,7 +127,7 @@ class scheduler:
 
         self.save_csv()
 
-    def run(self, temp: float) -> None:
+    def run(self, temp: float = 20) -> None:
         logging.info(f"Setting early temperature target of {temp}C..")
         self.test_cell.set_temperature_target(temp)
 
@@ -204,12 +206,11 @@ class scheduler:
 
         # Potentiostat / Temperature control functions
         impedance_results = self.test_cell.single_temperature_analysis(temp) 
-        # Potentiostat
-
-        # Empty cell once complete
+        
+        # Empty cell
         self.fluid_handler.empty_cell(total_vol)
 
-        # Clean cell once complete
+        # Clean cell
         self.fluid_handler.clean_cell()
 
         logging.info("Run complete.")

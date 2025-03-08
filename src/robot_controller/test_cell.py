@@ -1,5 +1,6 @@
 import logging
 import os
+import random
 import sys
 from csv import DictWriter
 
@@ -106,6 +107,9 @@ class measurements:
         plt.close()
 
     def get_impedance_properties(self, cell_constant: float, identifier: str = "na", plot: bool = True) -> float:
+        if self.sim is True:
+            return (random.random(), random.random())
+        
         data = pd.read_csv(self.squid.ac_file_path).to_numpy()
 
         frequency = data[:, 2]

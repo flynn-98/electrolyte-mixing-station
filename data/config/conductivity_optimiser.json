@@ -1,18 +1,18 @@
 {
-    "optimization_name": "Mixing Station Example",
-    "description": "Optimize example",
-    "sdlabs_group_id": "Atinary",
+    "optimization_name": "Liquid Electrolyte Conductivity",
+    "description": "Optimisation of liquid electrolyte composition to maximise ionic conductivity",
+    "sdlabs_group_id": "CAPeX",
     "parameters": [
         {
             "name": "param_a",
             "low_value": 0,
-            "high_value": 2,
+            "high_value": 2.5,
             "type": "continuous"
         },
         {
             "name": "param_b",
             "low_value": 0,
-            "high_value": 2,
+            "high_value": 2.5,
             "type": "continuous"
         }
     ],
@@ -37,5 +37,5 @@
     ],
     "batch_size": 1,
     "algorithm": "edboplus",
-    "budget": 20
+    "budget": 5
 }

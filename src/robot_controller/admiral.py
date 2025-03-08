@@ -35,8 +35,7 @@ class squidstat:
         self.experiment = None
         self.channel = channel
 
-        self.mode_file = "data/variables/test_mode.txt"
-        self.list_file = "data/variables/test_list.txt"
+        self.mode = 0 # Default to EIS
 
         self.ac_file_path = "data/results/AC.csv"
         self.dc_file_path = "data/results/DC.csv"
@@ -87,21 +86,6 @@ class squidstat:
         
         # Create dataframes
         self.reset_dataframes()
-
-        # Populate list file
-        with open(self.list_file, 'w+') as filehandler:
-            filehandler.writelines(list(self.modes))
-
-        # Populate mode file if not exists
-        if not os.path.exists(self.mode_file):
-            with open(self.mode_file, 'w+') as filehandler:
-                filehandler.write("0")
-
-        print("************************************")
-        print("Remember to set the desired Squidstat test mode in the following location: " + self.mode_file)
-        print("See the complete list of test modes in the same directory: " + self.list_file)
-        print("************************************")
-        input("Press any key to continue.")
         
         if self.sim is False:
             # Attach functions to call during events
@@ -126,16 +110,8 @@ class squidstat:
             self.handler.experimentStopped.connect(self.handle_experiment_stopped)
 
     def take_measurements(self) -> None:
-        # Build chosen analysis method (read from variables)
-        if os.path.exists(self.mode_file):
-            with open(self.mode_file, 'r') as filehandler:
-                analysis_method = int(filehandler.read())
-        else:
-            logging.error("No test mode set.")
-            sys.exit()
-
         # Run experiment build function from dict
-        build_experiment = list(self.modes.values())[analysis_method]
+        build_experiment = list(self.modes.values())[self.mode]
 
         build_experiment()
         self.run_experiment()

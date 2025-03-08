@@ -6,7 +6,7 @@ from sdlabs_wrapper.wrapper import initialize_optimization
 
 logging.basicConfig(level = logging.INFO)
 
-file_path = "data/config/optimiser.json"
+file_path = "data/config/conductivity_optimiser.json"
 API_KEY = "eyJhbGciOiJIUzUxMiIsImtpZCI6ImtleV8yOGY0OWNiNDkyNzI0MGJmYjQ4YzQ2MDRlYWY2YzI5ZCIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2F1dGguYXRpbmFyeS5jb20iLCJjb2duaXRvOmdyb3VwcyI6WyJhY2FkZW1pYyJdLCJpYXQiOjE3NDEzNTEyODgsIm5iZiI6MTc0MTM1MTI4OCwidXNlcm5hbWUiOiJiYjc2MDk4My1mM2IwLTQ3YTEtOGY3Ny05ZGY0OGFiNjU1ODEifQ.wBEigYeKco5e9gYNT_b17VZRztwLw-no1ae8k3HpG96r06LPSFVIb73VkA1eg2AFjUs_T9vAumhFtXTOzfq5Wg"
 
 # load config as dict
@@ -28,5 +28,3 @@ for iteration in range(wrapper.config.budget):
     if suggestions:
         wrapper.send_measurements(suggestions)
         logging.info(f"Iteration {iteration+1} Measurements sent")
-
-#SDLABS_ENDPOINT_URL = "https://api.scientia.atinary.com/sdlabs/latest"  # as defined in API Endpoints

@@ -32,7 +32,7 @@ lint = [
 repository = "https://github.com/flynn-98/electrolyte-mixing-station"
 
 [project.scripts]
-run-experiment = "robot_controller.command_line:run_experiment"
+run-campaign = "robot_controller.command_line:run_campaign"
 test-pipette = "robot_controller.command_line:test_pipette"
 test-squidstat = "robot_controller.command_line:squidstat_example"
 
