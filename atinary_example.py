@@ -17,7 +17,7 @@ wrapper = initialize_optimization(
 
 for iteration in range(wrapper.config.budget):
     print(f"Iteration {iteration+1}: Fetching new suggestions")
-    suggestions = wrapper.get_new_suggestions(max_retries=6, sleep_time_s=60)
+    suggestions = wrapper.get_new_suggestions(max_retries=10, sleep_time_s=10)
 
     print(f"Iteration {iteration+1} New Suggestions: {suggestions}")
 

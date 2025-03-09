@@ -14,7 +14,7 @@ def run_campaign() -> None:
     parser.add_argument("--device", help="Used to locate the device data by matching with Device ID.", type=str)
     parser.add_argument("--resume", default=False, help="Continue from last state. Defaults to false to restart.", type=bool, action=argparse.BooleanOptionalAction)
     parser.add_argument("--home", default=False, help="Set true to home gantry on start up. Defaults to false.", type=bool, action=argparse.BooleanOptionalAction)
-    parser.add_argument("--sleep", default=2, help="Sleep time (in minutes) between attempts to get new suggestions from Atinary. Defaults to 2mins.", type=int)
+    parser.add_argument("--sleep", default=1, help="Sleep time (in minutes) between attempts to get new suggestions from Atinary. Defaults to 2mins.", type=int)
     parser.add_argument("--temp", default=25, help="Temperature set point for electrolyte analysis. Defaults to 25C.", type=float)
     parser.add_argument("--csv", default="electrolyte_recipe", help="Name of csv file to be updated by Atinary wrapper. Defaults to electrolyte_recipe, or current_state if resume is True.", type=str)
 

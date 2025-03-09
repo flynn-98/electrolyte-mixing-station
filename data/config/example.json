@@ -1,16 +1,16 @@
 {
-    "optimization_name": "Example",
-    "description": "Example",
+    "optimization_name": "Mixing Station Example",
+    "description": "",
     "sdlabs_group_id": "Atinary",
     "parameters": [
         {
-            "name": "param_a",
+            "name": "ZnCl2",
             "low_value": 0,
             "high_value": 10,
             "type": "continuous"
         },
         {
-            "name": "param_b",
+            "name": "Zn(ClO4)2",
             "low_value": 0,
             "high_value": 10,
             "type": "continuous"
@@ -37,5 +37,5 @@
     ],
     "batch_size": 1,
     "algorithm": "edboplus",
-    "budget": 5
+    "budget": 10
 }

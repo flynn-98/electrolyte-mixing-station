@@ -96,7 +96,11 @@ run-campaign --device microtron_01
 
 Run `run-campaign --help` for more information.
 
-**Jump to the [jupyter notebook](instructions.ipynb) for further, interactive guidance on how to use the mixing station!**
+To monitor the campaign remotely, login to [Atinary](https://scientia.atinary.com/sdlabs) and navigate to the *Running Campaigns* tab on the dashboard. You can then decide on which charts to use to display the data, like so:
+
+![image](data/images/example_optimisation.png)
+
+*Jump to the [jupyter notebook](instructions.ipynb) for further, interactive guidance on how to use the mixing station!*
 
 ## Recommended Extensions
 
