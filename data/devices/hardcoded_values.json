@@ -14,6 +14,7 @@
             "Temp_Active": false,
             "Squid_Active": false,
             "Squid_Mode": 0,
+            "Cell_Constant": 1.0,
             "X_Gantry_Shift": -1.0,
             "Y_Gantry_Shift": 1.5,
             "Z_Workspace_Shift": 0
@@ -33,6 +34,7 @@
             "Temp_Active": false,
             "Squid_Active": false,
             "Squid_Mode": 0,
+            "Cell_Constant": 1.0,
             "X_Gantry_Shift": -1.0,
             "Y_Gantry_Shift": 1.5,
             "Z_Workspace_Shift": 0
@@ -52,6 +54,7 @@
             "Temp_Active": false,
             "Squid_Active": false,
             "Squid_Mode": 0,
+            "Cell_Constant": 1.0,
             "X_Gantry_Shift": 0,
             "Y_Gantry_Shift": 0,
             "Z_Workspace_Shift": 0

@@ -21,15 +21,16 @@ class measurements:
         self.temp_file = "data/results/temperature_report.csv"
 
         # Temperature parameters
-        self.start_temp = 60.0
-        self.end_temp = -10.0
+        self.start_temp = self.peltier.max_temp
+        self.end_temp = self.peltier.min_temp
         self.temp_points = 8
 
         self.epsilon_0 = 8.8541878128e-12 # vacuum permittivity
+        self.cell_constant = 1.0 # to be set from hardcoded values
         
         self.test_cell_volume = 2.5 # ml from CAD
 
-    def set_temperature_target(self, temp: float) -> None:
+    def set_blind_temperature(self, temp: float) -> None:
         self.peltier.set_temperature(temp)
         self.peltier.set_run_flag()
         
@@ -107,7 +108,7 @@ class measurements:
         plt.savefig(identifier + ".png")
         plt.close()
 
-    def get_impedance_properties(self, cell_constant: float, identifier: str = "na", plot: bool = True) -> float:
+    def get_impedance_properties(self, identifier: str = "na", plot: bool = False) -> float:
         if self.sim is True:
             return (random.random(), random.random())
         
@@ -133,8 +134,8 @@ class measurements:
 
         for i in range(len(z_real)):
             z_square = z_real[i] ** 2 + z_img[i] ** 2
-            epsilon_real = z_img[i] * cell_constant / (2 * np.pi * frequency[i] * self.epsilon_0 * z_square)
-            epsilon_img = z_real[i] * cell_constant / (2 * np.pi * frequency[i] * self.epsilon_0 * z_square)
+            epsilon_real = z_img[i] * self.cell_constant / (2 * np.pi * frequency[i] * self.epsilon_0 * z_square)
+            epsilon_img = z_real[i] * self.cell_constant / (2 * np.pi * frequency[i] * self.epsilon_0 * z_square)
 
             conductivity = np.append(conductivity, np.array([self.epsilon_0 * epsilon_img * 2 * np.pi * frequency[i]]))
             tan_delta = np.append(tan_delta, np.array([epsilon_img / epsilon_real]))

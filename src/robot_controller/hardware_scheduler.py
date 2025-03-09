@@ -46,6 +46,7 @@ class scheduler:
         self.mixer.correct_workspace_heights()
 
         self.test_cell.squid.mode = device_data["Squid_Mode"]
+        self.test_cell.cell_constant = device_data["Cell_Constant"]
 
         logging.info("Successfully passed hardcoded values for " + device_name + ".")
 
@@ -143,10 +144,10 @@ class scheduler:
     def run(self, temp: float | None = None) -> pd.DataFrame | tuple[float, float]:
         if temp is None:
             logging.info(f"Setting early temperature target of {temp}C..")
-            self.test_cell.set_temperature_target(temp)
+            self.test_cell.set_blind_temperature(temp)
         else:
             # If no temperature provided, default to full cycle analysis
-            self.test_cell.set_temperature_target(self.test_cell.start_temp)
+            self.test_cell.set_blind_temperature(self.test_cell.start_temp)
 
         logging.info("Beginning electrolyte mixing..")
         self.mixer.move_to_start()
