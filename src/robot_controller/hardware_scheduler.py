@@ -117,19 +117,36 @@ class scheduler:
         if self.mass_balance.ser.isOpen() is True:
             self.mass_balance.close_ser()
 
-    def update_dose_volumes(self) -> None:
-        # Place holder for API integration
-        for i in self.df.index.to_numpy(dtype=int):
-            vol = input("Input new Dose Volume (uL) for " + self.df.loc[i, "Name"] + ": ")
-            
-            self.df.loc[i, "Dose Volume (uL)"] = vol
-            logging.info(self.df.loc[i, "Name"] + f" Dose Volume updated to {vol}uL")
+    def update_dose_volumes(self, suggestions: dict) -> None:
+        #{'param_a': 5.0, 'param_b': 5.0, ..} dict formal provided by atinary
 
+        for i in self.df.index.to_numpy(dtype=int):
+            found = False
+
+            for suggestion in suggestions:
+                # Loop through all and find correct name, in case of order mismatch
+                target = self.df.loc[i, "Name"]
+                new_value = suggestions[suggestion]
+
+                if target == suggestion:
+                    self.df.loc[i, "Dose Volume (uL)"] = new_value
+                    logging.info(target + f" dose volume updated to {new_value}uL.")
+                    found = True
+
+            if found is False:
+                logging.error("No suggestion found for " + target + "!")
+                sys.exit()
+
+        # Save to current state
         self.save_csv()
 
     def run(self, temp: float | None = None) -> pd.DataFrame | tuple[float, float]:
-        logging.info(f"Setting early temperature target of {temp}C..")
-        self.test_cell.set_temperature_target(temp)
+        if temp is None:
+            logging.info(f"Setting early temperature target of {temp}C..")
+            self.test_cell.set_temperature_target(temp)
+        else:
+            # If no temperature provided, default to full cycle analysis
+            self.test_cell.set_temperature_target(self.test_cell.start_temp)
 
         logging.info("Beginning electrolyte mixing..")
         self.mixer.move_to_start()

@@ -96,7 +96,7 @@ run-campaign --device microtron_01
 
 Run `run-campaign --help` for more information.
 
-**Jump to the [workspace jupyter notebook](Workspace.ipynb) for more interactive guidance on how to use the mixing station!**
+**Jump to the [jupyter notebook](instructions.ipynb) for further, interactive guidance on how to use the mixing station!**
 
 ## Recommended Extensions
 

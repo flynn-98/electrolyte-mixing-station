@@ -42,13 +42,13 @@ class peltier:
 
         # Heating/Cooling control
         self.heating_tc = 60 #%
-        self.heating_Kp = 15
+        self.heating_Kp = 5
         self.heating_Ki = 0
         self.heating_Kd = 0
 
         self.cooling_tc = 100 #%
-        self.cooling_Kp = 15
-        self.cooling_Ki = 0
+        self.cooling_Kp = 20
+        self.cooling_Ki = 1
         self.cooling_Kd = 0
 
         self.cool_mode = False
