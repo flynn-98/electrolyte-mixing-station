@@ -1,5 +1,6 @@
 import logging
 import sys
+from os import path
 
 import pandas as pd
 from PySide6.QtWidgets import QApplication
@@ -36,8 +37,7 @@ class squidstat:
 
         self.mode = 0 # Default to EIS
 
-        self.ac_file_path = "data/results/AC.csv"
-        self.dc_file_path = "data/results/DC.csv"
+        self.results_path = "data/results/"
 
         self.ac_columns = [
                 "Timestamp",
@@ -108,35 +108,44 @@ class squidstat:
             self.handler.experimentNewElementStarting.connect(self.increment_elements)
             self.handler.experimentStopped.connect(self.handle_experiment_stopped)
 
-    def take_measurements(self) -> None:
+    def take_measurements(self, identifier: str) -> None:
         # Run experiment build function from dict
         build_experiment = list(self.modes.values())[self.mode]
 
         build_experiment()
         self.run_experiment()
 
-        self.save_data()
+        self.save_data(identifier)
         self.reset_dataframes()
-        self.close_experiment() 
+        self.close_experiment()
 
-    def save_data(self) -> None:
+    def get_dc_path(self, identifier: str) -> str:
+        return path.join(self.results_path, identifier+"_DC.csv")
+    
+    def get_ac_path(self, identifier: str) -> str:
+        return path.join(self.results_path, identifier+"_AC.csv")
+
+    def save_data(self, identifier: str) -> None:
         logging.info("Checking if Squidstat data is available..")
+
+        dc_path = self.get_dc_path()
+        ac_path = self.get_ac_path()
 
         if (self.ac_data.empty is True) and (self.dc_data.empty is True):
             logging.error("No data available!")
             
         elif self.ac_data.empty is True:  
             logging.info("Only DC data found.")
-            self.dc_data.to_csv(self.dc_file_path)
+            self.dc_data.to_csv(dc_path)
         
         elif self.dc_data.empty is True:
             logging.info("Only AC data found.")
-            self.ac_data.to_csv(self.ac_file_path)
+            self.ac_data.to_csv(ac_path)
         
         else:
             logging.info("AC and DC data found.")
-            self.ac_data.to_csv(self.ac_file_path)
-            self.dc_data.to_csv(self.dc_file_path)
+            self.ac_data.to_csv(ac_path)
+            self.dc_data.to_csv(dc_path)
 
     def reset_dataframes(self) -> None:
         logging.info("Resetting AC and DC dataframes..")
@@ -184,7 +193,7 @@ class squidstat:
         if self.sim is False:
             self.app.quit()
 
-    def increment_dc_data(self, channel: int, data) -> None:
+    def increment_dc_data(self, channel: int, data: any) -> None:
         # Append incoming data to dataframe
         # channel variable expected in connected function (see https://admiral-instruments.github.io/AdmiralSquidstatAPI/md_intro_and_examples_9__python_example.html)
 
@@ -201,7 +210,7 @@ class squidstat:
             next_step = dict(zip(self.dc_columns, values))
             self.dc_data = self.dc_data.append(next_step)
 
-    def increment_ac_data(self, channel: int, data) -> None:
+    def increment_ac_data(self, channel: int, data: any) -> None:
         # Append incoming data to dataframe
         logging.info(f"Extracting AC data from channel {channel}..")
 
@@ -224,7 +233,7 @@ class squidstat:
             next_step = dict(zip(self.ac_columns, values))
             self.ac_data = self.ac_data.append(next_step)
 
-    def increment_elements(self, channel: int, data) -> None:
+    def increment_elements(self, channel: int, data: any) -> None:
         # Append incoming data to dataframe
         logging.info(f"Extracting element data from channel {channel}..")
 
@@ -244,7 +253,7 @@ class squidstat:
         logging.info(f"Experiment completed on channel {channel}.")
         #self.app.quit()
     
-    def append_element(self, experiment, element, number_of_runs: int = 1) -> None:
+    def append_element(self, experiment: any, element: any, number_of_runs: int = 1) -> None:
         if experiment.appendElement(element, number_of_runs) is True:
             self.experiment = experiment
         else:

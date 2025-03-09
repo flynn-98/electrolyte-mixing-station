@@ -3,6 +3,7 @@ import os
 import random
 import sys
 from csv import DictWriter
+from datetime import datetime
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -33,6 +34,10 @@ class measurements:
     def set_blind_temperature(self, temp: float) -> None:
         self.peltier.set_temperature(temp)
         self.peltier.set_run_flag()
+
+    def get_indentifier(self) -> str:
+        now = datetime.now()
+        return "ID_" + now.strftime("%d/%m/%Y_%H:%M:%S")
         
     def single_temperature_analysis(self, temp: float, report: bool = True) -> None:
         result, mean, std = self.peltier.wait_until_temperature(temp, keep_on=True)
@@ -50,14 +55,16 @@ class measurements:
 
                 writer.writerow({'Temperature Target': temp, 'Mean Result': mean, 'STD': std})
 
-            # Take measurements with Squidstat
-            self.squid.take_measurements()
+        id = self.get_indentifier()
+
+        # Take measurements with Squidstat
+        self.squid.take_measurements(id)
 
         # Turn off Peltiers
         self.peltier.clear_run_flag()
 
         # Get data
-        ohmic_resistance, ionic_conductivity = self.get_impedance_properties()
+        ohmic_resistance, ionic_conductivity = self.get_impedance_properties(identifier=id)
 
         return (ohmic_resistance, ionic_conductivity)
 
@@ -85,11 +92,13 @@ class measurements:
 
                     writer.writerow({'Temperature Target': temp, 'Mean Result': mean, 'STD': std})
 
+            id = self.get_indentifier()
+
             # Take measurements with Squidstat
-            self.squid.take_measurements()
+            self.squid.take_measurements(id)
 
             # Get data
-            data[0,i], data[1,i] = self.get_impedance_properties()
+            data[0,i], data[1,i] = self.get_impedance_properties(identifier=id)
 
         # Turn off Peltiers
         self.peltier.clear_run_flag()
@@ -108,11 +117,11 @@ class measurements:
         plt.savefig(identifier + ".png")
         plt.close()
 
-    def get_impedance_properties(self, identifier: str = "na", plot: bool = False) -> float:
+    def get_impedance_properties(self, identifier: str = "na", plot: bool = True) -> float:
         if self.sim is True:
             return (random.random(), random.random())
         
-        data = pd.read_csv(self.squid.ac_file_path).to_numpy()
+        data = pd.read_csv(self.squid.get_ac_path(identifier)).to_numpy()
 
         frequency = data[:, 2]
         z_real = data[:, 3]
