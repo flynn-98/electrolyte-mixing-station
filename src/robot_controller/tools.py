@@ -11,16 +11,17 @@ API_KEY = "eyJhbGciOiJIUzUxMiIsImtpZCI6ImtleV8yOGY0OWNiNDkyNzI0MGJmYjQ4YzQ2MDRlY
 
 def run_campaign() -> None:
     parser=argparse.ArgumentParser(description="Begin or resume an Atinary campaign.")
-    parser.add_argument("--device_name", help="Used to locate the device data by matching with Device ID.", type=str)
+    parser.add_argument("--device", help="Used to locate the device data by matching with Device ID.", type=str)
     parser.add_argument("--resume", default=False, help="Continue from last state. Defaults to false to restart.", type=bool, action=argparse.BooleanOptionalAction)
     parser.add_argument("--home", default=False, help="Set true to home gantry on start up. Defaults to false.", type=bool, action=argparse.BooleanOptionalAction)
+    parser.add_argument("--sleep", default=2, help="Sleep time (in minutes) between attempts to get new suggestions from Atinary. Defaults to 2mins.", type=int, action=argparse.BooleanOptionalAction)
 
     args=parser.parse_args()
 
     if args.resume is False:
-        device = hardware_scheduler.experiment(device_name=args.device_name, csv_filename="electrolyte_recipe.csv", home=args.home)
+        device = hardware_scheduler.experiment(device_name=args.device, csv_filename="electrolyte_recipe.csv", home=args.home)
     else:
-        device = hardware_scheduler.experiment(device_name=args.device_name, csv_filename="current_state.csv", home=args.home)
+        device = hardware_scheduler.experiment(device_name=args.device, csv_filename="current_state.csv", home=args.home)
     
     # load config as dict
     with open(file_path, "rb") as f:
@@ -34,9 +35,9 @@ def run_campaign() -> None:
     for iteration in range(wrapper.config.budget):
 
         print("***********************ATINARY***********************")
-        print(f"Iteration {iteration+1}: Fetching new suggestions")
-        suggestions = wrapper.get_new_suggestions(max_retries=6, sleep_time_s=30)
-        print(f"Iteration {iteration+1} New suggestions: {suggestions}")
+        print(f"Iteration {iteration+1}: Fetching new suggestions..")
+        suggestions = wrapper.get_new_suggestions(max_retries=6, sleep_time_s=args.sleep * 60)
+        print(f"Iteration {iteration+1} New suggestions: {suggestions}.")
         print("*****************************************************")
 
         for suggestion in suggestions:
@@ -52,7 +53,7 @@ def run_campaign() -> None:
         if suggestions:
             wrapper.send_measurements(suggestions)
             print("***********************ATINARY***********************")
-            print(f"Iteration {iteration+1} measurements sent")
+            print(f"Iteration {iteration+1} measurements sent.")
             print("*****************************************************")
 
     device.close_all_ports()

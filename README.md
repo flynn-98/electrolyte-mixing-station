@@ -8,7 +8,7 @@ The Electrolyte Mixing Station is a flexible tool, primarily designed to select 
 
 ### Be sure to follow all the steps to set up the virtual environment!
 
-## Installing Dependencies
+## Instal Dependencies
 
 Build venv in root directory:
 
@@ -34,7 +34,7 @@ Activate venv:
 source .venv/bin/activate
 ```
 
-## Setting up SquidstatPyLibrary
+## Set up SquidstatPyLibrary
 
 Download latest *.whl* file from [here](https://github.com/Admiral-Instruments/AdmiralSquidstatAPI/tree/main/SquidstatLibrary/windows/pythonWrapper/Release). Move the file to */electrolyte-mixing-station* and run the following command:
 
@@ -44,11 +44,11 @@ Download latest *.whl* file from [here](https://github.com/Admiral-Instruments/A
 
 You can find documentation for the SquidstatPyLibrary [here](https://admiral-instruments.github.io/AdmiralSquidstatAPI/md_intro_and_examples_9__python_example.html).
 
-## Downloading ATEN RS232 to USB Driver
+## Download ATEN RS232 to USB Driver
 
 The Laird PID temperature controller uses RS232 to communicate, which requires an [adapter](https://www.aten.com/global/en/products/usb-solutions/converters/uc232a1/) to convert the signal to a 5V logic level for USB. Download the correct driver [here](https://www.aten.com/global/en/supportcenter/info/downloads/?action=display_product&pid=1142). Installing the drivers may require you to restart your computer.
 
-## Setting up Atinary SDK
+## Set up Atinary SDK
 
 Download latest *.tar.gz* file from [here](https://scientia.atinary.com/download/). Move the file to */electrolyte-mixing-station* and run the following command:
 
@@ -80,21 +80,23 @@ pio run --target upload
 
 ## Device Configuration
 
-Com port addresses for each device can be found [here](data/devices/mixing_stations.json). To add a new device, simply copy and paste the last device entry, increment the ID and rename the COM port addresses. The easiest way to determine these addresses, is to connect the device(s) and go to [PlatformIO's](https://docs.platformio.org/en/latest/integration/ide/vscode.html) *Devices* tab.
+Com port addresses for each device can be found [here](data/devices/hardcoded_values.json). To add a new device, simply copy and paste the last device entry, increment the ID and rename the COM port addresses. The easiest way to determine these addresses, is to connect the device(s) and go to [PlatformIO's](https://docs.platformio.org/en/latest/integration/ide/vscode.html) *Devices* tab.
 
 By toggling the booleans, you can activate or deactivate the various com port connections for scenarios where not all connections are needed.
 
-## Run Experiments
+# Run a Campaign
 
-Experiments can be run using a command line tool, allowing for a single PC to run tests on multiple mixing stations at once. For each device, open a new terminal and run the following command:
+A campaign can be run using a command line tool, with the specifics of the campaign taken from [here](data/config/conductivity_optimiser.json). For each device, open a new terminal and run the following command:
 
 ```
-run-experiment --device_name microtron_01
+run-campaign --device microtron_01
 ```
 
-Run `run-experiment --help` for more information. The electrolyte mixing ratios and aspiration variables will be pulled from [here](data/CSVs/electrolyte_recipe.csv) (for now).
+**Remember to include the volume of each chemical added to the containers [here](data/recipes/electrolyte_recipe.csv), before beginning the campaign!**
 
-**Jump to the [workspace jupyter notebook](Workspace.ipynb) for more guidance on how to use the mixing station!**
+Run `run-campaign --help` for more information.
+
+**Jump to the [workspace jupyter notebook](Workspace.ipynb) for more interactive guidance on how to use the mixing station!**
 
 ## Recommended Extensions
 
