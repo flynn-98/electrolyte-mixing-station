@@ -117,16 +117,16 @@ class scheduler:
         if self.mass_balance.ser.isOpen() is True:
             self.mass_balance.close_ser()
 
-    def update_dose_volumes(self, suggestions: dict) -> None:
+    def update_dose_volumes(self, new_volumes: dict) -> None:
         #{'param_a': 5.0, 'param_b': 5.0, ..} dict formal provided by atinary
 
         for i in self.df.index.to_numpy(dtype=int):
             found = False
 
-            for suggestion in suggestions:
+            for suggestion in new_volumes:
                 # Loop through all and find correct name, in case of order mismatch
                 target = self.df.loc[i, "Name"]
-                new_value = suggestions[suggestion]
+                new_value = new_volumes[suggestion]
 
                 if target == suggestion:
                     self.df.loc[i, "Dose Volume (uL)"] = new_value
