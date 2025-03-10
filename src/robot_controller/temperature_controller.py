@@ -112,6 +112,12 @@ class peltier:
                 logging.error("Temperature sensor #2 configuration failed.")
                 sys.exit()
 
+            if self.set_main_steinhart_coeffs() is True:
+                logging.info("Successfully updated steinhard coefficients for temperature sensor #1.")
+            else:
+                logging.error("Failed to update steinhard coefficients for temperature sensor #1.")
+                sys.exit() 
+
             if self.set_heat_sink_steinhart_coeffs() is True:
                 logging.info("Successfully updated steinhard coefficients for temperature sensor #2.")
             else:
@@ -359,7 +365,7 @@ class peltier:
             return False
         
     def set_main_steinhart_coeffs(self) -> bool:
-        if (self.register_write(59, self.A_coeff_1) is True) and (self.register_write(60, self.B_coeff_1) is True) and (self.register_write(61, self.C_coeff_1) is True):
+        if (self.register_write(59, self.A_coeff_2) is True) and (self.register_write(60, self.B_coeff_2) is True) and (self.register_write(61, self.C_coeff_2) is True):
             return True
         else:
             return False
