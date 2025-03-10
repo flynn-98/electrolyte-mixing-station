@@ -16,7 +16,7 @@ class peltier:
         self.sim = sim
 
         self.max_temp = 60 #C
-        self.min_temp = -10 #C
+        self.min_temp = -20 #C
 
         self.input_voltage = 12.0 #V
         self.max_current = 10.0 #A
@@ -47,8 +47,8 @@ class peltier:
         self.heating_Kd = 0
 
         self.cooling_tc = 100 #%
-        self.cooling_Kp = 18
-        self.cooling_Ki = 1
+        self.cooling_Kp = 30
+        self.cooling_Ki = 2
         self.cooling_Kd = 0
 
         self.cool_mode = False
