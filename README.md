@@ -52,13 +52,13 @@ The Laird PID temperature controller uses RS232 to communicate, which requires a
 
 ## Set up Atinary SDK
 
-Download latest *.tar.gz* file from [here](https://scientia.atinary.com/download/). Move the file to */electrolyte-mixing-station* and run the following command:
+Download latest *.tar.gz* file from [here](https://enterprise.atinary.com/download/). Move the file to */electrolyte-mixing-station* and run the following command:
 
 ```
 .venv/bin/pip install FILE.tar.gz
 ```
 
-You can find documentation for the Atinary SDK [here](https://scientia.atinary.com/documentation/docs/sdlabs_sdk/installation.html).
+You can find documentation for the Atinary SDK [here](https://enterprise.atinary.com/documentation/docs/sdlabs_sdk/installation.html).
 
 ## Install Atinary SDL Wrapper
 
