@@ -34,6 +34,8 @@ Activate venv:
 source .venv/bin/activate
 ```
 
+Note: Replace *bin* with *Scripts* if using windows.
+
 ## Set up SquidstatPyLibrary
 
 Download latest *.whl* file from [here](https://github.com/Admiral-Instruments/AdmiralSquidstatAPI/tree/main/SquidstatLibrary/windows/pythonWrapper/Release). Move the file to */electrolyte-mixing-station* and run the following command:
@@ -96,7 +98,7 @@ run-campaign --device microtron_01
 
 Run `run-campaign --help` for more information.
 
-To monitor the campaign remotely, login to [Atinary](https://scientia.atinary.com/sdlabs) and navigate to the *Running Campaigns* tab on the dashboard. You can then decide on which charts to use to display the data, like so:
+To monitor the campaign remotely, log in to [Atinary](https://scientia.atinary.com/sdlabs) and navigate to the *Running Campaigns* tab on the dashboard. You can then decide on which charts to use to display the data, like so:
 
 ![image](data/images/example_optimisation.png)
 

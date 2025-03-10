@@ -121,6 +121,7 @@ class measurements:
         if self.sim is True:
             return (random.random(), random.random())
         
+        # AC data required for impedance properties
         data = pd.read_csv(self.squid.get_ac_path(identifier)).to_numpy()
 
         frequency = data[:, 2]
