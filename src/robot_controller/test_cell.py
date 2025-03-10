@@ -16,8 +16,8 @@ logging.basicConfig(level = logging.INFO)
 class measurements:
     def __init__(self, squid_port: str, temp_port: str, squid_sim: bool = False, temp_sim: bool = False) -> None:
 
-        self.peltier = temperature_controller.peltier(temp_port, temp_sim)
-        self.squid = admiral.squidstat(squid_port, squid_sim)
+        self.peltier = temperature_controller.peltier(COM=temp_port, sim=temp_sim)
+        self.squid = admiral.squidstat(COM=squid_port, sim=squid_sim)
 
         self.temp_file = "data/results/temperature_report.csv"
 

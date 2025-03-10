@@ -1,5 +1,6 @@
 import argparse
 import json
+import logging
 import sys
 
 from sdlabs_wrapper.wrapper import initialize_optimization
@@ -8,6 +9,8 @@ from robot_controller import admiral, hardware_scheduler, pipette_controller
 
 config_file = "data/config/conductivity_optimiser.json"
 API_KEY = "eyJhbGciOiJIUzUxMiIsImtpZCI6ImtleV83ZTRjNTc1NjIwYzM0MDVkYTgwNmViMGU3NzdmMjY0MiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2F1dGguYXRpbmFyeS5jb20iLCJjb2duaXRvOmdyb3VwcyI6WyJDQVBlWF9QaW9uZWVyX0NlbnRlciJdLCJpYXQiOjE3NDE2Mzg5MTMsIm5iZiI6MTc0MTYzODkxMywidXNlcm5hbWUiOiJmMmM2ZDBiYy01OTQ1LTRiM2UtYjA3Mi0yMzc5ZTI1YmI0NjgifQ.zqKUJe9KwEEA4vPIw2l-rjaI5t2mODo8O4yxhdHpAkgW1xUnoImt7kNwfUYXlHkDuccM0qAWF-7g17o5Wirn7w"
+
+logging.basicConfig(level = logging.INFO)
 
 def run_campaign() -> None:
     parser=argparse.ArgumentParser(description="Begin or resume an Atinary campaign.")
@@ -21,9 +24,9 @@ def run_campaign() -> None:
     args=parser.parse_args()
 
     if args.resume is False:
-        device = hardware_scheduler.experiment(device_name=args.device, csv_filename=args.csv + ".csv", home=args.home)
+        device = hardware_scheduler.scheduler(device_name=args.device, csv_filename=args.csv + ".csv", home=args.home)
     else:
-        device = hardware_scheduler.experiment(device_name=args.device, csv_filename="current_state.csv", home=args.home)
+        device = hardware_scheduler.scheduler(device_name=args.device, csv_filename="current_state.csv", home=args.home)
     
     # load config as dict
     with open(config_file, "rb") as f:
@@ -36,11 +39,9 @@ def run_campaign() -> None:
 
     for iteration in range(wrapper.config.budget):
 
-        print("***********************ATINARY***********************")
-        print(f"Iteration {iteration+1}: Fetching new suggestions..")
+        logging.info(f"Iteration {iteration+1}: Fetching new suggestions..")
         suggestions = wrapper.get_new_suggestions(max_retries=10, sleep_time_s=args.sleep * 60)
-        print(f"Iteration {iteration+1} New suggestions: {suggestions.param_values}.")
-        print("*****************************************************")
+        logging.info(f"Iteration {iteration+1} New suggestions: {suggestions.param_values}.")
 
         for suggestion in suggestions:
             # Update df with new volumes and save to current state
@@ -55,9 +56,7 @@ def run_campaign() -> None:
 
         if suggestions:
             wrapper.send_measurements(suggestions)
-            print("***********************ATINARY***********************")
-            print(f"Iteration {iteration+1} measurements sent.")
-            print("*****************************************************")
+            logging.info(f"Iteration {iteration+1} measurements sent.")
 
     device.close_all_ports()
     sys.exit()

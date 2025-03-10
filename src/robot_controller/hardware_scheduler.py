@@ -33,7 +33,7 @@ class scheduler:
         self.mixer = mixing_station.electrolyte_mixer(gantry_port=device_data["Gantry_Address"], pipette_port=device_data["Pipette_Address"], gantry_sim=not device_data["Gantry_Active"], pipette_sim=not device_data["Pipette_Active"], home=home)
 
         # Retrieve any requried variables from controllers
-        self.max_dose = self.mixer.pipette.max_dose()
+        self.max_dose = self.mixer.pipette.max_dose
 
         # Set any required variables for controllers
         self.mass_balance.correction = 50 #g

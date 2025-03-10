@@ -1,6 +1,7 @@
 {
     "optimization_name": "Mixing Station Example",
     "description": "",
+    "sdlabs_account_type": "enterprise",
     "sdlabs_group_id": "Atinary",
     "parameters": [
         {

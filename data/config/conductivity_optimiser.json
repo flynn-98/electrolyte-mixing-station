@@ -7,29 +7,29 @@
         {
             "name": "ZnCl2",
             "low_value": 0,
-            "high_value": 2500,
-            "stride": 5,
+            "high_value": 1000,
+            "stride": 10,
             "type": "discrete"
         },
         {
             "name": "Zn(ClO4)2",
             "low_value": 0,
-            "high_value": 2500,
-            "stride": 5,
+            "high_value": 1000,
+            "stride": 10,
             "type": "discrete"
         },
         {
             "name": "Water",
             "low_value": 0,
-            "high_value": 2500,
-            "stride": 5,
+            "high_value": 1000,
+            "stride": 10,
             "type": "discrete"
         },
         {
             "name": "Zn(BF4)2",
             "low_value": 0,
-            "high_value": 2500,
-            "stride": 5,
+            "high_value": 1000,
+            "stride": 10,
             "type": "discrete"
         }
     ],
@@ -72,7 +72,7 @@
                 }
             ],
             "targets": [
-                2500
+                1000
             ]
         }
     ],

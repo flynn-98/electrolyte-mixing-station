@@ -65,7 +65,7 @@ You can find documentation for the Atinary SDK [here](https://scientia.atinary.c
 The SDL Wrapper is a codebase created by Atinary, for quick and easy set up of optimisation campaigns using a json config file. Install via the following command:
 
 ```
-python -m pip install git+https://github.com/Atinary-technologies/sdlabs_wrapper.git
+.venv/bin/pip install git+https://github.com/Atinary-technologies/sdlabs_wrapper.git
 ```
 
 ## Using Platformio to Flash Latest Firmware
