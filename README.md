@@ -98,7 +98,7 @@ run-campaign --device microtron_01
 
 Run `run-campaign --help` for more information.
 
-To monitor the campaign remotely, log in to [Atinary](https://scientia.atinary.com/sdlabs) and navigate to the *Running Campaigns* tab on the dashboard. You can then decide on which charts to use to display the data, like so:
+To monitor the campaign remotely, log in to [Atinary](https://enterprise.atinary.com/home/login) and navigate to the *Running Campaigns* tab on the dashboard. You can then decide on which charts to use to display the data, like so:
 
 ![image](data/images/example_optimisation.png)
 

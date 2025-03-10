@@ -2,7 +2,7 @@
     "optimization_name": "Liquid Electrolyte Conductivity",
     "description": "Optimisation of liquid electrolyte composition to maximise ionic conductivity",
     "sdlabs_account_type": "enterprise",
-    "sdlabs_group_id": "CAPeX",
+    "sdlabs_group_id": "CAPeX_Pioneer_Center",
     "parameters": [
         {
             "name": "ZnCl2",
@@ -78,5 +78,5 @@
     ],
     "batch_size": 1,
     "algorithm": "falcongpbo",
-    "budget": 5
+    "budget": 30
 }
