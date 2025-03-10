@@ -19,8 +19,8 @@ class peltier:
         self.min_temp = -10 #C
 
         self.input_voltage = 12.0 #V
-        self.max_current = 7.0 #A
-        self.min_current = 5.0 #A
+        self.max_current = 10.0 #A
+        self.min_current = 0.1 #A
 
         self.fan_current = 1.0 #A
         self.fan_voltage = 12.0
@@ -36,18 +36,18 @@ class peltier:
         self.C_coeff_2 = 8.3896e-8
 
         # Steady state temperature
-        self.allowable_error = 0.5 #C
+        self.allowable_error = 0.25 #C
         self.steady_state = 30 #s
         self.timeout = 1800 #s
 
         # Heating/Cooling control
         self.heating_tc = 60 #%
-        self.heating_Kp = 5
-        self.heating_Ki = 0
+        self.heating_Kp = 8
+        self.heating_Ki = 0.1
         self.heating_Kd = 0
 
         self.cooling_tc = 100 #%
-        self.cooling_Kp = 20
+        self.cooling_Kp = 18
         self.cooling_Ki = 1
         self.cooling_Kd = 0
 
@@ -113,15 +113,15 @@ class peltier:
                 sys.exit()
 
             if self.set_main_steinhart_coeffs() is True:
-                logging.info("Successfully updated steinhard coefficients for temperature sensor #1.")
+                logging.info("Successfully updated steinhart coefficients for temperature sensor #1.")
             else:
-                logging.error("Failed to update steinhard coefficients for temperature sensor #1.")
+                logging.error("Failed to update steinhart coefficients for temperature sensor #1.")
                 sys.exit() 
 
             if self.set_heat_sink_steinhart_coeffs() is True:
-                logging.info("Successfully updated steinhard coefficients for temperature sensor #2.")
+                logging.info("Successfully updated steinhart coefficients for temperature sensor #2.")
             else:
-                logging.error("Failed to update steinhard coefficients for temperature sensor #2.")
+                logging.error("Failed to update steinhart coefficients for temperature sensor #2.")
                 sys.exit()         
 
             if self.set_fan_modes() is True:
@@ -439,11 +439,12 @@ class peltier:
 
             temperature = self.get_t1_value()
 
-            # Allow temperature to drop naturally if current temp is greater than target and target is above threshold
-            if (self.cool_mode is False) and (temperature > value):
+            # Allow temperature to drop naturally if current temp is greater than target and target is well above threshold
+            if (temperature > self.temp_threshold * 2) and (temperature > value):
                 # Turn controller Off (if not already)
                 self.clear_run_flag()
-                time.sleep(1 / sample_rate)
+                logging.info(f"Waiting for temperature to fall below {self.temp_threshold * 2}C before active cooling.")
+                time.sleep(15)
 
                 continue # Skip all else
             else:
@@ -518,7 +519,7 @@ class peltier:
             temperature = self.get_t1_value()
             sink = self.get_t2_value()
             curr = self.get_main_current()
-            fan_curr = self.get_fan1_current() + self.get_fan2_current()                 
+            fan_curr = self.get_fan1_current() + self.get_fan2_current()         
 
             # Append and loose first element
             plt.title(f"Target Temp: {value}C, Sample Rate: {sample_rate}Hz")
@@ -542,8 +543,16 @@ class peltier:
                 
             local_start = time.time()
 
-            #self.get_status()
-            #self.clear_status()
+            # Allow temperature to drop naturally if current temp is greater than target and target is above threshold
+            if (temperature > self.temp_threshold * 2) and (temperature > value):
+                # Turn controller Off (if not already)
+                self.clear_run_flag()
+                time.sleep(1 / sample_rate)
+
+                continue # Skip all else
+            else:
+                # Turn controller ON (if not already)
+                self.set_run_flag()        
 
             while (abs(value - self.get_t1_value()) < self.allowable_error) and (time.time() - local_start < self.steady_state):
                 time.sleep(1 / sample_rate)
