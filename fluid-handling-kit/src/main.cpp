@@ -80,12 +80,11 @@ String action;
 
 void relayOn() {
     digitalWrite(RELAY_PIN, HIGH);
-    delay(200);
+    delay(500);
 };
 
 void relayOff() {
     digitalWrite(RELAY_PIN, LOW);
-    delay(200);
 };
 
 long volToSteps(float vol) {
@@ -108,6 +107,7 @@ void addElectrolyte(float vol) {
 
     // Report back to PC
     Serial.println("Pump complete in " + String(ElapsedTime) + "s");
+    relayOff();
 };
 
 void emptyCell(float vol) {
@@ -126,6 +126,7 @@ void emptyCell(float vol) {
 
     // Report back to PC
     Serial.println("Pump complete in " + String(ElapsedTime) + "s");
+    relayOff();
 };
 
 void cleanCell(float vol) {
@@ -150,6 +151,7 @@ void cleanCell(float vol) {
 
     // Report back to PC
     Serial.println("Pump complete in " + String(ElapsedTime) + "s");
+    relayOff();
 };
 
 void setup() {
@@ -188,10 +190,9 @@ void setup() {
 
   Serial.begin(9600);
   mixer.write(servoHome);
-
-relayOff();
-
-Serial.println("Fluid Handling Kit Ready");
+  
+  relayOff();
+  Serial.println("Fluid Handling Kit Ready");
 };
 
 void loop() {
@@ -200,7 +201,6 @@ void loop() {
 
     // Wait until data received from PC, via Serial (USB)
     if (Serial.available() > 0) {
-        LastCall = ceil( millis() / 1000 );
         // data structure to receive = action(var1, var2..)
 
         // Read until open bracket to extract action, continue based on which action was requested
@@ -237,15 +237,5 @@ void loop() {
 
         // Start idle counter after action complete
         LastCall = ceil( millis() / 1000 );
-    }
-    else {
-        // Check how long since last call, move to Home if too long
-        CurrentTime = ceil( millis() / 1000 );
-        ElapsedTime = CurrentTime - LastCall;
-
-        if (ElapsedTime > idleTime) {
-            relayOff();
-            LastCall = CurrentTime;
-        }
     }
 };

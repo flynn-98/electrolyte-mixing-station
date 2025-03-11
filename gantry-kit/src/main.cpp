@@ -77,25 +77,26 @@ Servo mixer;
 
 // Gantry (CNC) Home Positions (mm), values taken from CAD model and adjusted
 const float pad_thickness = 1.0; //mm 
-const float x_shift = 14.0; //mm (home position shift in X direction, to avoid unwanted clash)
+const float x_shift = 154.9; //mm (home position shift in X direction)
+const float x_limit = 14; //mm (minimum location to avoid clash)
 
 const float home[3] = {-167.9 + pad_thickness + x_shift, 1.5 - pad_thickness, 0}; 
 
 // Joint Limits (mm), also taken from CAD model
 const float jointLimit[2][3] = {
-    {0, 0, 0}, 
+    {x_limit - x_shift, 0, 0}, 
     {165.0 - x_shift, 141.0, -49.5}
 };
 
 // Overshoot value used during Homing, any gantry drift +- this value will be corrected (in theory!)
-const float drift = 2; //mm
+const float drift = 4; //mm
 
 // Joint direction coefficients: 1 or -1, for desired motor directions
 // X = 0, Y = 1, Z = 2
 const float motorDir[4] = {1, 1, -1, 1};
 
 // Maximum time in Loop before idle mode (s)
-const unsigned long HomeTime = 10;
+const unsigned long HomeTime = 90;
 
 // Define variables to change during Loop
 float x = 0;
@@ -117,12 +118,11 @@ bool homed = false;
 
 void relayOn() {
     digitalWrite(RELAY_PIN, HIGH);
-    delay(200);
+    delay(500);
 };
 
 void relayOff() {
     digitalWrite(RELAY_PIN, LOW);
-    delay(200);
 };
 
 long revsToSteps(float rotations) {
@@ -311,7 +311,7 @@ void gantryMove(float x, float y, float z) {
 
 void gantryZero() {
     // Move X to middle of workspace to avoid pipette rack
-    X_MOTOR.moveTo(mmToSteps(jointLimit[1][0]/2, true, 0));
+    X_MOTOR.moveTo(0);
     Y_MOTOR.moveTo(0);
     Z_MOTOR.moveTo(0);
 
@@ -319,9 +319,6 @@ void gantryZero() {
     Z_MOTOR.runToPosition();
     X_MOTOR.runToPosition();
     Y_MOTOR.runToPosition();
-
-    X_MOTOR.moveTo(0);
-    X_MOTOR.runToPosition();
 
     homed = true;
 
