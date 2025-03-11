@@ -33,6 +33,7 @@ repository = "https://github.com/flynn-98/electrolyte-mixing-station"
 
 [project.scripts]
 run-campaign = "robot_controller.tools:run_campaign"
+test-atinary = "robot_controller.tools:test_atinary"
 
 test-pipette = "robot_controller.tools:test_pipette"
 test-squidstat = "robot_controller.tools:squidstat_example"
