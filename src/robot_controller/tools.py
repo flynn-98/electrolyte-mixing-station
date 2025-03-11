@@ -50,7 +50,7 @@ def run_campaign() -> None:
             sys.exit()
 
         for suggestion in suggestions:
-            logging.info(f"Iteration {iteration+1} New suggestion: {suggestion.param_values}.")
+            logging.info(f"New suggestion received for iteration {iteration+1}: {suggestion.param_values}.")
 
             # Update df with new volumes and save to current state
             # e.g. {'Zn(ClO4)2': 5.0, 'ZnCl2': 5.0} - names must exactly match those in CSV

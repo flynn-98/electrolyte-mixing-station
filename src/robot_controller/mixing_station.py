@@ -41,12 +41,16 @@ class electrolyte_mixer:
         self.pot_base_height = -68.5 #mm (from CAD)
         self.pot_area = math.pi * 2.78**2 / 4 #cm2
 
-        self.chamber_location = [125, 98] # mm
+        self.chamber_location = [125, 95] # mm
         self.dispense_height = -15 #mm
 
         # Home if requested (will also happen during recovery)
         if home is True:
             self.gantry.softHome()
+
+        # Create variables folder if first time running code on PC
+        if not os.path.exists(os.path.dirname(self.pipette_file)):
+            os.mkdir(os.path.dirname(self.pipette_file))
 
     def correct_workspace_heights(self) -> None:
          self.pot_base_height += self.workspace_height_correction
@@ -89,6 +93,8 @@ class electrolyte_mixer:
 
         # Return active pipette
         file_exists = os.path.exists(self.pipette_file)
+        active_pipette = 0 # assume no pipette active if file not exists
+
         if file_exists:
             with open(self.pipette_file, 'r') as filehandler:
                 active_pipette = int(filehandler.read())

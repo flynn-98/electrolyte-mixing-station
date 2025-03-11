@@ -137,7 +137,6 @@ class scheduler:
 
             if found is False:
                 logging.error("No suggestion found for " + target + "!")
-                sys.exit()
         
         # Save to current state
         self.save_csv()
@@ -254,7 +253,7 @@ class scheduler:
         self.fluid_handler.clean_cell()
 
         # Future: Ethanol rinse and temperature increase?
-        logging.info(f"Raising temperature to {cleaning_temp}C remove liquid residues..")
+        logging.info(f"Raising temperature to {cleaning_temp}C to remove liquid residues..")
         self.test_cell.peltier.wait_until_temperature(cleaning_temp)
 
         logging.info("Cell cleaning complete.")

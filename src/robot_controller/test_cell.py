@@ -19,7 +19,9 @@ class measurements:
         self.peltier = temperature_controller.peltier(COM=temp_port, sim=temp_sim)
         self.squid = admiral.squidstat(COM=squid_port, sim=squid_sim)
 
-        self.temp_file = "data/results/temperature_report.csv"
+        self.sim = squid_sim
+
+        self.temp_file = os.path.join(self.squid.results_path, "temperature_report.csv")
 
         # Temperature parameters
         self.start_temp = self.peltier.max_temp
@@ -31,6 +33,12 @@ class measurements:
         
         self.test_cell_volume = 2.5 # ml from CAD
 
+        # Create file with header if first time running code on PC
+        if not os.path.exists(self.temp_file):
+            with open(self.temp_file, 'a+') as file:
+                writer = DictWriter(file, fieldnames=['Temperature Target', 'Mean Result', 'STD'])
+                writer.writeheader()
+
     def set_blind_temperature(self, temp: float) -> None:
         self.peltier.set_temperature(temp)
         self.peltier.set_run_flag()
@@ -41,7 +49,7 @@ class measurements:
         
     def single_temperature_analysis(self, temp: float, report: bool = True) -> None:
         result, mean, std = self.peltier.wait_until_temperature(temp, keep_on=True)
-            
+
         if result is False:
             logging.error("Failed to cycle through temperature set points.")
             sys.exit()
@@ -49,10 +57,6 @@ class measurements:
         elif report is True:
             with open(self.temp_file, 'a') as file:
                 writer = DictWriter(file, fieldnames=['Temperature Target', 'Mean Result', 'STD'])
-                    
-                if os.path.exists(self.report_file) is False:
-                    writer.writeheader()
-
                 writer.writerow({'Temperature Target': temp, 'Mean Result': mean, 'STD': std})
 
         id = self.get_indentifier()
@@ -71,7 +75,6 @@ class measurements:
     def full_range_temperature_analysis(self, report: bool = True) -> None:
         logging.info(f"Cycling through {self.temp_points} temperatures from {self.start_temp}C to {self.end_temp}C..")
 
-        file_exists = os.path.exists(self.report_file)
         temperatures = np.linspace(self.start_temp, self.end_temp, self.temp_points)
         data = np.empty((self.temp_points, 2))
 
@@ -85,11 +88,6 @@ class measurements:
             elif report is True:
                 with open(self.temp_file, 'a') as file:
                     writer = DictWriter(file, fieldnames=['Temperature Target', 'Mean Result', 'STD'])
-                    
-                    if file_exists is False:
-                        writer.writeheader()
-                        file_exists = True
-
                     writer.writerow({'Temperature Target': temp, 'Mean Result': mean, 'STD': std})
 
             id = self.get_indentifier()

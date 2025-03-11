@@ -1,6 +1,6 @@
 import logging
 import sys
-from os import path
+import os
 
 import pandas as pd
 from PySide6.QtWidgets import QApplication
@@ -38,6 +38,10 @@ class squidstat:
         self.mode = 0 # Default to EIS
 
         self.results_path = "data/results/"
+
+        # Create results folder if first time running code on PC
+        if not os.path.exists(self.results_path):
+            os.mkdir(self.results_path)
 
         self.ac_columns = [
                 "Timestamp",
@@ -119,10 +123,10 @@ class squidstat:
         self.reset_dataframes()
 
     def get_dc_path(self, identifier: str) -> str:
-        return path.join(self.results_path, identifier+"_DC.csv")
+        return os.path.join(self.results_path, identifier+"_DC.csv")
     
     def get_ac_path(self, identifier: str) -> str:
-        return path.join(self.results_path, identifier+"_AC.csv")
+        return os.path.join(self.results_path, identifier+"_AC.csv")
 
     def save_data(self, identifier: str) -> None:
         logging.info("Checking if Squidstat data is available..")
