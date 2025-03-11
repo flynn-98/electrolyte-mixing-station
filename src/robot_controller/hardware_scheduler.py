@@ -144,6 +144,13 @@ class scheduler:
 
         logging.info(f'Recipe will result in a total electrolyte volume of {self.df["Dose Volume (uL)"].sum()/1000}mL.')
 
+    def calculate_cost(self) -> float:
+        self.df["Total Cost"] =  self.df["Cost (/uL)"] * self.df["Dose Volume (uL)"]
+        total_cost = self.df["Total Cost"].sum()
+        self.df = self.df.drop("Total Cost", axis=1)
+
+        return total_cost
+
     def run(self, temp: float | None = None) -> pd.DataFrame | tuple[float, float]:
         if temp is None:
             logging.info(f"Setting early temperature target of {temp}C..")
@@ -219,9 +226,9 @@ class scheduler:
         self.fluid_handler.add_electrolyte(total_vol)
 
         # Mass Balance checks
-        self.df["Temp Mass Values (1e3*g)"] =  self.df["Density (g/mL)"] * self.df["Dose Volume (uL)"]
-        total_mass = self.df["Temp Mass Values (1e3*g)"].sum()/1000
-        self.df = self.df.drop("Temp Mass Values (1e3*g)", axis=1)
+        self.df["Mass (1e3*g)"] =  self.df["Density (g/mL)"] * self.df["Dose Volume (uL)"]
+        total_mass = self.df["Mass (1e3*g)"].sum()/1000
+        self.df = self.df.drop("Mass (1e3*g)", axis=1)
             
         self.mass_balance.check_mass_change(total_mass, starting_mass)
 

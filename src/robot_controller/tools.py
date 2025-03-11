@@ -53,9 +53,12 @@ def run_campaign() -> None:
             # Run experiment here
             impedance_results = device.run(args.temp)
 
+            # Build table of measurements to send e.g. [conductivity, cost]
+            results = [impedance_results[1], device.calculate_cost()]
+
             for i, obj in enumerate(wrapper.config.objectives):
                 # e.g. {'conductivity': 0.06925926902246848, 'cost': 0.9500057653400364}
-                suggestion.measurements[obj.name] = impedance_results[i] # Send data here
+                suggestion.measurements[obj.name] = results[i] # Send data here
 
             device.clean()
 
