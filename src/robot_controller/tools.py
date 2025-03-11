@@ -8,7 +8,7 @@ from sdlabs_wrapper.wrapper import initialize_optimization
 from robot_controller import admiral, hardware_scheduler, pipette_controller
 
 config_file = "data/config/example.json" #conductivity_optimiser.json"
-API_KEY = "eyJhbGciOiJIUzUxMiIsImtpZCI6ImtleV83ZTRjNTc1NjIwYzM0MDVkYTgwNmViMGU3NzdmMjY0MiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2F1dGguYXRpbmFyeS5jb20iLCJjb2duaXRvOmdyb3VwcyI6WyJDQVBlWF9QaW9uZWVyX0NlbnRlciJdLCJpYXQiOjE3NDE2Mzg5MTMsIm5iZiI6MTc0MTYzODkxMywidXNlcm5hbWUiOiJmMmM2ZDBiYy01OTQ1LTRiM2UtYjA3Mi0yMzc5ZTI1YmI0NjgifQ.zqKUJe9KwEEA4vPIw2l-rjaI5t2mODo8O4yxhdHpAkgW1xUnoImt7kNwfUYXlHkDuccM0qAWF-7g17o5Wirn7w"
+API_KEY = "eyJhbGciOiJIUzUxMiIsImtpZCI6ImtleV84YWQxMGFmYTAzMjI0NGM4ODJiZmYwNzY4ZmIxMjg3YiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2F1dGguYXRpbmFyeS5jb20iLCJjb2duaXRvOmdyb3VwcyI6WyJhY2FkZW1pYyJdLCJpYXQiOjE3NDE3MDU0MzksIm5iZiI6MTc0MTcwNTQzOSwidXNlcm5hbWUiOiJiYjc2MDk4My1mM2IwLTQ3YTEtOGY3Ny05ZGY0OGFiNjU1ODEifQ.wZDkZF_TvucRaBYHRsT8RP_Qa3Dph2U-FsX7TO2mkJ7t0YSgykd5I5k2iIwc6z8DfzNnw9MloFu15dSlrGCgMw"
 
 logging.basicConfig(level = logging.INFO)
 
@@ -53,6 +53,8 @@ def run_campaign() -> None:
             for i, obj in enumerate(wrapper.config.objectives):
                 #e.g. {'conductivity': 0.06925926902246848, 'cost': 0.9500057653400364}
                 suggestion.measurements[obj.name] = impedance_results[i] # Send data here
+
+            device.clean()
 
         if suggestions:
             wrapper.send_measurements(suggestions)

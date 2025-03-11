@@ -119,6 +119,9 @@ class scheduler:
     def update_dose_volumes(self, new_volumes: dict) -> None:
         #{'param_a': 5.0, 'param_b': 5.0, ..} dict formal provided by atinary
 
+        # Set all to zero to prevent unwanted aspirations
+        self.df["Dose Volume (uL)"].values[:] = 0
+
         for i in self.df.index.to_numpy(dtype=int):
             found = False
 
@@ -135,8 +138,6 @@ class scheduler:
             if found is False:
                 logging.error("No suggestion found for " + target + "!")
                 sys.exit()
-
-        # Set all others to zero ?
         
         # Save to current state
         self.save_csv()
@@ -235,12 +236,19 @@ class scheduler:
         # Empty cell
         self.fluid_handler.empty_cell(total_vol)
 
-        # Clean cell
-        self.fluid_handler.clean_cell()
-
         logging.info("Run complete.")
 
         return impedance_results
+    
+    def clean(self) -> None:
+        logging.info("Beginning cell cleaning procedure.")
+
+        # Clean cell
+        self.fluid_handler.clean_cell()
+
+        # Future: Ethanol rinse and temperature increase?
+
+        logging.info("Cell cleaning complete.")
 
     def run_life_test(self, N: int = 1) -> None:
         logging.info(f"Beginning {N}X life test..")
@@ -250,6 +258,7 @@ class scheduler:
         for n in range(N):
             logging.info(f"Creating electrolyte mixture #{n+1}..")
             self.run()
+            self.clean()
 
     def plot_aspiration_results(self, path: str) -> None:
         df = pd.read_csv(path, index_col=0)
