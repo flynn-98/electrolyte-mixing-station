@@ -135,7 +135,8 @@ class peltier:
 
     def close_ser(self) -> None:
         if self.sim is False:
-            self.ser.close()
+            if self.ser.isOpen():
+                self.ser.close()
 
     def get_data(self) -> str:
         while self.ser.in_waiting == 0:
@@ -482,10 +483,7 @@ class peltier:
         self.clear_run_flag()
         return False, 0.0, 0.0
     
-    def plot_live_temperature_control(self, value: float, sample_rate: float = 1) -> bool:
-        if self.sim is True:
-            return True
-        
+    def plot_live_temperature_control(self, value: float, sample_rate: float = 1) -> bool:        
         self.set_temperature(value)
         global_start = time.time()
 

@@ -101,20 +101,11 @@ class scheduler:
         self.df.to_csv(os.path.join(self.csv_path, filename), index=False)
 
     def close_all_ports(self) -> None:
-        if self.mixer.gantry.ser.isOpen() is True:
-                self.mixer.gantry.close_ser()
-
-        if self.mixer.pipette.ser.isOpen() is True:
-                self.mixer.gantry.close_ser()
-
-        if self.fluid_handler.ser.isOpen() is True:
-                self.fluid_handler.close_ser()
-
-        if self.test_cell.peltier.ser.isOpen() is True:
-            self.test_cell.peltier.close_ser()
-
-        if self.mass_balance.ser.isOpen() is True:
-            self.mass_balance.close_ser()
+        self.mixer.gantry.close_ser()
+        self.mixer.pipette.close_ser()
+        self.fluid_handler.close_ser()
+        self.test_cell.peltier.close_ser()
+        self.mass_balance.close_ser()
 
     def update_dose_volumes(self, new_volumes: dict) -> None:
         #{'param_a': 5.0, 'param_b': 5.0, ..} dict formal provided by atinary

@@ -50,7 +50,8 @@ class fluid_handler:
     def close_ser(self) -> None:
         logging.info("Closing serial connection to fluid handling kit.")
         if self.sim is False:
-            self.ser.close()
+            if self.ser.isOpen():
+                self.ser.close()
 
     def add_electrolyte(self, fluid_vol: float, tube_length: float = 300.0, overpump: float = 1.2) -> None:
         # Fluid volume in uL -> sent volume in mL

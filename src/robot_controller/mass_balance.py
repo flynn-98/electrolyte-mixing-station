@@ -47,7 +47,8 @@ class mass_reader:
 
     def close_ser(self) -> None:
         if self.sim is False:
-            self.ser.close()
+            if self.ser.isOpen():
+                self.ser.close()
 
     def get_mass(self) -> float:        
         if self.sim is False:
@@ -77,7 +78,8 @@ class mass_reader:
         
     def tare(self) -> None:
         # Send char to trigger tare
-        self.ser.write("t".encode())
+        if self.sim is False:
+            self.ser.write("t".encode())
 
     def check_mass_change(self, expected_mass: float, starting_mass: float) -> None:
         # Correction accounts for mass left behind in mixing chamber

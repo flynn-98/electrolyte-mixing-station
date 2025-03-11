@@ -56,7 +56,8 @@ class gantry:
     def close_ser(self) -> None:
         logging.info("Closing serial connection to gantry kit.")
         if self.sim is False:
-            self.ser.close()
+            if self.ser.isOpen():
+                self.ser.close()
 
     def move(self, x: float, y: float, z: float, accurately: bool = True) -> None:
         if accurately is False:

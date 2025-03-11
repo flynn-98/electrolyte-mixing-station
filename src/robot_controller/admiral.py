@@ -189,7 +189,7 @@ class squidstat:
                 self.upload_experiment()
                 self.trigger_experiment()
         else:
-            logging.error("No experiment has been built!")
+            logging.error("No experiment has been built.")
 
     def increment_dc_data(self, channel: int, data: any) -> None:
         # Append incoming data to dataframe

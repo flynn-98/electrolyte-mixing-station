@@ -125,7 +125,8 @@ class pipette:
         logging.info("Closing serial connection to pipette.")
         if self.sim is False:
             self.pump_off(check=False)
-            self.ser.close()
+            if self.ser.isOpen():
+                self.ser.close()
 
     def configure_pump(self) -> bool:
         # Configure pump registers
