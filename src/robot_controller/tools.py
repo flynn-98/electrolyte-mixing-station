@@ -43,6 +43,11 @@ def run_campaign() -> None:
 
         logging.info(f"Iteration {iteration+1}: Fetching new suggestions..")
         suggestions = wrapper.get_new_suggestions(max_retries=10, sleep_time_s=args.sleep * 60)
+
+        if not suggestions:
+            logging.error("No suggestions provided, skipping to next iteration.")
+            continue
+
         logging.info(f"Iteration {iteration+1} New suggestions: {suggestions.param_values}.")
 
         for suggestion in suggestions:
@@ -60,11 +65,11 @@ def run_campaign() -> None:
                 # e.g. {'conductivity': 0.06925926902246848, 'cost': 0.9500057653400364}
                 suggestion.measurements[obj.name] = results[i] # Send data here
 
-            device.clean()
-
-        if suggestions:
             wrapper.send_measurements(suggestions)
             logging.info(f"Iteration {iteration+1} measurements sent.")
+
+            # Clean test cell whilst optimiser calculates next suggestions
+            device.clean()
 
     device.close_all_ports()
     sys.exit()
