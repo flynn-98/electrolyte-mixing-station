@@ -8,7 +8,7 @@ from sdlabs_wrapper.wrapper import initialize_optimization
 from robot_controller import admiral, hardware_scheduler, pipette_controller
 
 config_file = "data/config/example.json" #conductivity_optimiser.json"
-API_KEY = "eyJhbGciOiJIUzUxMiIsImtpZCI6ImtleV84YWQxMGFmYTAzMjI0NGM4ODJiZmYwNzY4ZmIxMjg3YiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2F1dGguYXRpbmFyeS5jb20iLCJjb2duaXRvOmdyb3VwcyI6WyJhY2FkZW1pYyJdLCJpYXQiOjE3NDE3MDU0MzksIm5iZiI6MTc0MTcwNTQzOSwidXNlcm5hbWUiOiJiYjc2MDk4My1mM2IwLTQ3YTEtOGY3Ny05ZGY0OGFiNjU1ODEifQ.wZDkZF_TvucRaBYHRsT8RP_Qa3Dph2U-FsX7TO2mkJ7t0YSgykd5I5k2iIwc6z8DfzNnw9MloFu15dSlrGCgMw"
+API_KEY = "eyJhbGciOiJIUzUxMiIsImtpZCI6ImtleV9lMmJiY2M4ZWVhMjU0MjU2ODVmZDUzMWE2ZTJmOTE1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2F1dGguYXRpbmFyeS5jb20iLCJjb2duaXRvOmdyb3VwcyI6WyJDQVBlWF9QaW9uZWVyX0NlbnRlciJdLCJpYXQiOjE3NDE3MTE4OTUsIm5iZiI6MTc0MTcxMTg5NSwidXNlcm5hbWUiOiJmMmM2ZDBiYy01OTQ1LTRiM2UtYjA3Mi0yMzc5ZTI1YmI0NjgifQ.caBOaBaSHE-IS-1zgcbGb7jzR05jry_X1i5gArasfSR_k5qy8BDx4tSDz8JTfCXMDMmVtjl4KoNU9LcDykk0HA"
 
 logging.basicConfig(level = logging.INFO)
 
@@ -17,7 +17,7 @@ def run_campaign() -> None:
     parser.add_argument("--device", help="Used to locate the device data by matching with Device ID.", type=str)
     parser.add_argument("--resume", default=False, help="Continue from last state. Defaults to false to restart.", type=bool, action=argparse.BooleanOptionalAction)
     parser.add_argument("--home", default=False, help="Set true to home gantry on start up. Defaults to false.", type=bool, action=argparse.BooleanOptionalAction)
-    parser.add_argument("--sleep", default=10, help="Sleep time (in minutes) between attempts to get new suggestions from Atinary. Defaults to 10mins.", type=int)
+    parser.add_argument("--sleep", default=2, help="Sleep time (in minutes) between attempts to get new suggestions from Atinary. Defaults to 2mins.", type=int)
     parser.add_argument("--temp", default=25, help="Temperature set point for electrolyte analysis. Defaults to 25C.", type=float)
     parser.add_argument("--csv", default="electrolyte_recipe", help="Name of csv file to be updated by Atinary wrapper. Defaults to electrolyte_recipe, or current_state if resume is True.", type=str)
 
@@ -31,10 +31,12 @@ def run_campaign() -> None:
     # load config as dict
     with open(config_file, "rb") as f:
         config_dict = json.load(f)
+
     wrapper = initialize_optimization(
         api_key=API_KEY,
         spec_file_content=config_dict,
         inherit_data=False, 
+        always_restart=True,
     )
 
     for iteration in range(wrapper.config.budget):
@@ -45,13 +47,14 @@ def run_campaign() -> None:
 
         for suggestion in suggestions:
             # Update df with new volumes and save to current state
+            # e.g. {'Zn(ClO4)2': 5.0, 'ZnCl2': 5.0} - names must exactly match those in CSV
             device.update_dose_volumes(suggestion.param_values)
 
             # Run experiment here
             impedance_results = device.run(args.temp)
 
             for i, obj in enumerate(wrapper.config.objectives):
-                #e.g. {'conductivity': 0.06925926902246848, 'cost': 0.9500057653400364}
+                # e.g. {'conductivity': 0.06925926902246848, 'cost': 0.9500057653400364}
                 suggestion.measurements[obj.name] = impedance_results[i] # Send data here
 
             device.clean()
