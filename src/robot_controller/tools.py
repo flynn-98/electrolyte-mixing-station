@@ -1,7 +1,7 @@
 import argparse
 import json
-import random
 import logging
+import random
 import sys
 
 from sdlabs_wrapper.wrapper import initialize_optimization
