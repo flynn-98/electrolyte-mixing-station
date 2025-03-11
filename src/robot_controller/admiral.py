@@ -26,7 +26,7 @@ from SquidstatPyLibrary import (
 logging.basicConfig(level = logging.INFO)
 
 class squidstat:
-    def __init__(self, COM: str, instrument: str = "Plus1894", channel: int = 0, sim: bool = False) -> None:
+    def __init__(self, COM: str, instrument: str = "Plus2695", channel: int = 0, sim: bool = False) -> None:
         self.sim = sim
 
         self.app = QApplication()
@@ -117,7 +117,6 @@ class squidstat:
 
         self.save_data(identifier)
         self.reset_dataframes()
-        self.close_experiment()
 
     def get_dc_path(self, identifier: str) -> str:
         return path.join(self.results_path, identifier+"_DC.csv")
@@ -128,8 +127,8 @@ class squidstat:
     def save_data(self, identifier: str) -> None:
         logging.info("Checking if Squidstat data is available..")
 
-        dc_path = self.get_dc_path()
-        ac_path = self.get_ac_path()
+        dc_path = self.get_dc_path(identifier)
+        ac_path = self.get_ac_path(identifier)
 
         if (self.ac_data.empty is True) and (self.dc_data.empty is True):
             logging.error("No data available!")
@@ -159,19 +158,22 @@ class squidstat:
         # Internal function, to be run after the element (measurement) has been appended to the experiment
 
         logging.info("Uploading experiment to Squidstat..")
-        error = self.handler.uploadExperimentToChannel(self.channel, self.experiment)
-
-        if error != 0:
-            logging.error("Failed to upload experiment to Squidstat: " + error.message())
+        response = self.handler.uploadExperimentToChannel(self.channel, self.experiment)
+        
+        if response.message() != "successful":
+            logging.error("Failed to upload experiment to Squidstat: " + response.message())
             sys.exit()
 
     def trigger_experiment(self) -> None:
         # Internal function, to be run after upload_experiment
-        error = self.handler.startUploadedExperiment(self.channel)
+        response = self.handler.startUploadedExperiment(self.channel)
 
-        if error != 0:
-            logging.error("Failed to start experiment: " + error.message())
+        if response.message() != "successful":
+            logging.error("Failed to start experiment: " + response.message())
             sys.exit()
+        else:
+            logging.info("Successfully started experiment.")
+            self.app.exec_()
 
     def run_experiment(self) -> None:
         # Run an experiment on the potentiostat. Remember to define the experiment first, 
@@ -182,16 +184,8 @@ class squidstat:
             if self.sim is False:
                 self.upload_experiment()
                 self.trigger_experiment()
-                self.app.exec_()
         else:
             logging.error("No experiment has been built!")
-
-    def close_experiment(self) -> None:
-        # Close the experiment on the potentiostat and release the Qt application.
-
-        logging.info("Closing experiment..")
-        if self.sim is False:
-            self.app.quit()
 
     def increment_dc_data(self, channel: int, data: any) -> None:
         # Append incoming data to dataframe
@@ -251,7 +245,7 @@ class squidstat:
 
     def handle_experiment_stopped(self, channel: int) -> None:
         logging.info(f"Experiment completed on channel {channel}.")
-        #self.app.quit()
+        self.app.quit()
     
     def append_element(self, experiment: any, element: any, number_of_runs: int = 1) -> None:
         if experiment.appendElement(element, number_of_runs) is True:
