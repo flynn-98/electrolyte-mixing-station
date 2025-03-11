@@ -92,8 +92,6 @@ class scheduler:
         self.df = pd.read_csv(csv_location, header=0, names=df_columns.keys(), index_col=False).astype(df_columns)
         self.df.set_index("#")
         #self.show_df()
-
-        logging.info(f'Recipe will result in a total electrolyte volume of {self.df["Dose Volume (uL)"].sum()/1000}mL.')
         
         now = datetime.now()
         logging.info("Experiment ready to begin: " + now.strftime("%d/%m/%Y %H:%M:%S"))
@@ -138,8 +136,12 @@ class scheduler:
                 logging.error("No suggestion found for " + target + "!")
                 sys.exit()
 
+        # Set all others to zero ?
+        
         # Save to current state
         self.save_csv()
+
+        logging.info(f'Recipe will result in a total electrolyte volume of {self.df["Dose Volume (uL)"].sum()/1000}mL.')
 
     def run(self, temp: float | None = None) -> pd.DataFrame | tuple[float, float]:
         if temp is None:

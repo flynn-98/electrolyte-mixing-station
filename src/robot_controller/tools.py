@@ -7,7 +7,7 @@ from sdlabs_wrapper.wrapper import initialize_optimization
 
 from robot_controller import admiral, hardware_scheduler, pipette_controller
 
-config_file = "data/config/conductivity_optimiser.json"
+config_file = "data/config/example.json" #conductivity_optimiser.json"
 API_KEY = "eyJhbGciOiJIUzUxMiIsImtpZCI6ImtleV83ZTRjNTc1NjIwYzM0MDVkYTgwNmViMGU3NzdmMjY0MiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2F1dGguYXRpbmFyeS5jb20iLCJjb2duaXRvOmdyb3VwcyI6WyJDQVBlWF9QaW9uZWVyX0NlbnRlciJdLCJpYXQiOjE3NDE2Mzg5MTMsIm5iZiI6MTc0MTYzODkxMywidXNlcm5hbWUiOiJmMmM2ZDBiYy01OTQ1LTRiM2UtYjA3Mi0yMzc5ZTI1YmI0NjgifQ.zqKUJe9KwEEA4vPIw2l-rjaI5t2mODo8O4yxhdHpAkgW1xUnoImt7kNwfUYXlHkDuccM0qAWF-7g17o5Wirn7w"
 
 logging.basicConfig(level = logging.INFO)
@@ -17,7 +17,7 @@ def run_campaign() -> None:
     parser.add_argument("--device", help="Used to locate the device data by matching with Device ID.", type=str)
     parser.add_argument("--resume", default=False, help="Continue from last state. Defaults to false to restart.", type=bool, action=argparse.BooleanOptionalAction)
     parser.add_argument("--home", default=False, help="Set true to home gantry on start up. Defaults to false.", type=bool, action=argparse.BooleanOptionalAction)
-    parser.add_argument("--sleep", default=1, help="Sleep time (in minutes) between attempts to get new suggestions from Atinary. Defaults to 2mins.", type=int)
+    parser.add_argument("--sleep", default=10, help="Sleep time (in minutes) between attempts to get new suggestions from Atinary. Defaults to 10mins.", type=int)
     parser.add_argument("--temp", default=25, help="Temperature set point for electrolyte analysis. Defaults to 25C.", type=float)
     parser.add_argument("--csv", default="electrolyte_recipe", help="Name of csv file to be updated by Atinary wrapper. Defaults to electrolyte_recipe, or current_state if resume is True.", type=str)
 
