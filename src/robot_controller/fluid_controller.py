@@ -62,7 +62,7 @@ class fluid_handler:
             self.ser.write(f"addElectrolyte({vol})".encode())
             self.get_response()
 
-    def clean_cell(self, fluid_vol: float = 2.0, tube_length: float = 300.0, overpump: float = 1.0) -> None:
+    def clean_cell(self, fluid_vol: float = 3.0, tube_length: float = 300.0, overpump: float = 1.0) -> None:
         logging.info(f"Pumping {fluid_vol}uL of cleaning solution to test cell..")
         tube_vol = math.pi * tube_length * 1e-3 # 2mm ID tubing (Area = Pi)
         vol = overpump * (fluid_vol / 1000 + tube_vol) #ml

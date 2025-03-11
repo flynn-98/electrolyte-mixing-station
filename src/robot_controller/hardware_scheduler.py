@@ -240,13 +240,15 @@ class scheduler:
 
         return impedance_results
     
-    def clean(self) -> None:
+    def clean(self, cleaning_temp: float = 40) -> None:
         logging.info("Beginning cell cleaning procedure.")
 
-        # Clean cell
+        # Clean cell (acid)
         self.fluid_handler.clean_cell()
 
         # Future: Ethanol rinse and temperature increase?
+        logging.info(f"Raising temperature to {cleaning_temp}C remove liquid residues..")
+        self.test_cell.peltier.wait_until_temperature(cleaning_temp)
 
         logging.info("Cell cleaning complete.")
 
