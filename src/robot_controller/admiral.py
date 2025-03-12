@@ -205,8 +205,13 @@ class squidstat:
                 data.temperature
             ]
             
-            next_step = dict(zip(self.dc_columns, values))
-            self.dc_data = self.dc_data.append(next_step)
+            next = pd.DataFrame([dict(zip(self.dc_columns, values))])
+
+            if self.dc_data.empty:
+                self.dc_data = next
+            else:
+                # Append new data to dataframe
+                self.dc_data = pd.concat([self.dc_data, next], ignore_index=True)
 
     def increment_ac_data(self, channel: int, data: any) -> None:
         # Append incoming data to dataframe
@@ -228,8 +233,13 @@ class squidstat:
                 data.voltageAmplitude
             ]
 
-            next_step = dict(zip(self.ac_columns, values))
-            self.ac_data = self.ac_data.append(next_step)
+            next = pd.DataFrame([dict(zip(self.ac_columns, values))])
+
+            if self.ac_data.empty:
+                self.ac_data = next
+            else:
+                # Append new data to dataframe
+                self.ac_data = pd.concat([self.ac_data, next], ignore_index=True)
 
     def increment_elements(self, channel: int, data: any) -> None:
         # Append incoming data to dataframe
@@ -240,9 +250,14 @@ class squidstat:
             data.stepNumber,
             data.substepNumber
         ]
-        
-        next_step = dict(zip(self.step_colums, values))
-        self.elements = self.elements.append(next_step)
+
+        next = pd.DataFrame([dict(zip(self.step_colums, values))])
+
+        if self.elements.empty:
+            self.elements = next
+        else:
+            # Append new data to dataframe
+            self.elements = pd.concat([self.elements, next], ignore_index=True)
 
     def handle_device_connected(self, device_name: str) -> None:
         logging.info("Connected device is: " + device_name + ".")
@@ -260,9 +275,9 @@ class squidstat:
 
     def build_EIS_potentiostatic_experiment(
         self,
-        start_frequency: float = 10000,
-        end_frequency: float = 1000,
-        points_per_decade: int = 10,
+        start_frequency: float = 1,
+        end_frequency: float = 1000000,
+        points_per_decade: int = 20,
         voltage_bias: float = 0.0,
         voltage_amplitude: float = 0.1,
         number_of_runs: int = 1,

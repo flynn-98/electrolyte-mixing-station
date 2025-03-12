@@ -141,13 +141,9 @@ class scheduler:
 
         return total_cost
 
-    def run(self, temp: float | None = None) -> pd.DataFrame | tuple[float, float]:
-        if temp is None:
-            logging.info(f"Setting early temperature target of {temp}C..")
-            self.test_cell.set_blind_temperature(temp)
-        else:
-            # If no temperature provided, default to full cycle analysis
-            self.test_cell.set_blind_temperature(self.test_cell.start_temp)
+    def run(self, temp: float) -> pd.DataFrame | tuple[float, float]:
+        logging.info(f"Setting early temperature target of {temp}C..")
+        self.test_cell.set_blind_temperature(temp)
 
         logging.info("Beginning electrolyte mixing..")
         self.mixer.move_to_start()
@@ -223,12 +219,8 @@ class scheduler:
         self.mass_balance.check_mass_change(total_mass, starting_mass)
 
         # Potentiostat / Temperature control functions
-        if temp is None:
-            # returns df of multiple (ohmics res, ionic conductivity)
-            impedance_results = self.test_cell.full_range_temperature_analysis() 
-        else:
-            # returns tuple (ohmics res, ionic conductivity)
-            impedance_results = self.test_cell.single_temperature_analysis(temp) 
+        impedance_results = self.test_cell.single_temperature_analysis(temp)
+        # returns tuple (ohmics res, ionic conductivity)
         
         # Empty cell
         self.fluid_handler.empty_cell(total_vol)

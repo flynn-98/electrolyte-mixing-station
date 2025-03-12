@@ -105,14 +105,14 @@ class measurements:
 
     def plot_EIS(self, identifier: str = "na") -> None:
         logging.info("Saving EIS plot (Dataset " + identifier + ")..")
-        data = pd.read_csv(self.squid.ac_file_path)
+        data = pd.read_csv(self.squid.get_ac_path(identifier)).to_numpy()
 
         plt.figure()
         plt.title("EIS Data Results: " + identifier)
         plt.xlabel("Zreal (Ohms)")
         plt.ylabel("Zimag (Ohms)")
-        plt.scatter(data[3], -data[4]) #Zreal vs -Zimag
-        plt.savefig(identifier + ".png")
+        plt.scatter(data[:, 3], -data[:, 4]) #Zreal vs -Zimag
+        plt.savefig(os.path.join(self.squid.results_path, identifier+".png"))
         plt.close()
 
     def get_impedance_properties(self, identifier: str = "na", plot: bool = True) -> float:
