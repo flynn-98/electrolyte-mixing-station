@@ -434,7 +434,6 @@ class peltier:
             return True, 0.0, 0.0
         
         self.set_temperature(value)
-        input("Begin?")
         global_start = time.time()
 
         while (time.time() - global_start) < self.timeout:
