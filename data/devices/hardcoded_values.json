@@ -32,7 +32,7 @@
             "Fluid_Active": true,
             "Mass_Active": false,
             "Temp_Active": true,
-            "Squid_Active": false,
+            "Squid_Active": true,
             "Squid_Mode": 0,
             "Cell_Constant": 1.0,
             "X_Gantry_Shift": 0.0,
