@@ -127,7 +127,7 @@ class scheduler:
                     found = True
 
             if found is False:
-                logging.error("No suggestion found for " + target + "!")
+                logging.error("No suggestion found for " + target + ".")
         
         # Save to current state
         self.save_csv()

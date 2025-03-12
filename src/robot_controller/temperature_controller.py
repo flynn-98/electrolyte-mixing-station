@@ -36,26 +36,26 @@ class peltier:
         self.C_coeff_2 = 8.3896e-8
 
         # Steady state temperature
-        self.allowable_error = 0.25 #C
+        self.allowable_error = 0.5 #C
         self.steady_state = 60 #s
         self.timeout = 1500 #s (25mins)
 
         # Heating/Cooling control
         self.heating_tc = 60 #%
         self.heating_Kp = 5.0
-        self.heating_Ki = 0.5
+        self.heating_Ki = 0.001
         self.heating_Kd = 0.0
 
         self.cooling_tc = 100 #%
-        self.cooling_Kp = 50.0
-        self.cooling_Ki = 1.0
+        self.cooling_Kp = 12.5
+        self.cooling_Ki = 0.001
         self.cooling_Kd = 0.0
 
         self.cool_mode = False
         self.run_flag = False
 
         self.temp_threshold = 18 #C, to set heating or cooling parameters
-        self.dead_band = 5 #+-% to prevent rapid switching
+        self.dead_band = 4 #+-% to prevent rapid switching
 
         if self.sim is False:
             logging.info("Configuring temperature controller serial port..")
@@ -434,6 +434,7 @@ class peltier:
             return True, 0.0, 0.0
         
         self.set_temperature(value)
+        input("Begin?")
         global_start = time.time()
 
         while (time.time() - global_start) < self.timeout:
@@ -474,10 +475,11 @@ class peltier:
 
                 return True, float(mean), float(std)
             
+            logging.info(f"Temperature progress is {round(temperature, 2)}/{value}C ({round(self.get_tc_value(), 2)}% Power and {round(self.get_main_current(), 2)}A).")
             time.sleep(1 / sample_rate)
             
         logging.error(f"Temperature controller timed out trying to reach {value}C.")
-        logging.info(f"Final peltier current is {round(self.get_main_current(),2)}A.")
+        logging.info(f"Final peltier current is {round(self.get_main_current(), 2)}A.")
 
         # Turn controller OFF
         self.clear_run_flag()
