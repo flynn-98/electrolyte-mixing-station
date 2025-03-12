@@ -5,13 +5,13 @@
     "sdlabs_group_id": "CAPeX_Pioneer_Center",
     "parameters": [
         {
-            "name": "ZnCl2",
+            "name": "param_a",
             "low_value": 0,
             "high_value": 10,
             "type": "continuous"
         },
         {
-            "name": "Zn(ClO4)2",
+            "name": "param_b",
             "low_value": 0,
             "high_value": 10,
             "type": "continuous"
@@ -20,7 +20,7 @@
     "multi_objective_function": "chimera",
     "objectives": [
         {
-            "name": "conductivity",
+            "name": "Conductivity",
             "goal": "max",
             "multi_objective_configuration": {
                 "hierarchy": 0,
@@ -28,7 +28,7 @@
             }
         },
         {
-            "name": "cost",
+            "name": "Cost",
             "goal": "min",
             "multi_objective_configuration": {
                 "hierarchy": 1,

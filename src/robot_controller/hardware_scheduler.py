@@ -107,7 +107,7 @@ class scheduler:
         self.test_cell.peltier.close_ser()
         self.mass_balance.close_ser()
 
-    def update_dose_volumes(self, new_volumes: dict) -> None:
+    def update_dose_volumes(self, values: dict) -> None:
         #{'param_a': 5.0, 'param_b': 5.0, ..} dict formal provided by atinary
 
         # Set all to zero to prevent unwanted aspirations
@@ -116,18 +116,18 @@ class scheduler:
         for i in self.df.index.to_numpy(dtype=int):
             found = False
 
-            for suggestion in new_volumes:
+            for name in values:
                 # Loop through all and find correct name, in case of order mismatch
                 target = self.df.loc[i, "Name"]
-                new_value = new_volumes[suggestion]
 
-                if target == suggestion:
+                if target == name:
+                    new_value = values[name]
                     self.df.loc[i, "Dose Volume (uL)"] = new_value
                     logging.info(target + f" dose volume updated to {new_value}uL.")
                     found = True
 
             if found is False:
-                logging.error("No suggestion found for " + target + ".")
+                logging.error("No suggestion found for " + target + ", dose volume set to zero.")
         
         # Save to current state
         self.save_csv()
@@ -141,7 +141,7 @@ class scheduler:
 
         return total_cost
 
-    def run(self, temp: float) -> pd.DataFrame | tuple[float, float]:
+    def run(self, temp: float) -> tuple[float, float]:
         logging.info(f"Setting early temperature target of {temp}C..")
         self.test_cell.set_blind_temperature(temp)
 
@@ -220,20 +220,20 @@ class scheduler:
 
         # Potentiostat / Temperature control functions
         impedance_results = self.test_cell.single_temperature_analysis(temp)
-        # returns tuple (ohmics res, ionic conductivity)
         
         # Empty cell
         self.fluid_handler.empty_cell(total_vol)
 
         logging.info("Run complete.")
 
+        # returns tuple (ohmics res, ionic conductivity)
         return impedance_results
     
     def clean(self, cleaning_temp: float = 40) -> None:
         logging.info("Beginning cell cleaning procedure.")
 
         # Clean cell (acid)
-        self.fluid_handler.clean_cell()
+        self.fluid_handler.clean_cell(self.test_cell.test_cell_volume)
 
         # Future: Ethanol rinse and temperature increase?
         logging.info(f"Raising temperature to {cleaning_temp}C to remove liquid residues..")

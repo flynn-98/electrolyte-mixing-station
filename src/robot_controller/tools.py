@@ -8,7 +8,8 @@ from sdlabs_wrapper.wrapper import initialize_optimization
 
 from robot_controller import admiral, hardware_scheduler, pipette_controller
 
-config_file = "data/config/conductivity_optimiser.json"
+#config_file = "data/config/conductivity_optimiser.json"
+config_file = "data/config/integration_test.json"
 API_KEY = "eyJhbGciOiJIUzUxMiIsImtpZCI6ImtleV9lMmJiY2M4ZWVhMjU0MjU2ODVmZDUzMWE2ZTJmOTE1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2F1dGguYXRpbmFyeS5jb20iLCJjb2duaXRvOmdyb3VwcyI6WyJDQVBlWF9QaW9uZWVyX0NlbnRlciJdLCJpYXQiOjE3NDE3MTE4OTUsIm5iZiI6MTc0MTcxMTg5NSwidXNlcm5hbWUiOiJmMmM2ZDBiYy01OTQ1LTRiM2UtYjA3Mi0yMzc5ZTI1YmI0NjgifQ.caBOaBaSHE-IS-1zgcbGb7jzR05jry_X1i5gArasfSR_k5qy8BDx4tSDz8JTfCXMDMmVtjl4KoNU9LcDykk0HA"
 
 logging.basicConfig(level = logging.INFO)
@@ -56,8 +57,15 @@ def run_campaign() -> None:
             # e.g. {'Zn(ClO4)2': 5.0, 'ZnCl2': 5.0} - names must exactly match those in CSV
             device.update_dose_volumes(suggestion.param_values)
 
-            # Run experiment here
-            impedance_results = device.run(args.temp)
+            # Run experiment here at required temperature
+            target_temp = extract_temperature(suggestion.param_values)
+
+            if target_temp is None:
+                impedance_results = device.run(args.temp)
+            else:
+                # Use target temp if received by optimiser
+                impedance_results = device.run(target_temp)
+
 
             # Build table of measurements to send e.g. [conductivity, cost]
             results = [impedance_results[1], device.calculate_cost()]
@@ -74,6 +82,16 @@ def run_campaign() -> None:
 
     device.close_all_ports()
     sys.exit()
+
+def extract_temperature(values: dict) -> float | None:
+    for name in values:
+        # Loop through all and check if Temperature
+        if name == "Temperature":
+            new_value = values[name]
+            logging.info(f"New temperature found in received suggestions: {new_value}C.")
+            return new_value
+
+    return None
 
 def test_atinary() -> None:
     # load config as dict
