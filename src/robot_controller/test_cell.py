@@ -132,9 +132,9 @@ class measurements:
         min_imag = np.amin(abs_imag) # minimum of abs(Imag)
 
         min_index = np.where(abs_imag == min_imag)[0][0] # take the first index if multiple instances
-        ohmic_resistance = np.round(z_real[min_index], 3).item() * 100 # take real value corresponding to minimum imag
+        ohmic_resistance = np.round(z_real[min_index], 5).item() * 100 # take real value corresponding to minimum imag
 
-        logging.info(f"Ohmic Resistance calculated as {ohmic_resistance}Ohms (Dataset " + identifier + ").")
+        logging.info(f"Ohmic Resistance calculated as {ohmic_resistance}Ohms (Dataset: " + identifier + ").")
 
         # Finding Ionic conductivity
         conductivity = np.empty((1,0))
@@ -148,10 +148,10 @@ class measurements:
             conductivity = np.append(conductivity, np.array([self.epsilon_0 * epsilon_img * 2 * np.pi * frequency[i]]))
             tan_delta = np.append(tan_delta, np.array([epsilon_img / epsilon_real]))
 
-        max_index = tan_delta.argmax(tan_delta)
-        ionic_conductivity = np.round(conductivity[max_index], 3).item() * 1000 # ms/cm
+        max_index = np.argmax(tan_delta)
+        ionic_conductivity = np.round(conductivity[max_index], 5).item() * 1000 # ms/cm
 
-        logging.info(f"Ionic Conductivity calculated as {ionic_conductivity}mS/cm (Dataset " + identifier + ").")
+        logging.info(f"Ionic Conductivity calculated as {ionic_conductivity}mS/cm (Dataset: " + identifier + ").")
 
         if plot is True:
             self.plot_EIS(identifier)

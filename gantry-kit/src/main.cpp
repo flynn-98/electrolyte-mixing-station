@@ -175,8 +175,7 @@ void pinchPipettes() {
     Z_MOTOR.setMaxSpeed(Z_STAGE_SPEED);
     zQuickHome();
 
-    // Report back to PC
-    Serial.println("Pipettes successfully pinched");
+    // zQuickhome already reports back to PC
 };
 
 void releasePipettes() {
@@ -311,7 +310,7 @@ void gantryMove(float x, float y, float z) {
 
 void gantryZero() {
     // Move X to middle of workspace to avoid pipette rack
-    X_MOTOR.moveTo(0);
+    X_MOTOR.moveTo(jointLimit[0][0] / 3);
     Y_MOTOR.moveTo(0);
     Z_MOTOR.moveTo(0);
 
@@ -319,6 +318,9 @@ void gantryZero() {
     Z_MOTOR.runToPosition();
     X_MOTOR.runToPosition();
     Y_MOTOR.runToPosition();
+
+    X_MOTOR.moveTo(0);
+    X_MOTOR.runToPosition();
 
     homed = true;
 
