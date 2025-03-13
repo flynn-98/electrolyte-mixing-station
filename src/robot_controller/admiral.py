@@ -113,6 +113,8 @@ class squidstat:
             self.handler.experimentStopped.connect(self.handle_experiment_stopped)
 
     def take_measurements(self, identifier: str) -> None:
+        logging.info("Attempting to begin Squidstat experiment (Dataset: " + identifier + ")..")
+
         # Run experiment build function from dict
         build_experiment = list(self.modes.values())[self.mode]
 
@@ -182,7 +184,6 @@ class squidstat:
     def run_experiment(self) -> None:
         # Run an experiment on the potentiostat. Remember to define the experiment first, 
         # For instance using setup_potentiostaticEIS() or setup_CV().
-        logging.info("Attempting to begin Squidstat experiment..")
 
         if self.experiment is not None: 
             if self.sim is False:

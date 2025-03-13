@@ -45,7 +45,7 @@ class measurements:
 
     def get_indentifier(self) -> str:
         now = datetime.now()
-        return "ID_" + now.strftime("%d/%m/%Y_%H:%M:%S")
+        return "ID_" + now.strftime("%d-%m-%Y_%H-%M-%S")
         
     def single_temperature_analysis(self, temp: float, report: bool = True) -> None:
         result, mean, std = self.peltier.wait_until_temperature(temp, keep_on=True)

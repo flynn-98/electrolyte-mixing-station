@@ -48,7 +48,7 @@ class peltier:
 
         self.cooling_tc = 100 #%
         self.cooling_Kp = 12
-        self.cooling_Ki = 0.01
+        self.cooling_Ki = 0.05
         self.cooling_Kd = 0.0
 
         self.cool_mode = False
