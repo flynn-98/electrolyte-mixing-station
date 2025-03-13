@@ -38,7 +38,7 @@ def run_campaign() -> None:
         api_key=API_KEY,
         spec_file_content=config_dict,
         inherit_data=False, 
-        always_restart=True,
+        always_restart=not args.resume,
     )
 
     for iteration in range(wrapper.config.budget):
