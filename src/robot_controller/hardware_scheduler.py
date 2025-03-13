@@ -142,6 +142,9 @@ class scheduler:
         self.df = self.df.drop("Total Cost", axis=1)
 
         return total_cost
+    
+    def subtract_dose_volume(self, i: int, dose: float) -> None:
+        self.df.loc[i, "Dose Volume (uL)"] -= dose
 
     def run(self, temp: float) -> tuple[float, float]:
         logging.info(f"Setting early temperature target of {temp}C..")
@@ -192,6 +195,9 @@ class scheduler:
 
                 # Set new starting volume for next repeat
                 self.df.loc[i, "Container Volume (mL)"] = pot_volume
+
+                # Update remaining dose volume
+                self.subtract_dose_volume(i, dose)
 
                 # Save csv in current state (starting volumes up to date in case of unexpected interruption)
                 self.save_csv()
