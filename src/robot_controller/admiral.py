@@ -276,8 +276,8 @@ class squidstat:
 
     def build_EIS_potentiostatic_experiment(
         self,
-        start_frequency: float = 1,
-        end_frequency: float = 1000000,
+        start_frequency: float = 1000000,
+        end_frequency: float = 1,
         points_per_decade: int = 20,
         voltage_bias: float = 0.0,
         voltage_amplitude: float = 0.1,

@@ -22,7 +22,7 @@ class peltier:
         self.max_current = 10.0 #A
         self.min_current = 0.1 #A
 
-        self.fan_current = 1.0 #A
+        self.fan_current = 3.0 #A
         self.fan_voltage = 12.0
 
         # Thermisistor Steinhart coefficients NTC1
@@ -42,13 +42,13 @@ class peltier:
 
         # Heating/Cooling control
         self.heating_tc = 60 #%
-        self.heating_Kp = 6
-        self.heating_Ki = 0.01
+        self.heating_Kp = 5
+        self.heating_Ki = 0.005
         self.heating_Kd = 0.0
 
         self.cooling_tc = 100 #%
         self.cooling_Kp = 12
-        self.cooling_Ki = 0.05
+        self.cooling_Ki = 0.02
         self.cooling_Kd = 0.0
 
         self.cool_mode = False
@@ -189,7 +189,7 @@ class peltier:
             else:   
                 logging.error("Failed to clear temperature controller Run flag.")
 
-    def get_status(self) -> None:
+    def get_status(self) -> str:
         msg = "$S"
 
         if self.sim is False:
@@ -197,11 +197,11 @@ class peltier:
             repeat = self.get_data().split(" ")[1]
 
             if repeat == msg:
-                logging.info("Temperature controller status returned.")
+                logging.info("Temperature controller status checked.")
             else:   
                 logging.error("Failed to return temperature controller status.")
 
-            logging.info("Status: " + self.get_data())
+        return self.get_data()
 
     def clear_status(self) -> None:
         msg = "$SC"
@@ -215,7 +215,12 @@ class peltier:
             else:   
                 logging.error("Failed to clear temperature controller status.")
 
-            logging.info("Status: " + self.get_data())
+    def assess_status(self) -> None:
+        status = self.get_status()
+
+        if status != "0000 0000 0000":
+            logging.error("Status Error: " + status)
+            self.clear_status()
         
     def register_write(self, REGISTER_NUMBER: int, VALUE: int | float) -> bool:
         # Command set is built up by: Start char - command - data - stop char
@@ -418,6 +423,8 @@ class peltier:
             sys.exit()
 
     def set_temperature(self, temp: float) -> None:
+        self.assess_status()
+        
         if temp < self.temp_threshold:
             self.set_cooling_mode()
         else:
@@ -439,18 +446,6 @@ class peltier:
         while (time.time() - global_start) < self.timeout:
 
             temperature = self.get_t1_value()
-
-            # Allow temperature to drop naturally if current temp is greater than target and target is well above threshold
-            if (temperature > self.temp_threshold * 2) and (temperature > value):
-                # Turn controller Off (if not already)
-                self.clear_run_flag()
-                logging.info(f"Waiting for temperature to fall below {self.temp_threshold * 2}C before active cooling.")
-                time.sleep(15)
-
-                continue # Skip all else
-            else:
-                # Turn controller ON (if not already)
-                self.set_run_flag()
             
             stats = np.empty((1,))
             local_start = time.time()
@@ -540,18 +535,7 @@ class peltier:
             fig.canvas.draw()
             fig.canvas.flush_events()
                 
-            local_start = time.time()
-
-            # Allow temperature to drop naturally if current temp is greater than target and target is above threshold
-            if (temperature > self.temp_threshold * 2) and (temperature > value):
-                # Turn controller Off (if not already)
-                self.clear_run_flag()
-                time.sleep(1 / sample_rate)
-
-                continue # Skip all else
-            else:
-                # Turn controller ON (if not already)
-                self.set_run_flag()        
+            local_start = time.time()     
 
             while (abs(value - self.get_t1_value()) < self.allowable_error) and (time.time() - local_start < self.steady_state):
                 time.sleep(1 / sample_rate)
