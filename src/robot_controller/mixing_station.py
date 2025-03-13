@@ -56,10 +56,6 @@ class electrolyte_mixer:
          self.pot_base_height += self.workspace_height_correction
          self.pipette_pick_height += self.workspace_height_correction
 
-    def move_to_start(self) -> None:
-        # Add to start of all loops involving gantry motion
-        self.gantry.move(self.pipette_x_location + self.pipette_lead_in, 0, 0)
-
     def pick_pipette(self, pipette_no: int) -> None:
         # Turn pump off just in case
         self.pipette.pump_off(check=False)

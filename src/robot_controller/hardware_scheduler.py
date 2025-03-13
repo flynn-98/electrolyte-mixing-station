@@ -148,7 +148,6 @@ class scheduler:
         self.test_cell.set_blind_temperature(temp)
 
         logging.info("Beginning electrolyte mixing..")
-        self.mixer.move_to_start()
 
         # Check if pipette currently active, return if so
         self.mixer.return_pipette()
@@ -292,9 +291,6 @@ class scheduler:
     def tune(self, pot_number: int, aspirate_scalars: list[float], aspirate_volume: list[float], container_volume: float, density: float, N: int, M: int, aspirate_speed: float = 100.0, move_electrolyte: bool = False) -> None:
         now = datetime.now()
         logging.info(f"Tuning will perform a total of {N*M} aspirations: " + now.strftime("%d/%m/%Y %H:%M:%S"))
-        self.mixer.move_to_start()
-
-        
 
         errors = np.zeros((N,M))
         scalars = np.linspace(aspirate_scalars[0], aspirate_scalars[1], N) # i -> N
