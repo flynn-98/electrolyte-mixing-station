@@ -41,7 +41,6 @@ class measurements:
 
     def set_blind_temperature(self, temp: float) -> None:
         self.peltier.set_temperature(temp)
-        self.peltier.set_run_flag()
 
     def get_indentifier(self) -> str:
         now = datetime.now()

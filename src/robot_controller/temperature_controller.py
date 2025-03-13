@@ -435,6 +435,8 @@ class peltier:
         else:
             logging.error("Failed to set peltier target temperature.")
             sys.exit()
+
+        self.set_run_flag()
     
     def wait_until_temperature(self, value: float, sample_rate: float = 1, keep_on: bool = True) -> tuple[bool, float, float]:
         if self.sim is True:

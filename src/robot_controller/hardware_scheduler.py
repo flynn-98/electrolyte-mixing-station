@@ -237,7 +237,7 @@ class scheduler:
 
         # Future: Ethanol rinse and temperature increase?
         logging.info(f"Raising temperature to {cleaning_temp}C to remove liquid residues..")
-        self.test_cell.peltier.wait_until_temperature(cleaning_temp)
+        self.test_cell.peltier.wait_until_temperature(cleaning_temp, keep_on=False)
 
         logging.info("Cell cleaning complete.")
 
