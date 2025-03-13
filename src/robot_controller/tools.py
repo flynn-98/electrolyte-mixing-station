@@ -17,18 +17,14 @@ logging.basicConfig(level = logging.INFO)
 def run_campaign() -> None:
     parser=argparse.ArgumentParser(description="Begin or resume an Atinary campaign.")
     parser.add_argument("--device", help="Used to locate the device data by matching with Device ID.", type=str)
-    parser.add_argument("--resume", default=False, help="Continue from last state. Defaults to false to restart.", type=bool, action=argparse.BooleanOptionalAction)
+    parser.add_argument("--resume", default=False, help="Continue from saved state. Defaults to false to restart.", type=bool, action=argparse.BooleanOptionalAction)
     parser.add_argument("--home", default=False, help="Set true to home gantry on start up. Defaults to false.", type=bool, action=argparse.BooleanOptionalAction)
     parser.add_argument("--sleep", default=30, help="Sleep time (in seconds) between attempts to get new suggestions from Atinary. Defaults to 30s.", type=int)
     parser.add_argument("--temp", default=25, help="Temperature set point for electrolyte analysis. Defaults to 25C.", type=float)
-    parser.add_argument("--csv", default="campaign_start", help="Name of csv file to be updated by Atinary wrapper. Defaults to campaign_start, or last_state if resume is True.", type=str)
 
     args=parser.parse_args()
 
-    if args.resume is False:
-        device = hardware_scheduler.scheduler(device_name=args.device, csv_filename=args.csv + ".csv", home=args.home)
-    else:
-        device = hardware_scheduler.scheduler(device_name=args.device, csv_filename="last_state.csv", home=args.home)
+    device = hardware_scheduler.scheduler(device_name=args.device, resume=args.resume, home=args.home)
     
     # load config as dict
     with open(config_file, "rb") as f:

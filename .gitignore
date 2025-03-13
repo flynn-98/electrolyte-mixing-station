@@ -14,5 +14,5 @@ sdlabs_sdks/
 *.txt
 *.whl
 
-**/last_state.csv
+**/saved_state.csv
 data/results/*

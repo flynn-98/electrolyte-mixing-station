@@ -20,7 +20,7 @@ logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
                     handlers=[logging.FileHandler("mixing_station.log", mode="a"), logging.StreamHandler(sys.stdout)])
 
 class scheduler:
-    def __init__(self, device_name: str, csv_filename: str | None = None, home: bool = False) -> None:
+    def __init__(self, device_name: str, resume: bool = False, home: bool = False) -> None:
         # Read device data JSON
         self.json_file = "data/devices/hardcoded_values.json"
         device_data = self.read_json(device_name)
@@ -53,13 +53,18 @@ class scheduler:
         # Declare variables for CSV read
         self.df = pd.DataFrame()
         self.csv_path = "data/recipes"
-        self.csv_filename = csv_filename
 
-        self.tuning_path = "data/results/aspiration_tuning_results.csv"
+        self.save_file =  "saved_state.csv"
 
+        if resume is False:
+            self.csv_filename = "campaign_start.csv"
+        else:
+            self.csv_filename = self.save_file
+        
+        self.tuning_file = "aspiration_tuning_results.csv"
+        
         # Convert CSV file to df
-        if self.csv_filename is not None:
-            self.read_csv()
+        self.read_csv()
 
     def read_json(self, device_name: str) -> dict:
         with open(self.json_file) as json_data:
@@ -98,9 +103,9 @@ class scheduler:
         now = datetime.now()
         logging.info("Experiment ready to begin: " + now.strftime("%d/%m/%Y %H:%M:%S"))
 
-    def save_csv(self, filename: str = "last_state.csv") -> None:
+    def save_csv(self) -> None:
         logging.info("Saving volume changes to CSV.")
-        self.df.to_csv(os.path.join(self.csv_path, filename), index=False)
+        self.df.to_csv(os.path.join(self.csv_path, self.save_file), index=False)
 
     def close_all_ports(self) -> None:
         self.mixer.gantry.close_ser()
@@ -302,6 +307,8 @@ class scheduler:
         scalars = np.linspace(aspirate_scalars[0], aspirate_scalars[1], N) # i -> N
         volumes = np.linspace(aspirate_volume[0], aspirate_volume[1], M) # j -> M
 
+        tuning_path = os.path.join(self.test_cell.squid.results_path, self.tuning_file)
+
         for i, scalar in enumerate(scalars):
             for j, volume in enumerate(volumes):
                 logging.info(f"Aspirating {volume}uL using parameter {scalar}..")
@@ -338,10 +345,10 @@ class scheduler:
                     errors[i][j] = math.floor(change - volume) # uL
 
                 # Save results
-                pd.DataFrame(errors, index=scalars, columns=volumes).to_csv(self.tuning_path, index=True)
+                pd.DataFrame(errors, index=scalars, columns=volumes).to_csv(tuning_path, index=True)
 
         # Plot results
-        self.plot_aspiration_results(self.tuning_path)
+        self.plot_aspiration_results(tuning_path)
 
         # Get minimum error variables
         i_min, j_min = np.unravel_index(np.absolute(errors).argmin(), errors.shape)
