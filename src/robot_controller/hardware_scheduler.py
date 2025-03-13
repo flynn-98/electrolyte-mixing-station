@@ -233,7 +233,7 @@ class scheduler:
         logging.info("Beginning cell cleaning procedure.")
 
         # Clean cell (acid)
-        self.fluid_handler.clean_cell(self.test_cell.test_cell_volume)
+        self.fluid_handler.clean_cell(self.test_cell.test_cell_volume*1000)
 
         # Future: Ethanol rinse and temperature increase?
         logging.info(f"Raising temperature to {cleaning_temp}C to remove liquid residues..")
