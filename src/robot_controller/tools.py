@@ -21,14 +21,14 @@ def run_campaign() -> None:
     parser.add_argument("--home", default=False, help="Set true to home gantry on start up. Defaults to false.", type=bool, action=argparse.BooleanOptionalAction)
     parser.add_argument("--sleep", default=30, help="Sleep time (in seconds) between attempts to get new suggestions from Atinary. Defaults to 30s.", type=int)
     parser.add_argument("--temp", default=25, help="Temperature set point for electrolyte analysis. Defaults to 25C.", type=float)
-    parser.add_argument("--csv", default="electrolyte_recipe", help="Name of csv file to be updated by Atinary wrapper. Defaults to electrolyte_recipe, or current_state if resume is True.", type=str)
+    parser.add_argument("--csv", default="campaign_start", help="Name of csv file to be updated by Atinary wrapper. Defaults to campaign_start, or last_state if resume is True.", type=str)
 
     args=parser.parse_args()
 
     if args.resume is False:
         device = hardware_scheduler.scheduler(device_name=args.device, csv_filename=args.csv + ".csv", home=args.home)
     else:
-        device = hardware_scheduler.scheduler(device_name=args.device, csv_filename="current_state.csv", home=args.home)
+        device = hardware_scheduler.scheduler(device_name=args.device, csv_filename="last_state.csv", home=args.home)
     
     # load config as dict
     with open(config_file, "rb") as f:

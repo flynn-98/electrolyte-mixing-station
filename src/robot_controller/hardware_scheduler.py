@@ -55,6 +55,8 @@ class scheduler:
         self.csv_path = "data/recipes"
         self.csv_filename = csv_filename
 
+        self.tuning_path = "data/results/aspiration_tuning_results.csv"
+
         # Convert CSV file to df
         if self.csv_filename is not None:
             self.read_csv()
@@ -96,7 +98,7 @@ class scheduler:
         now = datetime.now()
         logging.info("Experiment ready to begin: " + now.strftime("%d/%m/%Y %H:%M:%S"))
 
-    def save_csv(self, filename: str = "current_state.csv") -> None:
+    def save_csv(self, filename: str = "last_state.csv") -> None:
         logging.info("Saving volume changes to CSV.")
         self.df.to_csv(os.path.join(self.csv_path, filename), index=False)
 
@@ -292,7 +294,7 @@ class scheduler:
         logging.info(f"Tuning will perform a total of {N*M} aspirations: " + now.strftime("%d/%m/%Y %H:%M:%S"))
         self.mixer.move_to_start()
 
-        path = "data/results/aspiration_tuning_results.csv"
+        
 
         errors = np.zeros((N,M))
         scalars = np.linspace(aspirate_scalars[0], aspirate_scalars[1], N) # i -> N
@@ -334,10 +336,10 @@ class scheduler:
                     errors[i][j] = math.floor(change - volume) # uL
 
                 # Save results
-                pd.DataFrame(errors, index=scalars, columns=volumes).to_csv(path, index=True)
+                pd.DataFrame(errors, index=scalars, columns=volumes).to_csv(self.tuning_path, index=True)
 
         # Plot results
-        self.plot_aspiration_results(path)
+        self.plot_aspiration_results(self.tuning_path)
 
         # Get minimum error variables
         i_min, j_min = np.unravel_index(np.absolute(errors).argmin(), errors.shape)

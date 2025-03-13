@@ -94,7 +94,7 @@ A campaign can be run using a command line tool, with the specifics of the campa
 run-campaign --device microtron_01
 ```
 
-**Remember to include the volume of each chemical added to the containers [here](data/recipes/electrolyte_recipe.csv), before beginning the campaign!**
+**Remember to include the volume of each chemical added to the containers [here](data/recipes/campaign_start.csv), before beginning the campaign!**
 
 Run `run-campaign --help` for more information.
 
