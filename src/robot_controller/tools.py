@@ -40,7 +40,7 @@ def run_campaign() -> None:
     for iteration in range(wrapper.config.budget):
 
         logging.info(f"Iteration {iteration+1}: Fetching new suggestions..")
-        suggestions = wrapper.get_new_suggestions(max_retries=10, sleep_time_s=args.sleep)
+        suggestions = wrapper.get_new_suggestions(max_retries=6, sleep_time_s=args.sleep)
 
         if not suggestions:
             logging.error(f"No suggestions received on iteration {iteration+1}.")
