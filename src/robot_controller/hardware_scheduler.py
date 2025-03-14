@@ -63,7 +63,7 @@ class scheduler:
         else:
             self.csv_filename = self.save_file
         
-        self.tuning_file = "aspiration_tuning_results.csv"
+        self.tuning_path = os.path.join(self.test_cell.squid.results_path, "aspiration_tuning_results.csv")
         
         # Convert CSV file to df
         self.read_csv()
@@ -271,8 +271,8 @@ class scheduler:
             self.run()
             self.clean()
 
-    def plot_aspiration_results(self, path: str) -> None:
-        df = pd.read_csv(path, index_col=0)
+    def plot_aspiration_results(self) -> None:
+        df = pd.read_csv(self.tuning_path, index_col=0)
         results = df.to_numpy(dtype=float)
 
         volumes = df.columns.to_numpy(dtype=float)
@@ -315,8 +315,6 @@ class scheduler:
         scalars = np.linspace(aspirate_scalars[0], aspirate_scalars[1], N) # i -> N
         volumes = np.linspace(aspirate_volume[0], aspirate_volume[1], M) # j -> M
 
-        tuning_path = os.path.join(self.test_cell.squid.results_path, self.tuning_file)
-
         for i, scalar in enumerate(scalars):
             for j, volume in enumerate(volumes):
                 logging.info(f"Aspirating {volume}uL using parameter {scalar}..")
@@ -353,10 +351,10 @@ class scheduler:
                     errors[i][j] = math.floor(change - volume) # uL
 
                 # Save results
-                pd.DataFrame(errors, index=scalars, columns=volumes).to_csv(tuning_path, index=True)
+                pd.DataFrame(errors, index=scalars, columns=volumes).to_csv(self.tuning_path, index=True)
 
         # Plot results
-        self.plot_aspiration_results(tuning_path)
+        self.plot_aspiration_results()
 
         # Get minimum error variables
         i_min, j_min = np.unravel_index(np.absolute(errors).argmin(), errors.shape)

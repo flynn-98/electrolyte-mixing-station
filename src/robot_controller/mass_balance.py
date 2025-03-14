@@ -82,6 +82,8 @@ class mass_reader:
             self.ser.write("t".encode())
 
     def check_mass_change(self, expected_mass: float, starting_mass: float) -> None:
+        logging.info("Assessing mass balance changes..")
+        
         # Correction accounts for mass left behind in mixing chamber
         expected_mass -= self.correction
 
