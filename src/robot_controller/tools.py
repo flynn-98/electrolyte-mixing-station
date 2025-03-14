@@ -57,13 +57,18 @@ def run_campaign() -> None:
 
             # Get required temperature either from parser or optimiser
             target_temp = extract_temperature(suggestion.param_values)
+            
             if target_temp is None:
                 target_temp = args.temp
 
-            if skip is False:
+            if skip is True:
+                device.electrolyte_volume = device.test_cell.test_cell_volume
+                skip = False
+            else:
                 # Update df with new volumes and save to current state
                 # e.g. {'Zn(ClO4)2': 5.0, 'ZnCl2': 5.0} - names must exactly match those in CSV
                 device.update_dose_volumes(suggestion.param_values)
+                
 
             device.synthesise(target_temp)
 
