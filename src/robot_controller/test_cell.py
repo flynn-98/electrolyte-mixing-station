@@ -39,9 +39,6 @@ class measurements:
                 writer = DictWriter(file, fieldnames=['Temperature Target', 'Mean Result', 'STD'])
                 writer.writeheader()
 
-    def set_blind_temperature(self, temp: float) -> None:
-        self.peltier.set_temperature(temp)
-
     def get_indentifier(self) -> str:
         now = datetime.now()
         return "ID_" + now.strftime("%d-%m-%Y_%H-%M-%S")

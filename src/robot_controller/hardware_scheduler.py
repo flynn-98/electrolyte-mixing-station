@@ -50,6 +50,8 @@ class scheduler:
 
         logging.info("Successfully passed hardcoded values for " + device_name + ".")
 
+        self.electrolyte_volume = 0
+
         # Declare variables for CSV read
         self.df = pd.DataFrame()
         self.csv_path = "data/recipes"
@@ -151,9 +153,10 @@ class scheduler:
     def subtract_dose_volume(self, i: int, dose: float) -> None:
         self.df.loc[i, "Dose Volume (uL)"] -= dose
 
-    def run(self, temp: float) -> tuple[float, float]:
-        logging.info(f"Setting early temperature target of {temp}C..")
-        self.test_cell.set_blind_temperature(temp)
+    def synthesise(self, temp: float | None  = None) -> None:
+        if temp is not None:
+            logging.info(f"Setting early temperature target of {temp}C..")
+            self.test_cell.peltier.set_temperature(temp)
 
         logging.info("Beginning electrolyte mixing..")
 
@@ -168,7 +171,7 @@ class scheduler:
             sys.exit()
 
         # Get total volume for later use by fluid handling kit
-        total_vol = self.df["Dose Volume (uL)"].sum()
+        self.electrolyte_volume = self.df["Dose Volume (uL)"].sum()
             
         # Loop through all non zero constituents
         for i in non_zero.index.to_numpy(dtype=int):
@@ -223,7 +226,7 @@ class scheduler:
         starting_mass = self.mass_balance.get_mass()
 
         # Pump electrolyte to next stage
-        self.fluid_handler.add_electrolyte(total_vol)
+        self.fluid_handler.add_electrolyte(self.electrolyte_volume)
 
         # Mass Balance checks
         self.df["Mass (1e3*g)"] =  self.df["Density (g/mL)"] * self.df["Dose Volume (uL)"]
@@ -232,13 +235,16 @@ class scheduler:
             
         self.mass_balance.check_mass_change(total_mass, starting_mass)
 
+        logging.info("Synthesis complete.")
+
+    def analyse(self, temp: float) -> tuple[float, float]:
         # Potentiostat / Temperature control functions
         impedance_results = self.test_cell.single_temperature_analysis(temp)
         
         # Empty cell
-        self.fluid_handler.empty_cell(total_vol)
+        self.fluid_handler.empty_cell(self.electrolyte_volume)
 
-        logging.info("Run complete.")
+        logging.info("Analysis complete.")
 
         # returns tuple (ohmics res, ionic conductivity)
         return impedance_results

@@ -19,6 +19,7 @@ def run_campaign() -> None:
     parser=argparse.ArgumentParser(description="Begin or resume an Atinary campaign.")
     parser.add_argument("--device", help="Used to locate the device data by matching with Device ID.", type=str)
     parser.add_argument("--resume", default=False, help="Continue from saved state. Defaults to false to restart.", type=bool, action=argparse.BooleanOptionalAction)
+    parser.add_argument("--skip", default=False, help="Skip steps of electrolyte synthesis that were already complete. Defaults to false to restart.", type=bool, action=argparse.BooleanOptionalAction)
     parser.add_argument("--home", default=False, help="Set true to home gantry on start up. Defaults to false.", type=bool, action=argparse.BooleanOptionalAction)
     parser.add_argument("--sleep", default=30, help="Sleep time (in seconds) between attempts to get new suggestions from Atinary. Defaults to 30s.", type=int)
     parser.add_argument("--temp", default=25, help="Temperature set point for electrolyte analysis. Defaults to 25C.", type=float)
@@ -38,6 +39,8 @@ def run_campaign() -> None:
         always_restart=not args.resume,
     )
 
+    skip = args.skip
+
     for iteration in range(wrapper.config.budget):
 
         logging.info(f"Iteration {iteration+1}: Fetching new suggestions..")
@@ -52,19 +55,19 @@ def run_campaign() -> None:
         for suggestion in suggestions:
             logging.info(f"New suggestion received for iteration {iteration+1}: {suggestion.param_values}.")
 
-            # Update df with new volumes and save to current state
-            # e.g. {'Zn(ClO4)2': 5.0, 'ZnCl2': 5.0} - names must exactly match those in CSV
-            device.update_dose_volumes(suggestion.param_values)
-
-            # Run experiment here at required temperature
+            # Get required temperature either from parser or optimiser
             target_temp = extract_temperature(suggestion.param_values)
-
             if target_temp is None:
-                impedance_results = device.run(args.temp)
-            else:
-                # Use target temp if received by optimiser
-                impedance_results = device.run(target_temp)
+                target_temp = args.temp
 
+            if skip is False:
+                # Update df with new volumes and save to current state
+                # e.g. {'Zn(ClO4)2': 5.0, 'ZnCl2': 5.0} - names must exactly match those in CSV
+                device.update_dose_volumes(suggestion.param_values)
+
+            device.synthesise(target_temp)
+
+            impedance_results = device.analyse(target_temp)
 
             # Build table of measurements to send e.g. [conductivity, cost]
             results = [impedance_results[1], device.calculate_cost()]

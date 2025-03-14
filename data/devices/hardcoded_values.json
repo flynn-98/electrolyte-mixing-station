@@ -26,7 +26,7 @@
             "Fluid_Address": "COM15",
             "Mass_Address": "COM6",
             "Temp_Address": "COM4",
-            "Squid_Address": "COM14",
+            "Squid_Address": "COM16",
             "Gantry_Active": true,
             "Pipette_Active": true,
             "Fluid_Active": true,
