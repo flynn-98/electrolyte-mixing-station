@@ -259,7 +259,7 @@ class scheduler:
 
         # Only run if test cell is below cleaning temperature
         if self.test_cell.peltier.get_t1_value() > cleaning_temp:
-            logging.info(f"Holding at high temperature to remove liquid residues..")
+            logging.info("Holding at high temperature to remove liquid residues..")
             time.sleep(self.test_cell.peltier.steady_state)
         else:
             logging.info(f"Raising temperature to {cleaning_temp}C to remove liquid residues..")
