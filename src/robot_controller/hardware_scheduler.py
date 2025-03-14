@@ -166,6 +166,9 @@ class scheduler:
             logging.error("No CSV loaded.")
             logging.error(ex)
             sys.exit()
+
+        # Get total volume for later use by fluid handling kit
+        total_vol = self.df["Dose Volume (uL)"].sum()
             
         # Loop through all non zero constituents
         for i in non_zero.index.to_numpy(dtype=int):
@@ -220,7 +223,6 @@ class scheduler:
         starting_mass = self.mass_balance.get_mass()
 
         # Pump electrolyte to next stage
-        total_vol = self.df["Dose Volume (uL)"].sum()
         self.fluid_handler.add_electrolyte(total_vol)
 
         # Mass Balance checks

@@ -22,7 +22,7 @@ class peltier:
         self.max_current = 10.0 #A
         self.min_current = 0.1 #A
 
-        self.fan_current = 3.0 #A
+        self.fan_current = 2.0 #A
         self.fan_voltage = 12.0
 
         # Thermisistor Steinhart coefficients NTC1
@@ -43,7 +43,7 @@ class peltier:
         # Heating/Cooling control
         self.heating_tc = 60 #%
         self.heating_Kp = 6
-        self.heating_Ki = 0.005
+        self.heating_Ki = 0.002
         self.heating_Kd = 0.0
 
         self.cooling_tc = 100 #%
@@ -128,7 +128,9 @@ class peltier:
                 logging.info("Temperature regulator Fan settings successfully configured.")
             else:
                 logging.error("Temperature regulator Fan configuration failed.")
-                sys.exit()      
+                sys.exit()
+
+            self.assess_status()      
 
         else:
             logging.info("No serial connection to temperature controller established.")

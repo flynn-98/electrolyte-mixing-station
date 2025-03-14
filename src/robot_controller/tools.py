@@ -10,6 +10,7 @@ from robot_controller import admiral, hardware_scheduler, pipette_controller
 
 #config_file = "data/config/conductivity_optimiser.json"
 config_file = "data/config/integration_test.json"
+
 API_KEY = "eyJhbGciOiJIUzUxMiIsImtpZCI6ImtleV9lMmJiY2M4ZWVhMjU0MjU2ODVmZDUzMWE2ZTJmOTE1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2F1dGguYXRpbmFyeS5jb20iLCJjb2duaXRvOmdyb3VwcyI6WyJDQVBlWF9QaW9uZWVyX0NlbnRlciJdLCJpYXQiOjE3NDE3MTE4OTUsIm5iZiI6MTc0MTcxMTg5NSwidXNlcm5hbWUiOiJmMmM2ZDBiYy01OTQ1LTRiM2UtYjA3Mi0yMzc5ZTI1YmI0NjgifQ.caBOaBaSHE-IS-1zgcbGb7jzR05jry_X1i5gArasfSR_k5qy8BDx4tSDz8JTfCXMDMmVtjl4KoNU9LcDykk0HA"
 
 logging.basicConfig(level = logging.INFO)
@@ -40,7 +41,9 @@ def run_campaign() -> None:
     for iteration in range(wrapper.config.budget):
 
         logging.info(f"Iteration {iteration+1}: Fetching new suggestions..")
-        suggestions = wrapper.get_new_suggestions(max_retries=6, sleep_time_s=args.sleep)
+
+        # Atinary will return suggestions until measurements received - useful in case of resume
+        suggestions = wrapper.get_new_suggestions(max_retries=10, sleep_time_s=args.sleep)
 
         if not suggestions:
             logging.error(f"No suggestions received on iteration {iteration+1}.")
@@ -103,8 +106,9 @@ def test_atinary() -> None:
 
     for iteration in range(wrapper.config.budget):
         print(f"Iteration {iteration+1}: Fetching new suggestions")
+        
         suggestions = wrapper.get_new_suggestions(max_retries=10, sleep_time_s=30)
-
+      
         print(f"Iteration {iteration+1} New Suggestions: {suggestions}")
 
         for suggestion in suggestions:
