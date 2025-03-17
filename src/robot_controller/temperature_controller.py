@@ -130,7 +130,7 @@ class peltier:
                 logging.error("Temperature regulator Fan configuration failed.")
                 sys.exit()
 
-            self.assess_status()      
+            #self.assess_status()      
 
         else:
             logging.info("No serial connection to temperature controller established.")
@@ -203,7 +203,10 @@ class peltier:
             else:   
                 logging.error("Failed to return temperature controller status.")
 
-        return self.get_data()
+            return self.get_data()
+        
+        else:
+            return "0000 0000 0000"
 
     def clear_status(self) -> None:
         msg = "$SC"
@@ -217,12 +220,18 @@ class peltier:
             else:   
                 logging.error("Failed to clear temperature controller status.")
 
+            return self.get_data()
+        
+        else:
+            return "0000 0000 0000"
+
     def assess_status(self) -> None:
         status = self.get_status()
 
         if status != "0000 0000 0000":
             logging.error("Status Error: " + status)
-            self.clear_status()
+            status = self.clear_status()
+            logging.info("New Status: " + status)
         
     def register_write(self, REGISTER_NUMBER: int, VALUE: int | float) -> bool:
         # Command set is built up by: Start char - command - data - stop char
@@ -425,7 +434,7 @@ class peltier:
             sys.exit()
 
     def set_temperature(self, temp: float) -> None:
-        self.assess_status()
+        #self.assess_status()
         
         if temp < self.temp_threshold:
             self.set_cooling_mode()

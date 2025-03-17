@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+import serial
 
 import pandas as pd
 from PySide6.QtWidgets import QApplication
@@ -21,6 +22,8 @@ from SquidstatPyLibrary import (
     AisOpenCircuitElement,
     AisSquareWaveVoltammetryElement,
 )
+import serial.tools
+import serial.tools.list_ports
 
 # Suppress FutureWarning messages from Pandas
 logging.basicConfig(level = logging.INFO)
@@ -94,6 +97,8 @@ class squidstat:
             # Attach functions to call during events
             self.tracker.newDeviceConnected.connect(self.handle_device_connected)
 
+            self.port_check(COM)
+
             try:
                 # Connect to device and find handler for specified type
                 self.tracker.connectToDeviceOnComPort(COM)
@@ -111,6 +116,13 @@ class squidstat:
 
             self.handler.experimentNewElementStarting.connect(self.increment_elements)
             self.handler.experimentStopped.connect(self.handle_experiment_stopped)
+
+    def port_check(self, COM: str) -> None:
+        ports = [tuple(p) for p in list(serial.tools.list_ports.comports())]
+
+        if COM not in ports:
+            logging.error("Provided Squidstat COM port not found.")
+            sys.exit()
 
     def take_measurements(self, identifier: str) -> None:
         logging.info("Attempting to begin Squidstat experiment (Dataset: " + identifier + ")..")
