@@ -72,7 +72,16 @@ class fluid_handler:
             self.ser.write(f"cleanCell({vol})".encode())
             self.get_response()
 
-            self.empty_cell(fluid_vol)
+    # TODO: update below for waste pump to use ethanol, and addition of pinch valve as new empty method
+
+    def rinse_cell(self, fluid_vol: float, tube_length: float = 300.0, overpump: float = 1.2) -> None:
+        logging.info(f"Pumping {fluid_vol}uL of ethanol to test cell..")
+        tube_vol = math.pi * tube_length * 1e-3 # 2mm ID tubing (Area = Pi)
+        vol = overpump * (fluid_vol / 1000 + tube_vol) #ml
+        
+        if self.sim is False:
+            self.ser.write(f"emptyCell({vol})".encode())
+            self.get_response()
 
     def empty_cell(self, fluid_vol: float, tube_length: float = 300.0, overpump: float = 1.2) -> None:
         logging.info(f"Pumping {fluid_vol}uL from test cell to waste..")

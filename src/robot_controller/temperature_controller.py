@@ -450,7 +450,7 @@ class peltier:
 
         self.set_run_flag()
     
-    def wait_until_temperature(self, value: float, sample_rate: float = 1, keep_on: bool = True) -> tuple[bool, float, float]:
+    def wait_until_temperature(self, value: float, sample_rate: float = 0.2, keep_on: bool = True, steady_state: bool = True) -> tuple[bool, float, float]:
         if self.sim is True:
             return True, 0.0, 0.0
         
@@ -465,6 +465,15 @@ class peltier:
             local_start = time.time()
 
             while (abs(value - temperature) < self.allowable_error) and (time.time() - local_start < self.steady_state):
+                # End if 
+                if steady_state is False:
+                    logging.info(f"Temperature controller successfully reached {value}C in {time.time() - global_start}s.")
+
+                    if keep_on is False:
+                        self.clear_run_flag()
+
+                    return True, 0.0, 0.0
+                
                 temperature = self.get_t1_value()
                 stats = np.append(stats, np.array([temperature]), axis=0)
 
@@ -475,7 +484,7 @@ class peltier:
                 mean = round(stats.mean(), 2)
                 std = round(stats.std(), 3)
 
-                logging.info(f"Temperature controller successfully reached {value}C in {time.time() - global_start}s (mean = {mean}C, std = {std}C)")
+                logging.info(f"Temperature controller successfully reached {value}C in {time.time() - global_start}s (mean = {mean}C, std = {std}C).")
 
                 # Turn controller OFF if required
                 if keep_on is False:

@@ -256,14 +256,13 @@ class scheduler:
         self.fluid_handler.clean_cell(self.test_cell.test_cell_volume*1000)
 
         # Future: Ethanol rinse here
+        self.fluid_handler.rinse_cell(self.test_cell.test_cell_volume*1000)
+        self.fluid_handler.empty_cell(self.test_cell.test_cell_volume*1000)
 
         # Only run if test cell is below cleaning temperature
-        if self.test_cell.peltier.get_t1_value() > cleaning_temp:
-            logging.info("Holding at high temperature to remove liquid residues..")
-            time.sleep(self.test_cell.peltier.steady_state)
-        else:
+        if self.test_cell.peltier.get_t1_value() < cleaning_temp:
             logging.info(f"Raising temperature to {cleaning_temp}C to remove liquid residues..")
-            self.test_cell.peltier.wait_until_temperature(cleaning_temp, keep_on=False)
+            self.test_cell.peltier.wait_until_temperature(cleaning_temp, keep_on=False, steady_state=False)
 
         logging.info("Cell cleaning complete.")
 
