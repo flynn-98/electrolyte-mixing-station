@@ -373,10 +373,7 @@ class peltier:
         # 3 = to activate Zoom mode (internal control of digital pot). Have this bit set to achieve maximal resolution.
         # 4 = to activate PT mode 
 
-        # To revisit best mode and values to use
-
         # Also set alarms on over and under
-
         if (self.register_write(56, mode) is True) and (self.register_write(73, self.max_temp + 5) is True) and (self.register_write(74, self.min_temp - 5) is True):
             return True
         else:

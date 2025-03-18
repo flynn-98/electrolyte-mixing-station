@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The Electrolyte Mixing Station is a flexible tool, primarily designed to select and mix microlitres of different electrolytes, using a volume control module that can be configured to deal with low and higher viscosities.
+The Electrolyte Mixing Station is a automated platform, designed to mix microlitres of different liquid electrolytes - using a pressure-based volume control module - and perform electrochemical analyses on the resulting mixtures at temperatures from -20 to 60C.
 
 ![image](data/images/workflow.png)
 
