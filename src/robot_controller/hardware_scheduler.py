@@ -196,18 +196,18 @@ class scheduler:
                     continue
 
                 # Aspirate using data from relevant df row, increment pot co ordinates
-                pot_volume = self.mixer.collect_volume(dose, pot_volume, relevant_row["Name"], i+1, relevant_row["Aspirate Scalar"], relevant_row["Aspirate Speed (uL/s)"])
+                new_volume = self.mixer.collect_volume(dose, pot_volume, relevant_row["Name"], i+1, relevant_row["Aspirate Scalar"], relevant_row["Aspirate Speed (uL/s)"])
 
                 # Move to mixing chamber and dispense
                 self.mixer.deliver_volume()
 
                 # Set new starting volume for next repeat
-                self.df.loc[i, "Container Volume (mL)"] = pot_volume
+                self.df.loc[i, "Container Volume (mL)"] = new_volume
 
                 # Update remaining dose volume
-                self.subtract_dose_volume(i, dose)
+                #self.subtract_dose_volume(i, dose)
 
-                # Save csv in current state (starting volumes up to date in case of unexpected interruption)
+                # Save csv in current state (starting volumes up to date in case of interruption)
                 self.save_csv()
 
             # Return pipette
@@ -219,8 +219,14 @@ class scheduler:
         # Let mixture settle
         time.sleep(1)
 
+        # Turn off fans to remove noise from mass readings
+        self.test_cell.peltier.turn_fans_off()
+
         # Take mass balance reading
         starting_mass = self.mass_balance.get_mass()
+
+        # Turn fans back on during pumping
+        self.test_cell.peltier.set_fan_modes()
 
         # Pump electrolyte to next stage
         self.fluid_handler.add_electrolyte(self.electrolyte_volume)
@@ -229,8 +235,14 @@ class scheduler:
         self.df["Mass (1e3*g)"] =  self.df["Density (g/mL)"] * self.df["Dose Volume (uL)"]
         total_mass = self.df["Mass (1e3*g)"].sum()/1000
         self.df = self.df.drop("Mass (1e3*g)", axis=1)
+
+        # Turn off fans to remove noise from mass readings
+        self.test_cell.peltier.turn_fans_off()
             
         self.mass_balance.check_mass_change(total_mass, starting_mass)
+
+        # Turn fans back on
+        self.test_cell.peltier.set_fan_modes()
 
         logging.info("Synthesis complete.")
 

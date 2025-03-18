@@ -341,6 +341,13 @@ class peltier:
         else:
             return False
         
+    def turn_fans_off(self) -> bool:
+        # To be used when taking mass readings
+        if (self.register_write(16, 0) is True) and (self.register_write(23, 0) is True):
+            return True
+        else:
+            return False
+        
     def set_voltage_alarm_settings(self) -> bool:
         # Set alarms for over and under voltage
         if (self.register_write(45, self.input_voltage + 1) is True) and (self.register_write(46, self.input_voltage - 1) is True):
