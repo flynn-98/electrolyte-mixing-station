@@ -50,7 +50,7 @@ class scheduler:
 
         logging.info("Successfully passed hardcoded values for " + device_name + ".")
 
-        self.electrolyte_volume = 0
+        self.electrolyte_volume = None
 
         # Declare variables for CSV read
         self.df = pd.DataFrame()
@@ -60,6 +60,7 @@ class scheduler:
 
         if resume is False:
             self.csv_filename = "campaign_start.csv"
+            self.save_csv()
         else:
             self.csv_filename = self.save_file
         
@@ -141,7 +142,10 @@ class scheduler:
         # Save to current state
         self.save_csv()
 
-        logging.info(f'Recipe will result in a total electrolyte volume of {self.df["Dose Volume (uL)"].sum()/1000}mL.')
+        # Get total volume for later use by fluid handling kit
+        self.electrolyte_volume = self.df["Dose Volume (uL)"].sum()
+
+        logging.info(f'Recipe will result in a total electrolyte volume of {self.electrolyte_volume/1000}mL.')
 
     def calculate_cost(self) -> float:
         self.df["Total Cost"] =  self.df["Cost (/uL)"] * self.df["Dose Volume (uL)"]
@@ -153,11 +157,7 @@ class scheduler:
     def subtract_dose_volume(self, i: int, dose: float) -> None:
         self.df.loc[i, "Dose Volume (uL)"] -= dose
 
-    def synthesise(self, temp: float | None  = None) -> None:
-        if temp is not None:
-            logging.info(f"Setting early temperature target of {temp}C..")
-            self.test_cell.peltier.set_temperature(temp)
-
+    def synthesise(self) -> None:
         logging.info("Beginning electrolyte mixing..")
 
         # Check if pipette currently active, return if so
@@ -170,8 +170,8 @@ class scheduler:
             logging.error(ex)
             sys.exit()
 
-        # Get total volume for later use by fluid handling kit
-        self.electrolyte_volume = self.df["Dose Volume (uL)"].sum()
+        if self.electrolyte_volume is None:
+            self.electrolyte_volume = non_zero["Dose Volume (uL)"].sum()
             
         # Loop through all non zero constituents
         for i in non_zero.index.to_numpy(dtype=int):

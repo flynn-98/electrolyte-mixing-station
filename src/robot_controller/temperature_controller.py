@@ -51,6 +51,8 @@ class peltier:
         self.cooling_Ki = 0.02
         self.cooling_Kd = 0.0
 
+        # TODO: subzero mode
+
         self.cool_mode = False
         self.run_flag = False
 
