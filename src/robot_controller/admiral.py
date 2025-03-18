@@ -118,8 +118,7 @@ class squidstat:
             self.handler.experimentStopped.connect(self.handle_experiment_stopped)
 
     def port_check(self, COM: str) -> None:
-        ports = [tuple(p) for p in list(serial.tools.list_ports.comports())]
-
+        ports = [tuple(p)[0] for p in list(serial.tools.list_ports.comports())]
         if COM not in ports:
             logging.error("Provided Squidstat COM port not found.")
             sys.exit()

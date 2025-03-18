@@ -53,7 +53,7 @@ class fluid_handler:
             if self.ser.isOpen():
                 self.ser.close()
 
-    def add_electrolyte(self, fluid_vol: float, tube_length: float = 300.0, overpump: float = 1.2) -> None:
+    def add_electrolyte(self, fluid_vol: float, tube_length: float = 630.0, overpump: float = 1.1) -> None:
         # Fluid volume in uL -> sent volume in mL
         logging.info(f"Pumping {fluid_vol}uL of electrolyte to test cell..")
         tube_vol = math.pi * tube_length * 1e-3 # 2mm ID tubing (Area = Pi)
