@@ -246,11 +246,14 @@ class scheduler:
         # returns tuple (ohmics res, ionic conductivity)
         return impedance_results
     
-    def clean(self, cleaning_temp: float = 40) -> None:
+    def clean(self, cleaning_temp: float = 40, wait_time: float = 10) -> None:
         logging.info("Beginning cell cleaning procedure.")
 
         # Clean cell (acid)
         self.fluid_handler.clean_cell(self.test_cell.test_cell_volume*1000)
+        logging.info(f"Waiting for {wait_time}s to remove contaminants..")
+        time.sleep(wait_time)
+        self.fluid_handler.empty_cell(self.test_cell.test_cell_volume*1000)
 
         # Future: Ethanol rinse here
         self.fluid_handler.rinse_cell(self.test_cell.test_cell_volume*1000)

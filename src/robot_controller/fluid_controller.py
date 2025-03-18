@@ -53,7 +53,7 @@ class fluid_handler:
             if self.ser.isOpen():
                 self.ser.close()
 
-    def add_electrolyte(self, fluid_vol: float, tube_length: float = 630.0, overpump: float = 1.25) -> None:
+    def add_electrolyte(self, fluid_vol: float, tube_length: float = 630.0, overpump: float = 1.3) -> None:
         # Fluid volume in uL -> sent volume in mL
         logging.info(f"Pumping {fluid_vol}uL of electrolyte to test cell..")
         tube_vol = math.pi * tube_length * 1e-3 # 2mm ID tubing (Area = Pi)
@@ -63,7 +63,7 @@ class fluid_handler:
             self.ser.write(f"addElectrolyte({vol})".encode())
             self.get_response()
 
-    def clean_cell(self, fluid_vol: float, tube_length: float = 300.0, overpump: float = 1.2) -> None:
+    def clean_cell(self, fluid_vol: float, tube_length: float = 500.0, overpump: float = 1.2) -> None:
         logging.info(f"Pumping {fluid_vol}uL of cleaning solution to test cell..")
         tube_vol = math.pi * tube_length * 1e-3 # 2mm ID tubing (Area = Pi)
         vol = overpump * (fluid_vol / 1000 + tube_vol) #ml
@@ -74,7 +74,7 @@ class fluid_handler:
 
     # TODO: update below for waste pump to use ethanol, and addition of pinch valve as new empty method
 
-    def rinse_cell(self, fluid_vol: float, tube_length: float = 300.0, overpump: float = 1.2) -> None:
+    def rinse_cell(self, fluid_vol: float, tube_length: float = 500.0, overpump: float = 1.2) -> None:
         logging.info(f"Pumping {fluid_vol}uL of ethanol to test cell..")
         tube_vol = math.pi * tube_length * 1e-3 # 2mm ID tubing (Area = Pi)
         vol = overpump * (fluid_vol / 1000 + tube_vol) #ml
@@ -83,7 +83,7 @@ class fluid_handler:
             self.ser.write(f"emptyCell({vol})".encode())
             self.get_response()
 
-    def empty_cell(self, fluid_vol: float, tube_length: float = 300.0, overpump: float = 1.2) -> None:
+    def empty_cell(self, fluid_vol: float, tube_length: float = 500.0, overpump: float = 1.2) -> None:
         logging.info(f"Pumping {fluid_vol}uL from test cell to waste..")
         tube_vol = math.pi * tube_length * 1e-3 # 2mm ID tubing (Area = Pi)
         vol = overpump * (fluid_vol / 1000 + tube_vol) #ml
