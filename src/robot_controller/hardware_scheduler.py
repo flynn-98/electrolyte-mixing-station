@@ -20,7 +20,7 @@ logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
                     handlers=[logging.FileHandler("mixing_station.log", mode="a"), logging.StreamHandler(sys.stdout)])
 
 class scheduler:
-    def __init__(self, device_name: str, resume: bool = False, home: bool = False) -> None:
+    def __init__(self, device_name: str, resume: bool = False, home: bool = False, clear: bool = False) -> None:
         # Read device data JSON
         self.json_file = "data/devices/hardcoded_values.json"
         device_data = self.read_json(device_name)
@@ -65,6 +65,9 @@ class scheduler:
         
         # Convert CSV file to df
         self.read_csv()
+
+        if clear is True:
+            self.clear_mixing_chamber()
 
     def read_json(self, device_name: str) -> dict:
         with open(self.json_file) as json_data:
@@ -256,17 +259,17 @@ class scheduler:
         return impedance_results
     
     def clean(self, cleaning_temp: float = 40, wait_time: float = 10) -> None:
-        logging.info("Beginning cell cleaning procedure.")
+        logging.info("Beginning cell cleaning procedure..")
 
         # Clean cell (acid)
-        self.fluid_handler.clean_cell(self.test_cell.test_cell_volume*1000)
+        self.fluid_handler.clean_cell(self.test_cell.test_cell_volume)
         logging.info(f"Waiting for {wait_time}s to remove contaminants..")
         time.sleep(wait_time)
-        self.fluid_handler.empty_cell(self.test_cell.test_cell_volume*1000)
+        self.fluid_handler.empty_cell(self.test_cell.test_cell_volume)
 
         # Future: Ethanol rinse here
-        self.fluid_handler.rinse_cell(self.test_cell.test_cell_volume*1000)
-        self.fluid_handler.empty_cell(self.test_cell.test_cell_volume*1000)
+        self.fluid_handler.rinse_cell(self.test_cell.test_cell_volume)
+        self.fluid_handler.empty_cell(self.test_cell.test_cell_volume)
 
         # Only run if test cell is below cleaning temperature
         if self.test_cell.peltier.get_t1_value() < cleaning_temp:
@@ -274,6 +277,11 @@ class scheduler:
             self.test_cell.peltier.wait_until_temperature(cleaning_temp, keep_on=False, steady_state=False)
 
         logging.info("Cell cleaning complete.")
+
+    def clear_mixing_chamber(self) -> None:
+        logging.info("Beginning chamber clearing procedure..")
+        self.fluid_handler.add_electrolyte(self.test_cell.test_cell_volume)
+        self.fluid_handler.empty_cell(self.test_cell.test_cell_volume)
 
     def run_life_test(self, N: int = 1) -> None:
         logging.info(f"Beginning {N}X life test..")
