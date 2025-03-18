@@ -17,7 +17,7 @@ class mass_reader:
         self.minor_mass_error = 10 # %, error if exceeded
         self.critical_mass_error = 50 # %, error if exceeded
 
-        self.correction = 45 #g left behind in mixing chamber
+        self.correction = 0.05 #g or mL left behind in mixing chamber
 
         self.timeout = 2 #s 
 

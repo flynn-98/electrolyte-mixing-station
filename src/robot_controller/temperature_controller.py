@@ -464,7 +464,7 @@ class peltier:
             local_start = time.time()
 
             while (abs(value - temperature) < self.allowable_error) and (time.time() - local_start < self.steady_state):
-                # End if 
+                
                 if steady_state is False:
                     logging.info(f"Temperature controller successfully reached {value}C in {time.time() - global_start}s.")
 
