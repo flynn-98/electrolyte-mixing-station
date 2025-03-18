@@ -216,9 +216,6 @@ class scheduler:
         # Trigger servo to mix electrolyte
         self.mixer.gantry.mix()
 
-        # Let mixture settle
-        time.sleep(1)
-
         # Turn off fans to remove noise from mass readings
         self.test_cell.peltier.turn_fans_off()
 
