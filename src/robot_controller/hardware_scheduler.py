@@ -198,13 +198,13 @@ class scheduler:
                     continue
 
                 # Aspirate using data from relevant df row, increment pot co ordinates
-                new_volume = self.mixer.collect_volume(dose, pot_volume, relevant_row["Name"], i+1, relevant_row["Aspirate Scalar"], relevant_row["Aspirate Speed (uL/s)"])
+                pot_volume = self.mixer.collect_volume(dose, pot_volume, relevant_row["Name"], i+1, relevant_row["Aspirate Scalar"], relevant_row["Aspirate Speed (uL/s)"])
 
                 # Move to mixing chamber and dispense
                 self.mixer.deliver_volume()
 
                 # Set new starting volume for next repeat
-                self.df.loc[i, "Container Volume (mL)"] = new_volume
+                self.df.loc[i, "Container Volume (mL)"] = pot_volume
 
                 # Update remaining dose volume
                 #self.subtract_dose_volume(i, dose)
