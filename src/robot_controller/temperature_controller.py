@@ -51,6 +51,8 @@ class peltier:
         self.cooling_Ki = 0.02
         self.cooling_Kd = 0.0
 
+        # TODO: subzero mode
+
         self.cool_mode = False
         self.run_flag = False
 
@@ -124,12 +126,7 @@ class peltier:
                 logging.error("Failed to update steinhart coefficients for temperature sensor #2.")
                 sys.exit()         
 
-            if self.set_fan_modes() is True:
-                logging.info("Temperature regulator Fan settings successfully configured.")
-            else:
-                logging.error("Temperature regulator Fan configuration failed.")
-                sys.exit()
-
+            self.set_fan_modes()
             self.assess_status()      
 
         else:
@@ -327,17 +324,25 @@ class peltier:
         else:
             return False
 
-    def set_fan_modes(self, mode: int = 4) -> bool:
+    def set_fan_modes(self, mode: int = 4) -> None:
         # Always OFF = 0
         # Always ON = 1
         # Cool = 2
         # Heat = 3
         # Cool / Heat = 4, on when main output is non zero (reg[106])
-
+        
         if (self.register_write(16, mode) is True) and (self.register_write(23, mode) is True) and (self.register_write(22, self.fan_voltage) is True) and (self.register_write(29, self.fan_voltage) is True):
-            return True
+            logging.info("Temperature regulator fan settings successfully configured.")
         else:
-            return False
+            logging.error("Temperature regulator fan configuration failed.")
+            sys.exit()
+        
+    def turn_fans_off(self) -> None:
+        # To be used when taking mass readings
+        if (self.register_write(16, 0) is True) and (self.register_write(23, 0) is True):
+            logging.info("Fans successfully turned off.")
+        else:
+            logging.error("Failed to turn off fans.")
         
     def set_voltage_alarm_settings(self) -> bool:
         # Set alarms for over and under voltage
@@ -462,7 +467,7 @@ class peltier:
             local_start = time.time()
 
             while (abs(value - temperature) < self.allowable_error) and (time.time() - local_start < self.steady_state):
-                # End if 
+                
                 if steady_state is False:
                     logging.info(f"Temperature controller successfully reached {value}C in {time.time() - global_start}s.")
 

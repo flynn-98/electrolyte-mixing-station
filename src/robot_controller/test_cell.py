@@ -31,7 +31,7 @@ class measurements:
         self.epsilon_0 = 8.8541878128e-12 # vacuum permittivity
         self.cell_constant = 1.0 # to be set from hardcoded values
         
-        self.test_cell_volume = 2.5 # ml from CAD
+        self.test_cell_volume = 2500 # ul from CAD
 
         # Create file with header if first time running code on PC
         if not os.path.exists(self.temp_file):

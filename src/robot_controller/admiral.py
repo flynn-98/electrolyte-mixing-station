@@ -278,12 +278,22 @@ class squidstat:
         logging.info(f"Experiment completed on channel {channel}.")
         self.app.quit()
     
-    def append_element(self, experiment: any, element: any, number_of_runs: int = 1) -> None:
-        if experiment.appendElement(element, number_of_runs) is True:
+    def append_element(self, experiment: any, element: any, cycles: int = 1) -> None:
+        if experiment.appendElement(element, cycles) is True:
             self.experiment = experiment
         else:
             logging.error("Failed to build experiment!")
             sys.exit()
+
+    #####################################
+    # TODO: Charge transfer resistance (EIS) - other side of Re-Im semi circle
+    # TODO: Bruce Vince method (for polymer electrolyte) to determine transference number - complicated!
+    # TODO: LSV - Cyclic voltammetry (DC). build_DC_potential_sweep_experiment to find oxidation and reduction points, maximise gap (ESW).
+    # TODO: CV - Pass / Fail based on decomposition in 2nd cycle? Not as easy to pull out single value, could be Meta but not optimised.
+
+    # TODO: Open circuit potential of system - stability? Not textbook, but some measure of deviation in readings.
+    # TODO: Measure OCP and Impedence - stability? Contamination = non stable readings. To look into acceptable stability ranges.
+    #####################################
 
     def build_EIS_potentiostatic_experiment(
         self,
@@ -292,7 +302,7 @@ class squidstat:
         points_per_decade: int = 20,
         voltage_bias: float = 0.0,
         voltage_amplitude: float = 0.1,
-        number_of_runs: int = 1,
+        cycles: int = 1,
     ) -> None:
         #Perform an potentiostatic EIS experiment on the potentiostat
 
@@ -308,7 +318,7 @@ class squidstat:
             voltage_amplitude,
         )
 
-        self.append_element(experiment, element, number_of_runs)
+        self.append_element(experiment, element, cycles)
         
     def build_cyclic_voltammetry_experiment(
         self,
@@ -318,7 +328,7 @@ class squidstat:
         end_voltage: float = 0,
         scan_rate: float = 0.1,
         sampling_interval: float = 0.01,
-        number_of_runs: int = 1,
+        cycles: int = 1,
     ) -> None:
         # Perform a cyclic voltammetry experiment on the potentiostat
 
@@ -335,7 +345,7 @@ class squidstat:
             sampling_interval,
         )
 
-        self.append_element(experiment, element, number_of_runs)
+        self.append_element(experiment, element, cycles)
 
     def build_constant_current_experiment(
         self,
@@ -526,7 +536,7 @@ class squidstat:
         end_voltage: float = 0.01,
         scan_rate: float = 0.1,
         sampling_interval: float = 0.01,
-        number_of_runs: int =1,
+        cycles: int =1,
     ) -> None:
         # Perform a square wave voltammetry experiment on the potentiostat
 
@@ -543,7 +553,7 @@ class squidstat:
             sampling_interval,
         )
 
-        self.append_element(experiment, element, number_of_runs)
+        self.append_element(experiment, element, cycles)
 
     def build_EIS_galvanostatic_experiment(
         self,
@@ -552,7 +562,7 @@ class squidstat:
         points_per_decade: int = 10,
         current_bias: float = 0.0,
         current_amplitude: float = 0.1,
-        number_of_runs: int = 1,
+        cycles: int = 1,
     ) -> None:
         # Perform an galvanostatic EIS experiment on the potentiostat
 
@@ -568,7 +578,7 @@ class squidstat:
             current_amplitude,
         )
 
-        self.append_element(experiment, element, number_of_runs)
+        self.append_element(experiment, element, cycles)
 
     def build_OCP_experiment(
             self, 

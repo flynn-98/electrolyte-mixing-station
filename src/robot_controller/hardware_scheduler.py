@@ -20,7 +20,7 @@ logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
                     handlers=[logging.FileHandler("mixing_station.log", mode="a"), logging.StreamHandler(sys.stdout)])
 
 class scheduler:
-    def __init__(self, device_name: str, resume: bool = False, home: bool = False) -> None:
+    def __init__(self, device_name: str, resume: bool = False, home: bool = False, clear: bool = False) -> None:
         # Read device data JSON
         self.json_file = "data/devices/hardcoded_values.json"
         device_data = self.read_json(device_name)
@@ -35,9 +35,6 @@ class scheduler:
         # Retrieve any requried variables from controllers
         self.max_dose = self.mixer.pipette.max_dose
 
-        # Set any required variables for controllers
-        self.mass_balance.correction = 50 #g
-
         # Retrieve hardcoded values and pass down
         self.mixer.gantry.x_correction = device_data["X_Gantry_Shift"]
         self.mixer.gantry.y_correction = device_data["Y_Gantry_Shift"]
@@ -50,7 +47,7 @@ class scheduler:
 
         logging.info("Successfully passed hardcoded values for " + device_name + ".")
 
-        self.electrolyte_volume = 0
+        self.electrolyte_volume = None
 
         # Declare variables for CSV read
         self.df = pd.DataFrame()
@@ -60,6 +57,7 @@ class scheduler:
 
         if resume is False:
             self.csv_filename = "campaign_start.csv"
+            self.save_csv()
         else:
             self.csv_filename = self.save_file
         
@@ -67,6 +65,9 @@ class scheduler:
         
         # Convert CSV file to df
         self.read_csv()
+
+        if clear is True:
+            self.clear_mixing_chamber()
 
     def read_json(self, device_name: str) -> dict:
         with open(self.json_file) as json_data:
@@ -141,7 +142,10 @@ class scheduler:
         # Save to current state
         self.save_csv()
 
-        logging.info(f'Recipe will result in a total electrolyte volume of {self.df["Dose Volume (uL)"].sum()/1000}mL.')
+        # Get total volume for later use by fluid handling kit
+        self.electrolyte_volume = self.df["Dose Volume (uL)"].sum()
+
+        logging.info(f'Recipe will result in a total electrolyte volume of {self.electrolyte_volume/1000}mL.')
 
     def calculate_cost(self) -> float:
         self.df["Total Cost"] =  self.df["Cost (/uL)"] * self.df["Dose Volume (uL)"]
@@ -153,11 +157,7 @@ class scheduler:
     def subtract_dose_volume(self, i: int, dose: float) -> None:
         self.df.loc[i, "Dose Volume (uL)"] -= dose
 
-    def synthesise(self, temp: float | None  = None) -> None:
-        if temp is not None:
-            logging.info(f"Setting early temperature target of {temp}C..")
-            self.test_cell.peltier.set_temperature(temp)
-
+    def synthesise(self) -> None:
         logging.info("Beginning electrolyte mixing..")
 
         # Check if pipette currently active, return if so
@@ -170,8 +170,8 @@ class scheduler:
             logging.error(ex)
             sys.exit()
 
-        # Get total volume for later use by fluid handling kit
-        self.electrolyte_volume = self.df["Dose Volume (uL)"].sum()
+        if self.electrolyte_volume is None:
+            self.electrolyte_volume = non_zero["Dose Volume (uL)"].sum()
             
         # Loop through all non zero constituents
         for i in non_zero.index.to_numpy(dtype=int):
@@ -199,18 +199,18 @@ class scheduler:
                     continue
 
                 # Aspirate using data from relevant df row, increment pot co ordinates
-                pot_volume = self.mixer.collect_volume(dose, pot_volume, relevant_row["Name"], i+1, relevant_row["Aspirate Scalar"], relevant_row["Aspirate Speed (uL/s)"])
+                new_volume = self.mixer.collect_volume(dose, pot_volume, relevant_row["Name"], i+1, relevant_row["Aspirate Scalar"], relevant_row["Aspirate Speed (uL/s)"])
 
                 # Move to mixing chamber and dispense
                 self.mixer.deliver_volume()
 
                 # Set new starting volume for next repeat
-                self.df.loc[i, "Container Volume (mL)"] = pot_volume
+                self.df.loc[i, "Container Volume (mL)"] = new_volume
 
                 # Update remaining dose volume
-                self.subtract_dose_volume(i, dose)
+                #self.subtract_dose_volume(i, dose)
 
-                # Save csv in current state (starting volumes up to date in case of unexpected interruption)
+                # Save csv in current state (starting volumes up to date in case of interruption)
                 self.save_csv()
 
             # Return pipette
@@ -219,11 +219,14 @@ class scheduler:
         # Trigger servo to mix electrolyte
         self.mixer.gantry.mix()
 
-        # Let mixture settle
-        time.sleep(1)
+        # Turn off fans to remove noise from mass readings
+        self.test_cell.peltier.turn_fans_off()
 
         # Take mass balance reading
         starting_mass = self.mass_balance.get_mass()
+
+        # Turn fans back on during pumping
+        self.test_cell.peltier.set_fan_modes()
 
         # Pump electrolyte to next stage
         self.fluid_handler.add_electrolyte(self.electrolyte_volume)
@@ -232,8 +235,14 @@ class scheduler:
         self.df["Mass (1e3*g)"] =  self.df["Density (g/mL)"] * self.df["Dose Volume (uL)"]
         total_mass = self.df["Mass (1e3*g)"].sum()/1000
         self.df = self.df.drop("Mass (1e3*g)", axis=1)
+
+        # Turn off fans to remove noise from mass readings
+        self.test_cell.peltier.turn_fans_off()
             
         self.mass_balance.check_mass_change(total_mass, starting_mass)
+
+        # Turn fans back on
+        self.test_cell.peltier.set_fan_modes()
 
         logging.info("Synthesis complete.")
 
@@ -249,15 +258,18 @@ class scheduler:
         # returns tuple (ohmics res, ionic conductivity)
         return impedance_results
     
-    def clean(self, cleaning_temp: float = 40) -> None:
-        logging.info("Beginning cell cleaning procedure.")
+    def clean(self, cleaning_temp: float = 40, wait_time: float = 10) -> None:
+        logging.info("Beginning cell cleaning procedure..")
 
         # Clean cell (acid)
-        self.fluid_handler.clean_cell(self.test_cell.test_cell_volume*1000)
+        self.fluid_handler.clean_cell(self.test_cell.test_cell_volume)
+        logging.info(f"Waiting for {wait_time}s to remove contaminants..")
+        time.sleep(wait_time)
+        self.fluid_handler.empty_cell(self.test_cell.test_cell_volume)
 
         # Future: Ethanol rinse here
-        self.fluid_handler.rinse_cell(self.test_cell.test_cell_volume*1000)
-        self.fluid_handler.empty_cell(self.test_cell.test_cell_volume*1000)
+        self.fluid_handler.rinse_cell(self.test_cell.test_cell_volume)
+        self.fluid_handler.empty_cell(self.test_cell.test_cell_volume)
 
         # Only run if test cell is below cleaning temperature
         if self.test_cell.peltier.get_t1_value() < cleaning_temp:
@@ -265,6 +277,11 @@ class scheduler:
             self.test_cell.peltier.wait_until_temperature(cleaning_temp, keep_on=False, steady_state=False)
 
         logging.info("Cell cleaning complete.")
+
+    def clear_mixing_chamber(self) -> None:
+        logging.info("Beginning chamber clearing procedure..")
+        self.fluid_handler.add_electrolyte(self.test_cell.test_cell_volume)
+        self.fluid_handler.empty_cell(self.test_cell.test_cell_volume)
 
     def run_life_test(self, N: int = 1) -> None:
         logging.info(f"Beginning {N}X life test..")
