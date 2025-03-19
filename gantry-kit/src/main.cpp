@@ -311,7 +311,7 @@ void gantryMove(float x, float y, float z) {
 
 void gantryZero() {
     // Move X to middle of workspace to avoid pipette rack
-    X_MOTOR.moveTo(jointLimit[0][0] / 3);
+    X_MOTOR.moveTo(jointLimit[0][0] / 2);
     Y_MOTOR.moveTo(0);
     Z_MOTOR.moveTo(0);
 
@@ -333,7 +333,7 @@ void gantryMix(int count, int servoDelay) {
 
     for (int i=0; i<count; i++) {
         mixer.write(servoHome + servoStart);
-        delay(servoDelay);
+        delay(3 * servoDelay);
         mixer.write(servoHome + servoEnd);
         delay(servoDelay);
     }
