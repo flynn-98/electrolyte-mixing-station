@@ -9,7 +9,7 @@ import serial
 logging.basicConfig(level = logging.INFO)
 
 class pipette:
-    def __init__(self, COM: str, sim: bool = False, maximum_power: float = 275, charge_pressure: float = 30, aspirate_speed: float = 100, Kp: int = 1, Ki: int = 20, Kd: int = 0) -> None:
+    def __init__(self, COM: str, sim: bool = False, maximum_power: float = 275, charge_pressure: float = 30, Kp: int = 1, Ki: int = 20, Kd: int = 0) -> None:
         self.sim = sim
 
         self.max_dose = 200 # ul
@@ -17,7 +17,6 @@ class pipette:
         self.calibrated_grad = 2.64 # ul/mbar
 
         self.max_pressure = 160 # mbar
-        self.aspirate_speed = aspirate_speed # uL/s
 
         self.charge_pressure = charge_pressure # mbar
         self.max_power = maximum_power #mW
@@ -346,7 +345,7 @@ class pipette:
             print(f"Aspirate Speed set to {aspirate_speed}uL/s.")
 
         # Aspirate pipette
-        self.aspirate(aspirate_volume, aspirate_constant, aspirate_speed, poly=False, check=True)
+        self.aspirate(aspirate_volume, aspirate_constant, aspirate_speed, check=True)
 
         print("Aspiration complete.")
         print(f"{aspirate_volume}uL extracted.")
