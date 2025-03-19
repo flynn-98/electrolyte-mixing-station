@@ -57,7 +57,6 @@ class scheduler:
 
         if resume is False:
             self.csv_filename = "campaign_start.csv"
-            self.save_csv()
         else:
             self.csv_filename = self.save_file
         
@@ -101,7 +100,7 @@ class scheduler:
         
         self.df = pd.read_csv(csv_location, header=0, names=df_columns.keys(), index_col=False).astype(df_columns)
         self.df.set_index("#")
-        #self.show_df()
+        self.save_csv()
         
         now = datetime.now()
         logging.info("Experiment ready to begin: " + now.strftime("%d/%m/%Y %H:%M:%S"))
