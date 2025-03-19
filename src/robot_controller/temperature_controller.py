@@ -43,20 +43,23 @@ class peltier:
         # Heating/Cooling control
         self.heating_tc = 60 #%
         self.heating_Kp = 7
-        self.heating_Ki = 0.005
+        self.heating_Ki = 0.01
         self.heating_Kd = 0.0
 
-        self.cooling_tc = 100 #%
+        self.cooling_tc = 80 #%
         self.cooling_Kp = 12
         self.cooling_Ki = 0.02
         self.cooling_Kd = 0.0
 
-        # TODO: subzero mode
+        self.subzero_tc = 100 #%
+        self.subzero_Kp = 14
+        self.subzero_Ki = 0.05
+        self.subzero_Kd = 0.0
 
-        self.cool_mode = False
         self.run_flag = False
 
         self.temp_threshold = 18 #C, to set heating or cooling parameters
+        self.subzero_threshold = -5 #C
         self.dead_band = 4 #+-% to prevent rapid switching
 
         if self.sim is False:
@@ -421,7 +424,6 @@ class peltier:
         return self.register_read(154)
     
     def set_heating_mode(self) -> None:
-        self.cool_mode = False
         if (self.set_max_tc(self.heating_tc) is True) and (self.set_pid_parameters(self.heating_Kp, self.heating_Ki, self.heating_Kd) is True):
                 logging.info("Temperature regulator set to heating mode.")
         else:
@@ -429,20 +431,28 @@ class peltier:
             sys.exit()
 
     def set_cooling_mode(self) -> None:
-        self.cool_mode = True
         if (self.set_max_tc(self.cooling_tc) is True) and (self.set_pid_parameters(self.cooling_Kp, self.cooling_Ki, self.cooling_Kd) is True):
                 logging.info("Temperature regulator set to cooling mode.")
         else:
             logging.error("Failed to set temperature regulator to cooling mode.")
             sys.exit()
 
+    def set_subzero_mode(self) -> None:
+        if (self.set_max_tc(self.subzero_tc) is True) and (self.set_pid_parameters(self.subzero_Kp, self.subzero_Ki, self.subzero_Kd) is True):
+                logging.info("Temperature regulator set to subzero mode.")
+        else:
+            logging.error("Failed to set temperature regulator to subzero mode.")
+            sys.exit()
+
     def set_temperature(self, temp: float) -> None:
         self.assess_status()
         
-        if temp < self.temp_threshold:
+        if temp >= self.temp_threshold:
+            self.set_heating_mode()
+        elif temp >= self.subzero_threshold:
             self.set_cooling_mode()
         else:
-            self.set_heating_mode()
+            self.set_subzero_mode()
 
         if self.register_write(0, self.clamp(temp, self.min_temp, self.max_temp)) is True:
             logging.info(f"Peltier target temperature set to {temp}C.")
