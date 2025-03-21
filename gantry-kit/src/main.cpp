@@ -44,7 +44,7 @@ const float STEPS_REV = 200.0;
 const float MICROSTEPS = 4.0;
 
 const float STAGE_SPEED = 1000.0 * MICROSTEPS; //microsteps/s
-const float TENSION_SPEED = 50.0 * MICROSTEPS; //microsteps/s
+const float TENSION_SPEED = 200.0 * MICROSTEPS; //microsteps/s
 const float HOMING_SPEED = 50.0 * MICROSTEPS; //microsteps/s
 
 const float MAX_ACCEL = 350.0 * MICROSTEPS; //microsteps/s2
@@ -60,10 +60,10 @@ const float ROD_PITCH = 2.0; //mm
 // Parameters for Mixer (Servo)
 const int servoHome = 90;
 const int servoStart = 20; // +Home
-const int servoEnd = 50; // +Home
+const int servoEnd = 60; // +Home
 
 // Parameters for pipette rack
-const float tension_rotations = 1.5;
+const float tension_rotations = 0.15;
 const float release_rotations = -0.05;
 
 // Define steppers with pins (STEP, DIR)
@@ -157,23 +157,10 @@ void zQuickHome() {
 };
 
 void pinchPipettes() {
-    Z_MOTOR.setMaxSpeed(Z_HOMING_SPEED);
-
-    // Initial tensioning
-    E_MOTOR.move(revsToSteps(tension_rotations/4));
+    // Tensioning
+    E_MOTOR.move(revsToSteps(tension_rotations));
     E_MOTOR.runToPosition();
 
-    // Move z stage slowly whilst tensioning pipette
-    E_MOTOR.move(revsToSteps(3*tension_rotations/4));
-    Z_MOTOR.moveTo(mmToSteps(4*jointLimit[1][2]/5, false, 2));
-
-    // Pull on pipettes whilst lifting z stage
-    while ( (E_MOTOR.distanceToGo() != 0) || (Z_MOTOR.distanceToGo() != 0) ) {
-        E_MOTOR.run();
-        Z_MOTOR.run();
-    }
-
-    Z_MOTOR.setMaxSpeed(Z_STAGE_SPEED);
     zQuickHome();
 
     // zQuickhome already reports back to PC
@@ -311,7 +298,7 @@ void gantryMove(float x, float y, float z) {
 
 void gantryZero() {
     // Move X to middle of workspace to avoid pipette rack
-    X_MOTOR.moveTo(jointLimit[0][0] / 2);
+    X_MOTOR.moveTo(mmToSteps(jointLimit[0][0]/2, true, 0));
     Y_MOTOR.moveTo(0);
     Z_MOTOR.moveTo(0);
 
@@ -333,9 +320,9 @@ void gantryMix(int count, int servoDelay) {
 
     for (int i=0; i<count; i++) {
         mixer.write(servoHome + servoStart);
-        delay(3 * servoDelay);
-        mixer.write(servoHome + servoEnd);
         delay(servoDelay);
+        mixer.write(servoHome + servoEnd);
+        delay(2*servoDelay);
     }
     
     mixer.write(servoHome);

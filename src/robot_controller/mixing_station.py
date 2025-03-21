@@ -32,7 +32,7 @@ class electrolyte_mixer:
                               [self.pipette_x_location, 10.2]
                             ]
         
-        self.pipette_pick_height = -47.5 #mm (from CAD)
+        self.pipette_pick_height = -49 #mm (from CAD)
         self.pipette_lead_in = 12 #mm to position pipette to the right of rack (in X direction) when returning pipette
 
         # File to store last known active pipette for recovery
