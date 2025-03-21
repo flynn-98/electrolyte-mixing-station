@@ -13,8 +13,8 @@ class pipette:
         self.sim = sim
 
         self.max_dose = 200 # ul
-        self.min_dose = 1.349 # ul
-        self.calibrated_grad = 2.64 # ul/mbar
+        self.min_dose = 0.4 # ul
+        self.calibrated_grad = 2.76 # ul/mbar
 
         self.max_pressure = 160 # mbar
 
@@ -81,9 +81,9 @@ class pipette:
     def get_aspiration_pressure(self, volume: float, scalar: float = 1.0) -> float:
         # Constant as function of volume (1/2.64 = 0.38mbar/ul)
         if (volume >= self.min_dose * 2):
-            return round((volume - scalar * self.min_dose) / self.calibrated_grad, 2)
+            return round(scalar * (volume - self.min_dose) / self.calibrated_grad, 3)
         else:
-            return round(volume / self.calibrated_grad, 2)
+            return round(volume / self.calibrated_grad, 3)
     
     def register_write(self, REGISTER_NUMBER: int, VALUE: float) -> bool:
         # The PCB responds to “write” commands by echoing the command back. 
