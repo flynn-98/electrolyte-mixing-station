@@ -25,41 +25,41 @@ class peltier:
         self.fan_current = 2.0 #A
         self.fan_voltage = 12.0
 
-        # Thermisistor Steinhart coefficients NTC1
+        # Thermisistor Steinhart coefficients NTC1 (testing only)
         self.A_coeff_1 = 1.396917e-3
         self.B_coeff_1 = 2.378257e-4
         self.C_coeff_1 = 9.372652e-8
 
-        # Thermisistor Steinhart coefficients NTC2
+        # Thermisistor Steinhart coefficients NTC2 (standard type)
         self.A_coeff_2 = 1.0373e-3
         self.B_coeff_2 = 2.3317e-4
         self.C_coeff_2 = 8.3896e-8
 
         # Steady state temperature
         self.allowable_error = 0.5 #C
-        self.steady_state = 120 #s (2mins)
+        self.steady_state = 180 #s (3mins)
         self.timeout = 1800 #s (30mins)
 
         # Heating/Cooling control
         self.heating_tc = 60 #%
-        self.heating_Kp = 7
+        self.heating_Kp = 8
         self.heating_Ki = 0.01
         self.heating_Kd = 0.0
 
-        self.cooling_tc = 80 #%
+        self.cooling_tc = 85 #%
         self.cooling_Kp = 12
-        self.cooling_Ki = 0.02
+        self.cooling_Ki = 0.05
         self.cooling_Kd = 0.0
 
         self.subzero_tc = 100 #%
         self.subzero_Kp = 14
-        self.subzero_Ki = 0.05
+        self.subzero_Ki = 0.1
         self.subzero_Kd = 0.0
 
         self.run_flag = False
 
-        self.temp_threshold = 18 #C, to set heating or cooling parameters
-        self.subzero_threshold = -5 #C
+        self.temp_threshold = 16 #C, to set heating or cooling parameters
+        self.subzero_threshold = 0 #C
         self.dead_band = 4 #+-% to prevent rapid switching
 
         if self.sim is False:
