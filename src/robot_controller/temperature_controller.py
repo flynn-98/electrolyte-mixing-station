@@ -58,7 +58,7 @@ class peltier:
 
         self.run_flag = False
 
-        self.temp_threshold = 16 #C, to set heating or cooling parameters
+        self.temp_threshold = 15 #C, to set heating or cooling parameters
         self.subzero_threshold = 0 #C
         self.dead_band = 4 #+-% to prevent rapid switching
 
@@ -462,9 +462,14 @@ class peltier:
 
         self.set_run_flag()
     
-    def wait_until_temperature(self, value: float, sample_rate: float = 0.2, keep_on: bool = True, steady_state: bool = True) -> tuple[bool, float, float]:
+    def wait_until_temperature(self, value: float, sample_rate: float = 0.2, keep_on: bool = True, steady_state: float | None = None) -> tuple[bool, float, float]:
         if self.sim is True:
             return True, 0.0, 0.0
+        
+        if steady_state is not None:
+            time_check = steady_state
+        else:
+            time_check = self.steady_state
         
         self.set_temperature(value)
         global_start = time.time()
@@ -476,15 +481,7 @@ class peltier:
             stats = np.empty((1,))
             local_start = time.time()
 
-            while (abs(value - temperature) < self.allowable_error) and (time.time() - local_start < self.steady_state):
-                
-                if steady_state is False:
-                    logging.info(f"Temperature controller successfully reached {value}C in {time.time() - global_start}s.")
-
-                    if keep_on is False:
-                        self.clear_run_flag()
-
-                    return True, 0.0, 0.0
+            while (abs(value - temperature) < self.allowable_error) and (time.time() - local_start < time_check):
                 
                 temperature = self.get_t1_value()
                 stats = np.append(stats, np.array([temperature]), axis=0)
@@ -492,7 +489,7 @@ class peltier:
                 time.sleep(1 / sample_rate)
 
             # Check if steady state timeout reached
-            if (time.time() - local_start) >= self.steady_state:
+            if (time.time() - local_start) >= time_check:
                 mean = round(stats.mean(), 2)
                 std = round(stats.std(), 3)
 

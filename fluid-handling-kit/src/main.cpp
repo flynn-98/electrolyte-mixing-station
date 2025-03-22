@@ -129,6 +129,32 @@ void emptyCell(float vol) {
     relayOff();
 };
 
+void cleanCell(float vol) {
+    relayOn();
+
+    StartTime = ceil( millis() / 1000 );
+
+    // No limits for Pump
+    PUMP_3.move(volToSteps(vol));
+
+    // Run until complete
+    PUMP_3.runToPosition();
+
+    CurrentTime = ceil( millis() / 1000 );
+    ElapsedTime = CurrentTime - StartTime;
+
+    // Report back to PC (before depriming to save time)
+    Serial.println("Pump complete in " + String(ElapsedTime) + "s");
+
+    // Deprime line to avoid dripping into cell
+    PUMP_3.move(-1 * volToSteps(vol));
+
+    // Run until complete
+    PUMP_3.runToPosition();
+
+    relayOff();
+};
+
 void rinseCell(float vol) {
     relayOn();
 
@@ -143,33 +169,15 @@ void rinseCell(float vol) {
     CurrentTime = ceil( millis() / 1000 );
     ElapsedTime = CurrentTime - StartTime;
 
-    // Report back to PC
+    // Report back to PC (before depriming to save time)
     Serial.println("Pump complete in " + String(ElapsedTime) + "s");
-    relayOff();
-};
-
-void cleanCell(float vol) {
-    relayOn();
-
-    StartTime = ceil( millis() / 1000 );
-
-    // No limits for Pump
-    PUMP_3.move(volToSteps(vol));
-
-    // Run until complete
-    PUMP_3.runToPosition();
 
     // Deprime line to avoid dripping into cell
-    PUMP_3.move(-1 * volToSteps(vol));
+    PUMP_4.move(-1 * volToSteps(vol));
 
     // Run until complete
-    PUMP_3.runToPosition();
+    PUMP_4.runToPosition();
 
-    CurrentTime = ceil( millis() / 1000 );
-    ElapsedTime = CurrentTime - StartTime;
-
-    // Report back to PC
-    Serial.println("Pump complete in " + String(ElapsedTime) + "s");
     relayOff();
 };
 

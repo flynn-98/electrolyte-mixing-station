@@ -314,9 +314,19 @@ void gantryZero() {
 }
 
 void gantryMix(int count, int servoDelay) {
-    StartTime = ceil( millis() / 1000 );
+    int split_counts = ceil(count/2);
 
-    for (int i=0; i<count; i++) {
+    for (int i=0; i<split_counts; i++) {
+        mixer.write(servoHome + servoStart);
+        delay(servoDelay);
+        mixer.write(servoHome + servoEnd);
+        delay(2*servoDelay);
+    }
+
+    // Report back to PC
+    Serial.println("First half of " + String(count) + " mixing counts complete");
+
+    for (int i=0; i<split_counts; i++) {
         mixer.write(servoHome + servoStart);
         delay(servoDelay);
         mixer.write(servoHome + servoEnd);
@@ -324,12 +334,6 @@ void gantryMix(int count, int servoDelay) {
     }
     
     mixer.write(servoHome);
-
-    CurrentTime = ceil( millis() / 1000 );
-    ElapsedTime = CurrentTime - StartTime;
-
-    // Report back to PC
-    Serial.println("Mix complete in " + String(ElapsedTime) + "s");
 };
 
 void setup() {

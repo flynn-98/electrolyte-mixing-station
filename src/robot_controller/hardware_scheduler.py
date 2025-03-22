@@ -247,7 +247,7 @@ class scheduler:
         impedance_results = self.test_cell.single_temperature_analysis(temp)
         
         # Empty cell
-        self.fluid_handler.empty_cell(self.electrolyte_volume)
+        self.fluid_handler.empty_cell(fluid_vol=self.electrolyte_volume)
 
         logging.info("Analysis complete.")
 
@@ -257,21 +257,16 @@ class scheduler:
     def clean(self, cleaning_temp: float = 40, wait_time: float = 10) -> None:
         logging.info("Beginning cell cleaning procedure..")
 
-        # Clean cell (acid)
-        self.fluid_handler.clean_cell(self.test_cell.test_cell_volume)
-        logging.info(f"Waiting for {wait_time}s to remove contaminants..")
-        time.sleep(wait_time)
+        # Clean cell (acid) and empty
+        self.fluid_handler.clean_cell(fluid_vol=self.test_cell.test_cell_volume, wait_time=wait_time)
 
-        self.fluid_handler.empty_cell(self.test_cell.test_cell_volume)
-
-        # Ethanol rinse followed by heating
-        self.fluid_handler.rinse_cell(self.test_cell.test_cell_volume)
-        self.fluid_handler.empty_cell(self.test_cell.test_cell_volume)
+        # Ethanol rinse followed by empty and heating
+        self.fluid_handler.rinse_cell(fluid_vol=self.test_cell.test_cell_volume)
 
         # Only run if test cell is below cleaning temperature
         if self.test_cell.peltier.get_t1_value() < cleaning_temp:
             logging.info(f"Raising temperature to {cleaning_temp}C to remove liquid residues..")
-            self.test_cell.peltier.wait_until_temperature(cleaning_temp, keep_on=False, steady_state=False)
+            self.test_cell.peltier.wait_until_temperature(cleaning_temp, keep_on=False, steady_state=wait_time)
 
         logging.info("Cell cleaning complete.")
 

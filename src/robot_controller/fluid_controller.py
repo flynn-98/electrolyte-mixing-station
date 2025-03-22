@@ -1,6 +1,7 @@
 import logging
 import math
 import sys
+import time
 
 import serial
 
@@ -63,7 +64,16 @@ class fluid_handler:
             self.ser.write(f"addElectrolyte({vol})".encode())
             self.get_response()
 
-    def clean_cell(self, fluid_vol: float, tube_length: float = 500.0, overpump: float = 1.2) -> None:
+    def empty_cell(self, fluid_vol: float, tube_length: float = 500.0, overpump: float = 1.2) -> None:
+        logging.info(f"Pumping {fluid_vol}uL from test cell to waste..")
+        tube_vol = math.pi * tube_length * 1e-3 # 2mm ID tubing (Area = Pi)
+        vol = overpump * (fluid_vol / 1000 + tube_vol) #ml
+        
+        if self.sim is False:
+            self.ser.write(f"emptyCell({vol})".encode())
+            self.get_response()
+
+    def clean_cell(self, fluid_vol: float, wait_time: float, tube_length: float = 500.0, overpump: float = 1.2) -> None:
         logging.info(f"Pumping {fluid_vol}uL of cleaning solution to test cell..")
         tube_vol = math.pi * tube_length * 1e-3 # 2mm ID tubing (Area = Pi)
         vol = overpump * (fluid_vol / 1000 + tube_vol) #ml
@@ -71,6 +81,11 @@ class fluid_handler:
         if self.sim is False:
             self.ser.write(f"cleanCell({vol})".encode())
             self.get_response()
+
+            logging.info(f"Waiting for {wait_time}s to remove contaminants..")
+            time.sleep(wait_time)
+
+            self.empty_cell(vol)   
 
     def rinse_cell(self, fluid_vol: float, tube_length: float = 500.0, overpump: float = 1.2) -> None:
         logging.info(f"Pumping {fluid_vol}uL of ethanol to test cell..")
@@ -81,11 +96,4 @@ class fluid_handler:
             self.ser.write(f"rinseCell({vol})".encode())
             self.get_response()
 
-    def empty_cell(self, fluid_vol: float, tube_length: float = 500.0, overpump: float = 1.2) -> None:
-        logging.info(f"Pumping {fluid_vol}uL from test cell to waste..")
-        tube_vol = math.pi * tube_length * 1e-3 # 2mm ID tubing (Area = Pi)
-        vol = overpump * (fluid_vol / 1000 + tube_vol) #ml
-        
-        if self.sim is False:
-            self.ser.write(f"emptyCell({vol})".encode())
-            self.get_response()
+            self.empty_cell(vol)
