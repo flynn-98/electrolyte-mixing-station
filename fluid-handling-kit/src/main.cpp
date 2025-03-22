@@ -129,6 +129,25 @@ void emptyCell(float vol) {
     relayOff();
 };
 
+void rinseCell(float vol) {
+    relayOn();
+
+    StartTime = ceil( millis() / 1000 );
+
+    // No limits for Pump
+    PUMP_4.move(volToSteps(vol));
+
+    // Run until complete
+    PUMP_4.runToPosition();
+
+    CurrentTime = ceil( millis() / 1000 );
+    ElapsedTime = CurrentTime - StartTime;
+
+    // Report back to PC
+    Serial.println("Pump complete in " + String(ElapsedTime) + "s");
+    relayOff();
+};
+
 void cleanCell(float vol) {
     relayOn();
 
@@ -224,6 +243,12 @@ void loop() {
             
             // Call action using received variables
             emptyCell(vol);
+        }
+        else if (action == "rinseCell") {
+            vol = Serial.readStringUntil(')').toFloat();
+            
+            // Call action using received variables
+            rinseCell(vol);
         }
         else if (action == "returnState") {
             vol = Serial.readStringUntil(')').toFloat();

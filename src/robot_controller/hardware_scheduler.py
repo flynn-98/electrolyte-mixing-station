@@ -171,6 +171,11 @@ class scheduler:
 
         if self.electrolyte_volume is None:
             self.electrolyte_volume = non_zero["Dose Volume (uL)"].sum()
+
+        # Calculate mass for later checks
+        self.df["Mass (1e3*g)"] =  self.df["Density (g/mL)"] * self.df["Dose Volume (uL)"]
+        total_mass = self.df["Mass (1e3*g)"].sum()/1000
+        self.df = self.df.drop("Mass (1e3*g)", axis=1)
             
         # Loop through all non zero constituents
         for i in non_zero.index.to_numpy(dtype=int):
@@ -206,9 +211,6 @@ class scheduler:
                 # Set new starting volume for next repeat
                 self.df.loc[i, "Container Volume (mL)"] = pot_volume
 
-                # Update remaining dose volume
-                #self.subtract_dose_volume(i, dose)
-
                 # Save csv in current state (starting volumes up to date in case of interruption)
                 self.save_csv()
 
@@ -229,11 +231,6 @@ class scheduler:
 
         # Pump electrolyte to next stage
         self.fluid_handler.add_electrolyte(self.electrolyte_volume)
-
-        # Mass Balance checks
-        self.df["Mass (1e3*g)"] =  self.df["Density (g/mL)"] * self.df["Dose Volume (uL)"]
-        total_mass = self.df["Mass (1e3*g)"].sum()/1000
-        self.df = self.df.drop("Mass (1e3*g)", axis=1)
 
         # Turn off fans to remove noise from mass readings
         self.test_cell.peltier.turn_fans_off()
@@ -264,9 +261,10 @@ class scheduler:
         self.fluid_handler.clean_cell(self.test_cell.test_cell_volume)
         logging.info(f"Waiting for {wait_time}s to remove contaminants..")
         time.sleep(wait_time)
+
         self.fluid_handler.empty_cell(self.test_cell.test_cell_volume)
 
-        # Future: Ethanol rinse here
+        # Ethanol rinse followed by heating
         self.fluid_handler.rinse_cell(self.test_cell.test_cell_volume)
         self.fluid_handler.empty_cell(self.test_cell.test_cell_volume)
 

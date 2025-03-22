@@ -63,8 +63,7 @@ const int servoStart = 20; // +Home
 const int servoEnd = 60; // +Home
 
 // Parameters for pipette rack
-const float tension_rotations = 0.15;
-const float release_rotations = -0.05;
+const float tension_rotations = 0.05;
 
 // Define steppers with pins (STEP, DIR)
 AccelStepper X_MOTOR(AccelStepper::DRIVER, X_STEP, X_DIR); 
@@ -162,12 +161,11 @@ void pinchPipettes() {
     E_MOTOR.runToPosition();
 
     zQuickHome();
-
     // zQuickhome already reports back to PC
 };
 
 void releasePipettes() {
-    E_MOTOR.move(revsToSteps(release_rotations));
+    E_MOTOR.move(revsToSteps(-1 * tension_rotations));
     E_MOTOR.runToPosition();
 
     // Report back to PC

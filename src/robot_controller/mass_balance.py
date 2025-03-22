@@ -53,7 +53,7 @@ class mass_reader:
     def get_mass(self) -> float:        
         if self.sim is False:
             # Wait for balance to settle in case fluid is moving
-            time.sleep(3)
+            time.sleep(5)
             received = False
 
             while received is False:
