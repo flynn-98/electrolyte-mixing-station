@@ -81,6 +81,7 @@ class gantry:
             self.get_response()
 
     def zQuickHome(self) -> None:
+        logging.info("Homing z axis..")
         if self.sim is False:
             self.ser.write("zQuickHome()".encode())
             self.get_response()
@@ -94,12 +95,18 @@ class gantry:
             self.ser.write(f"mix({count}, {delay})".encode())
             self.get_response()
 
-    def pinch(self) -> None:
+    def release(self) -> None:
+        logging.info("Releasing pipette rack..")
+        if self.sim is False:
+            self.ser.write("release()".encode())
+            self.get_response()
+
+    def remove_pipette(self) -> None:
+        logging.info("Pinching pipette rack..")
         if self.sim is False:
             self.ser.write("pinch()".encode())
             self.get_response()
 
-    def release(self) -> None:
-        if self.sim is False:
-            self.ser.write("release()".encode())
-            self.get_response()
+        self.zQuickHome()
+        self.release()
+    

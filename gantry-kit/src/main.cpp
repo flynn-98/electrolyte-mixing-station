@@ -160,8 +160,7 @@ void pinchPipettes() {
     E_MOTOR.move(revsToSteps(tension_rotations));
     E_MOTOR.runToPosition();
 
-    zQuickHome();
-    // zQuickhome already reports back to PC
+    Serial.println("Pipette rack successfully pinched");
 };
 
 void releasePipettes() {
@@ -169,7 +168,7 @@ void releasePipettes() {
     E_MOTOR.runToPosition();
 
     // Report back to PC
-    Serial.println("Pipettes successfully released");
+    Serial.println("Pipette rack successfully released");
 };
 
 void motorsRun() {
@@ -311,7 +310,7 @@ void gantryZero() {
     homed = true;
 
     // gantrySoftHome();
-}
+};
 
 void gantryMix(int count, int servoDelay) {
     int split_counts = ceil(count/2);

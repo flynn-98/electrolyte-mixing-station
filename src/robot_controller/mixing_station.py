@@ -75,11 +75,11 @@ class electrolyte_mixer:
         with open(self.pipette_file, 'w+') as filehandler:
                 filehandler.write(f"{pipette_no}")
 
-        # Move into pipette rack
+        # Move up from pipette rack - home to remove any errors from collision
         logging.info(f"Raising Pipette #{pipette_no}..")
         self.gantry.zQuickHome()
 
-        # Move into pipette rack
+        # Move away from pipette rack
         logging.info("Moving away from pipette rack..")
         self.gantry.move(x + self.pipette_lead_in, y, 0)
 
@@ -110,11 +110,8 @@ class electrolyte_mixer:
         logging.info(f"Delivering Pipette #{active_pipette} to rack..")
         self.gantry.move(x, y, self.pipette_pick_height)
 
-        logging.info("Pinching and raising pipette module..")
-        self.gantry.pinch()
-        #self.gantry.zQuickHome()
-        self.gantry.release()
-        logging.info("Pipettes released.")
+        logging.info("Removing pipette from module..")
+        self.gantry.remove_pipette()
 
         with open(self.pipette_file, 'w+') as filehandler:
                 filehandler.write("0")
