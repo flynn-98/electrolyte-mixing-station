@@ -107,6 +107,8 @@ class gantry:
             self.ser.write("pinch()".encode())
             self.get_response()
 
-        self.zQuickHome()
+            self.ser.write("removePipette()".encode())
+            self.get_response()
+
         self.release()
-    
+        self.zQuickHome()

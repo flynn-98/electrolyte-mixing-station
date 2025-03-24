@@ -32,7 +32,7 @@ class electrolyte_mixer:
                               [self.pipette_x_location, 10.2]
                             ]
         
-        self.pipette_pick_height = -49 #mm (from CAD)
+        self.pipette_pick_height = -48 #mm (from CAD)
         self.pipette_lead_in = 12 #mm to position pipette to the right of rack (in X direction) when returning pipette
 
         # File to store last known active pipette for recovery
@@ -110,8 +110,11 @@ class electrolyte_mixer:
         logging.info(f"Delivering Pipette #{active_pipette} to rack..")
         self.gantry.move(x, y, self.pipette_pick_height)
 
+        # Move to lead in position just to be safe (if pipette failed to remove)
         logging.info("Removing pipette from module..")
         self.gantry.remove_pipette()
+
+        self.gantry.move(x + self.pipette_lead_in, y, 0)
 
         with open(self.pipette_file, 'w+') as filehandler:
                 filehandler.write("0")

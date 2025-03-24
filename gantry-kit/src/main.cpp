@@ -44,7 +44,7 @@ const float STEPS_REV = 200.0;
 const float MICROSTEPS = 4.0;
 
 const float STAGE_SPEED = 1000.0 * MICROSTEPS; //microsteps/s
-const float TENSION_SPEED = 200.0 * MICROSTEPS; //microsteps/s
+const float TENSION_SPEED = 50.0 * MICROSTEPS; //microsteps/s
 const float HOMING_SPEED = 50.0 * MICROSTEPS; //microsteps/s
 
 const float MAX_ACCEL = 350.0 * MICROSTEPS; //microsteps/s2
@@ -63,7 +63,9 @@ const int servoStart = 20; // +Home
 const int servoEnd = 60; // +Home
 
 // Parameters for pipette rack
-const float tension_rotations = 0.05;
+const float tension_rotations = 0.15;
+const float release_rotations = 0.05;
+const float release_height = 8.0; //mm
 
 // Define steppers with pins (STEP, DIR)
 AccelStepper X_MOTOR(AccelStepper::DRIVER, X_STEP, X_DIR); 
@@ -88,7 +90,7 @@ const float jointLimit[2][3] = {
 };
 
 // Overshoot value used during Homing, any gantry drift +- this value will be corrected (in theory!)
-const float drift = 4; //mm
+const float drift = 2; //mm
 
 // Joint direction coefficients: 1 or -1, for desired motor directions
 // X = 0, Y = 1, Z = 2
@@ -160,15 +162,25 @@ void pinchPipettes() {
     E_MOTOR.move(revsToSteps(tension_rotations));
     E_MOTOR.runToPosition();
 
-    Serial.println("Pipette rack successfully pinched");
+    Serial.println("Pipette rack pinched");
+};
+
+void removePipette() {
+    Z_MOTOR.setMaxSpeed(Z_HOMING_SPEED);
+    Z_MOTOR.move(mmToSteps(release_height, false, 2));
+
+    Z_MOTOR.runToPosition();
+    Z_MOTOR.setMaxSpeed(Z_STAGE_SPEED);
+
+    Serial.println("Active pipette removed");
 };
 
 void releasePipettes() {
-    E_MOTOR.move(revsToSteps(-1 * tension_rotations));
+    E_MOTOR.move(revsToSteps(-1 * release_rotations));
     E_MOTOR.runToPosition();
 
     // Report back to PC
-    Serial.println("Pipette rack successfully released");
+    Serial.println("Pipette rack released");
 };
 
 void motorsRun() {
@@ -426,6 +438,11 @@ void loop() {
             x = Serial.readStringUntil(')').toFloat();
 
             pinchPipettes();
+        }
+        else if (action == "removePipette") {
+            x = Serial.readStringUntil(')').toFloat();
+
+            removePipette();
         }
         else if (action == "release") {
             x = Serial.readStringUntil(')').toFloat();
