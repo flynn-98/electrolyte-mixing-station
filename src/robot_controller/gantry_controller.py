@@ -86,13 +86,13 @@ class gantry:
             self.ser.write("zQuickHome()".encode())
             self.get_response()
 
-    def mix(self, count: int = 25, delay: int = 100) -> None:
-        logging.info(f"Mixing electrolyte {count} times with a {delay}ms delay.")
+    def mix(self, count: int = 25, displacement: float = 0.125, speed: float = 0.5) -> None:
+        logging.info(f"Mixing electrolyte {count}x times to {displacement}revs at {speed}revs/s..")
         if self.sim is False:
             # Move away from mixing chamber first
             self.move(0, 0, 0)
 
-            self.ser.write(f"mix({count}, {delay})".encode())
+            self.ser.write(f"mix({count},{displacement},{speed})".encode())
             self.get_response()
 
     def release(self) -> None:

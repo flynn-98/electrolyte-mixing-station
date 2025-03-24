@@ -44,7 +44,6 @@ const float STEPS_REV = 200.0;
 const float MICROSTEPS = 4.0;
 
 const float STAGE_SPEED = 1000.0 * MICROSTEPS; //microsteps/s
-const float TENSION_SPEED = 50.0 * MICROSTEPS; //microsteps/s
 const float HOMING_SPEED = 50.0 * MICROSTEPS; //microsteps/s
 
 const float MAX_ACCEL = 350.0 * MICROSTEPS; //microsteps/s2
@@ -53,14 +52,15 @@ const float Z_STAGE_SPEED = 1400.0 * MICROSTEPS; //microsteps/s
 const float Z_HOMING_SPEED = 150 * MICROSTEPS; //microsteps/s
 const float Z_ACCEL = 500.0 * MICROSTEPS; //microsteps/s2
 
+const float MAX_MIX_SPEED = 200.0 * MICROSTEPS; //microsteps/s
+
 // Parameters needed to convert distances (mm) to motor steps
 const float PULLEY_RADIUS = 6.34; //mm
 const float ROD_PITCH = 2.0; //mm
 
-// Parameters for Mixer (Servo)
-//const int servoHome = 90;
-const int servoStart = 20; // +Home
-const int servoEnd = 60; // +Home
+// Parameters for Mixer (Stepper)
+const float stepperStart = 20; // +Home
+const float stepperEnd = 60; // +Home
 
 // Parameters for Tensioner (Servo)
 const int servoHome = 90;
@@ -98,7 +98,7 @@ const float drift = 4; //mm
 
 // Joint direction coefficients: 1 or -1, for desired motor directions
 // X = 0, Y = 1, Z = 2
-const float motorDir[4] = {1, 1, -1, 1};
+const float motorDir[3] = {1, 1, -1};
 
 // Maximum time in Loop before idle mode (s)
 const unsigned long HomeTime = 90;
@@ -110,7 +110,8 @@ float z = 0;
 
 float vol = 0;
 int count = 0;
-int servoDelay = 0;
+float displacement = 0;
+float mix_speed = 0;
 
 unsigned long StartTime;
 unsigned long CurrentTime;
@@ -119,6 +120,7 @@ unsigned long ElapsedTime;
 
 long steps;
 String action;
+
 bool homed = false;
 
 void relayOn() {
@@ -131,7 +133,7 @@ void relayOff() {
 };
 
 long revsToSteps(float rotations) {
-    return motorDir[3] * MICROSTEPS * STEPS_REV * rotations;
+    return MICROSTEPS * STEPS_REV * rotations;
 };
 
 long mmToSteps(float milli, bool horizontal, int motor) {
@@ -315,27 +317,30 @@ void gantryZero() {
     // gantrySoftHome();
 };
 
-void gantryMix(int count, int servoDelay) {
+void gantryMix(int count, float displacement, float mix_speed) {
     int split_counts = ceil(count/2);
+    steps = revsToSteps(displacement);
+
+    M_MOTOR.setSpeed(revsToSteps(mix_speed));
 
     for (int i=0; i<split_counts; i++) {
-        tensioner.write(servoHome + servoStart);
-        delay(servoDelay);
-        tensioner.write(servoHome + servoEnd);
-        delay(2*servoDelay);
+        M_MOTOR.moveTo(steps);
+        M_MOTOR.runSpeedToPosition();
+
+        M_MOTOR.moveTo(0);
+        M_MOTOR.runSpeedToPosition();
     }
 
     // Report back to PC
-    Serial.println("First half of " + String(count) + " mixing counts complete");
+    Serial.println("Mixing in progress");
 
     for (int i=0; i<split_counts; i++) {
-        tensioner.write(servoHome + servoStart);
-        delay(servoDelay);
-        tensioner.write(servoHome + servoEnd);
-        delay(2*servoDelay);
+        M_MOTOR.moveTo(steps);
+        M_MOTOR.runSpeedToPosition();
+
+        M_MOTOR.moveTo(0);
+        M_MOTOR.runSpeedToPosition();
     }
-    
-    tensioner.write(servoHome);
 };
 
 void setup() {
@@ -362,7 +367,7 @@ void setup() {
   Y_MOTOR.setAcceleration(MAX_ACCEL);
   Z_MOTOR.setAcceleration(Z_ACCEL);
 
-  M_MOTOR.setMaxSpeed(TENSION_SPEED);
+  M_MOTOR.setMaxSpeed(MAX_MIX_SPEED);
   M_MOTOR.setAcceleration(MAX_ACCEL);
 
   X_MOTOR.setMaxSpeed(STAGE_SPEED);
@@ -373,6 +378,7 @@ void setup() {
   X_MOTOR.setCurrentPosition(0);
   Y_MOTOR.setCurrentPosition(0);
   Z_MOTOR.setCurrentPosition(0);
+  M_MOTOR.setCurrentPosition(0);
 
   Serial.begin(9600);
   tensioner.write(servoHome);
@@ -421,9 +427,10 @@ void loop() {
         }
         else if (action == "mix") {
             count = Serial.readStringUntil(',').toInt();
-            servoDelay = Serial.readStringUntil(')').toInt();
+            displacement = Serial.readStringUntil(',').toFloat();
+            mix_speed = Serial.readStringUntil(')').toFloat();
 
-            gantryMix(count, servoDelay);
+            gantryMix(count, displacement, mix_speed);
         }
         else if (action == "pinch") {
             x = Serial.readStringUntil(')').toFloat();
