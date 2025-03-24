@@ -15,8 +15,8 @@ const int Z_STEP = 6;
 const int Z_DIR = 7;
 
 // Pins for extra stepper motor
-const int E_STEP = 8;
-const int E_DIR = 9;
+const int M_STEP = 8;
+const int M_DIR = 9;
 
 // Define Arduino pins for each function
 const int SERVO_PIN = 10;
@@ -58,9 +58,13 @@ const float PULLEY_RADIUS = 6.34; //mm
 const float ROD_PITCH = 2.0; //mm
 
 // Parameters for Mixer (Servo)
+//const int servoHome = 90;
+//const int servoStart = 20; // +Home
+//const int servoEnd = 60; // +Home
+
+// Parameters for Tensioner (Servo)
 const int servoHome = 90;
-const int servoStart = 20; // +Home
-const int servoEnd = 60; // +Home
+const int tensionShift = 25;
 
 // Parameters for pipette rack
 const float tension_rotations = 0.15;
@@ -71,10 +75,10 @@ const float release_height = 8.0; //mm
 AccelStepper X_MOTOR(AccelStepper::DRIVER, X_STEP, X_DIR); 
 AccelStepper Y_MOTOR(AccelStepper::DRIVER, Y_STEP, Y_DIR);
 AccelStepper Z_MOTOR(AccelStepper::DRIVER, Z_STEP, Z_DIR); 
-AccelStepper E_MOTOR(AccelStepper::DRIVER, E_STEP, E_DIR);
+AccelStepper M_MOTOR(AccelStepper::DRIVER, M_STEP, M_DIR);
 
 // Create servo instance
-Servo mixer;
+Servo tensioner;
 
 // Gantry (CNC) Home Positions (mm), values taken from CAD model and adjusted
 const float pad_thickness = 1.0; //mm 
@@ -158,9 +162,7 @@ void zQuickHome() {
 };
 
 void pinchPipettes() {
-    // Tensioning
-    E_MOTOR.move(revsToSteps(tension_rotations));
-    E_MOTOR.runToPosition();
+    tensioner.write(servoHome + tensionShift);
 
     Serial.println("Pipette rack pinched");
 };
@@ -176,8 +178,7 @@ void removePipette() {
 };
 
 void releasePipettes() {
-    E_MOTOR.move(revsToSteps(-1 * release_rotations));
-    E_MOTOR.runToPosition();
+    tensioner.write(servoHome);
 
     // Report back to PC
     Serial.println("Pipette rack released");
@@ -328,9 +329,9 @@ void gantryMix(int count, int servoDelay) {
     int split_counts = ceil(count/2);
 
     for (int i=0; i<split_counts; i++) {
-        mixer.write(servoHome + servoStart);
+        tensioner.write(servoHome + servoStart);
         delay(servoDelay);
-        mixer.write(servoHome + servoEnd);
+        tensioner.write(servoHome + servoEnd);
         delay(2*servoDelay);
     }
 
@@ -338,13 +339,13 @@ void gantryMix(int count, int servoDelay) {
     Serial.println("First half of " + String(count) + " mixing counts complete");
 
     for (int i=0; i<split_counts; i++) {
-        mixer.write(servoHome + servoStart);
+        tensioner.write(servoHome + servoStart);
         delay(servoDelay);
-        mixer.write(servoHome + servoEnd);
+        tensioner.write(servoHome + servoEnd);
         delay(2*servoDelay);
     }
     
-    mixer.write(servoHome);
+    tensioner.write(servoHome);
 };
 
 void setup() {
@@ -358,11 +359,11 @@ void setup() {
   pinMode(Z_STEP, OUTPUT);
   pinMode(Z_DIR, OUTPUT);
 
-  pinMode(E_STEP, OUTPUT);
-  pinMode(E_DIR, OUTPUT);
+  pinMode(M_STEP, OUTPUT);
+  pinMode(M_DIR, OUTPUT);
 
   pinMode(SERVO_PIN, OUTPUT);
-  mixer.attach(SERVO_PIN);
+  tensioner.attach(SERVO_PIN);
   
   pinMode(RELAY_PIN, OUTPUT);
 
@@ -371,8 +372,8 @@ void setup() {
   Y_MOTOR.setAcceleration(MAX_ACCEL);
   Z_MOTOR.setAcceleration(Z_ACCEL);
 
-  E_MOTOR.setMaxSpeed(TENSION_SPEED);
-  E_MOTOR.setAcceleration(MAX_ACCEL);
+  M_MOTOR.setMaxSpeed(TENSION_SPEED);
+  M_MOTOR.setAcceleration(MAX_ACCEL);
 
   X_MOTOR.setMaxSpeed(STAGE_SPEED);
   Y_MOTOR.setMaxSpeed(STAGE_SPEED);
@@ -384,7 +385,7 @@ void setup() {
   Z_MOTOR.setCurrentPosition(0);
 
   Serial.begin(9600);
-  mixer.write(servoHome);
+  tensioner.write(servoHome);
 
   relayOff();
   
