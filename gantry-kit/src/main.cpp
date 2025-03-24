@@ -94,7 +94,7 @@ const float jointLimit[2][3] = {
 };
 
 // Overshoot value used during Homing, any gantry drift +- this value will be corrected (in theory!)
-const float drift = 2; //mm
+const float drift = 4; //mm
 
 // Joint direction coefficients: 1 or -1, for desired motor directions
 // X = 0, Y = 1, Z = 2
@@ -165,16 +165,6 @@ void pinchPipettes() {
     tensioner.write(servoHome + tensionShift);
 
     Serial.println("Pipette rack pinched");
-};
-
-void removePipette() {
-    Z_MOTOR.setMaxSpeed(Z_HOMING_SPEED);
-    Z_MOTOR.move(mmToSteps(release_height, false, 2));
-
-    Z_MOTOR.runToPosition();
-    Z_MOTOR.setMaxSpeed(Z_STAGE_SPEED);
-
-    Serial.println("Active pipette removed");
 };
 
 void releasePipettes() {
@@ -439,11 +429,6 @@ void loop() {
             x = Serial.readStringUntil(')').toFloat();
 
             pinchPipettes();
-        }
-        else if (action == "removePipette") {
-            x = Serial.readStringUntil(')').toFloat();
-
-            removePipette();
         }
         else if (action == "release") {
             x = Serial.readStringUntil(')').toFloat();
