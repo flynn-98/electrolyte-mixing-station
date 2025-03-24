@@ -59,12 +59,12 @@ const float ROD_PITCH = 2.0; //mm
 
 // Parameters for Mixer (Servo)
 //const int servoHome = 90;
-//const int servoStart = 20; // +Home
-//const int servoEnd = 60; // +Home
+const int servoStart = 20; // +Home
+const int servoEnd = 60; // +Home
 
 // Parameters for Tensioner (Servo)
 const int servoHome = 90;
-const int tensionShift = 25;
+const int tensionShift = -25;
 
 // Parameters for pipette rack
 const float tension_rotations = 0.15;
