@@ -42,7 +42,7 @@ class electrolyte_mixer:
         self.pot_base_height = -68.5 #mm (from CAD)
         self.pot_area = math.pi * 2.78**2 / 4 #cm2
 
-        self.chamber_location = [125, 95] # mm
+        self.chamber_location = [145, 115] # mm
         self.dispense_height = -15 #mm
 
         # Home if requested (will also happen during recovery)
