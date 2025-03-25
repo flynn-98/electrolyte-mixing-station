@@ -437,6 +437,11 @@ void loop() {
             
             zQuickHome();
         }
+        else if (action == "gantryZero") {
+            x = Serial.readStringUntil(')').toFloat();
+            
+            gantryZero();
+        }
         else if (action == "mix") {
             count = Serial.readStringUntil(',').toInt();
             displacement = Serial.readStringUntil(',').toFloat();
