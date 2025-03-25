@@ -52,19 +52,19 @@ const float Z_STAGE_SPEED = 1400.0 * MICROSTEPS; //microsteps/s
 const float Z_HOMING_SPEED = 150 * MICROSTEPS; //microsteps/s
 const float Z_ACCEL = 500.0 * MICROSTEPS; //microsteps/s2
 
-const float MAX_MIX_SPEED = 200.0 * MICROSTEPS; //microsteps/s
+const float MAX_MIX_SPEED = 500.0 * MICROSTEPS; //microsteps/s
 
 // Parameters needed to convert distances (mm) to motor steps
 const float PULLEY_RADIUS = 6.34; //mm
 const float ROD_PITCH = 2.0; //mm
 
 // Parameters for Mixer (Stepper)
-const float stepperStart = 20; // +Home
-const float stepperEnd = 60; // +Home
+const float stepperOffset = 0.05; // revs
+const float stepperFindHome = -0.25; // revs
 
 // Parameters for Tensioner (Servo)
 const int servoHome = 90;
-const int tensionShift = -25;
+const int tensionShift = -90; //-25;
 
 // Parameters for pipette rack
 const float tension_rotations = 0.15;
@@ -98,7 +98,7 @@ const float drift = 4; //mm
 
 // Joint direction coefficients: 1 or -1, for desired motor directions
 // X = 0, Y = 1, Z = 2
-const float motorDir[3] = {1, 1, -1};
+const float motorDir[4] = {1, 1, -1, -1};
 
 // Maximum time in Loop before idle mode (s)
 const unsigned long HomeTime = 90;
@@ -111,7 +111,7 @@ float z = 0;
 float vol = 0;
 int count = 0;
 float displacement = 0;
-float mix_speed = 0;
+float mixAccel = MAX_ACCEL;
 
 unsigned long StartTime;
 unsigned long CurrentTime;
@@ -133,7 +133,7 @@ void relayOff() {
 };
 
 long revsToSteps(float rotations) {
-    return MICROSTEPS * STEPS_REV * rotations;
+    return motorDir[3] * MICROSTEPS * STEPS_REV * rotations;
 };
 
 long mmToSteps(float milli, bool horizontal, int motor) {
@@ -317,30 +317,35 @@ void gantryZero() {
     // gantrySoftHome();
 };
 
-void gantryMix(int count, float displacement, float mix_speed) {
+void gantryMix(int count, float displacement, float mixAccel) {
     int split_counts = ceil(count/2);
-    steps = revsToSteps(displacement);
-
-    M_MOTOR.setSpeed(revsToSteps(mix_speed));
+    M_MOTOR.setAcceleration(mixAccel * MICROSTEPS * STEPS_REV);
 
     for (int i=0; i<split_counts; i++) {
-        M_MOTOR.moveTo(steps);
-        M_MOTOR.runSpeedToPosition();
+        M_MOTOR.moveTo(revsToSteps(stepperOffset));
+        M_MOTOR.runToPosition();
 
-        M_MOTOR.moveTo(0);
-        M_MOTOR.runSpeedToPosition();
+        M_MOTOR.moveTo(revsToSteps(displacement + stepperOffset));
+        M_MOTOR.runToPosition();
+
+        delay(200);
     }
 
     // Report back to PC
     Serial.println("Mixing in progress");
 
     for (int i=0; i<split_counts; i++) {
-        M_MOTOR.moveTo(steps);
-        M_MOTOR.runSpeedToPosition();
+        M_MOTOR.moveTo(revsToSteps(stepperOffset));
+        M_MOTOR.runToPosition();
 
-        M_MOTOR.moveTo(0);
-        M_MOTOR.runSpeedToPosition();
+        M_MOTOR.moveTo(revsToSteps(displacement + stepperOffset));
+        M_MOTOR.runToPosition();
+
+        delay(200);
     }
+
+    M_MOTOR.moveTo(0);
+    M_MOTOR.runToPosition();
 };
 
 void setup() {
@@ -378,12 +383,19 @@ void setup() {
   X_MOTOR.setCurrentPosition(0);
   Y_MOTOR.setCurrentPosition(0);
   Z_MOTOR.setCurrentPosition(0);
-  M_MOTOR.setCurrentPosition(0);
 
   Serial.begin(9600);
-  tensioner.write(servoHome);
+
+  // Home mixing motor
+  relayOn();
+  M_MOTOR.move(revsToSteps(stepperFindHome));
+  M_MOTOR.runToPosition();
+  M_MOTOR.setCurrentPosition(0);
 
   relayOff();
+
+  // Home pipette rack motor
+  tensioner.write(servoHome);
   
   Serial.println("Gantry Kit Ready");
 };
@@ -428,9 +440,9 @@ void loop() {
         else if (action == "mix") {
             count = Serial.readStringUntil(',').toInt();
             displacement = Serial.readStringUntil(',').toFloat();
-            mix_speed = Serial.readStringUntil(')').toFloat();
+            mixAccel = Serial.readStringUntil(')').toFloat();
 
-            gantryMix(count, displacement, mix_speed);
+            gantryMix(count, displacement, mixAccel);
         }
         else if (action == "pinch") {
             x = Serial.readStringUntil(')').toFloat();
