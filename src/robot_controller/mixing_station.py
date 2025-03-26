@@ -32,8 +32,9 @@ class electrolyte_mixer:
                               [self.pipette_x_location, 10.2]
                             ]
         
-        self.pipette_pick_height = -48 #mm (from CAD)
+        self.pipette_pick_height = -49 #mm (from CAD)
         self.pipette_lead_in = 12 #mm to position pipette to the right of rack (in X direction) when returning pipette
+        self.pipette_head_height = 26 #mm
 
         # File to store last known active pipette for recovery
         self.pipette_file = "data/variables/active_pipette.txt" # 1-9, 0 = not active        
@@ -41,7 +42,7 @@ class electrolyte_mixer:
         self.pot_base_height = -68.5 #mm (from CAD)
         self.pot_area = math.pi * 2.78**2 / 4 #cm2
 
-        self.chamber_location = [125, 95] # mm
+        self.chamber_location = [145, 115] # mm
         self.dispense_height = -15 #mm
 
         # Home if requested (will also happen during recovery)
@@ -108,12 +109,16 @@ class electrolyte_mixer:
 
         # Move into pipette rack
         logging.info(f"Delivering Pipette #{active_pipette} to rack..")
-        self.gantry.move(x, y, self.pipette_pick_height)
+        self.gantry.move(x, y, self.pipette_pick_height + 2)
 
-        # Move to lead in position just to be safe (if pipette failed to remove)
         logging.info("Removing pipette from module..")
         self.gantry.remove_pipette()
 
+        logging.info("Checking pipette is correctly inserted into rack..")
+        self.gantry.move(x + self.pipette_lead_in / 2, y, 0)
+        self.gantry.move(x + self.pipette_lead_in / 2, y, self.pipette_pick_height + self.pipette_head_height)
+
+        # Move to lead in position just to be safe (if pipette failed to remove)
         self.gantry.move(x + self.pipette_lead_in, y, 0)
 
         with open(self.pipette_file, 'w+') as filehandler:

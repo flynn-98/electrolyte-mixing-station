@@ -15,8 +15,8 @@ const int Z_STEP = 6;
 const int Z_DIR = 7;
 
 // Pins for extra stepper motor
-const int E_STEP = 8;
-const int E_DIR = 9;
+const int M_STEP = 8;
+const int M_DIR = 9;
 
 // Define Arduino pins for each function
 const int SERVO_PIN = 10;
@@ -44,7 +44,6 @@ const float STEPS_REV = 200.0;
 const float MICROSTEPS = 4.0;
 
 const float STAGE_SPEED = 1000.0 * MICROSTEPS; //microsteps/s
-const float TENSION_SPEED = 50.0 * MICROSTEPS; //microsteps/s
 const float HOMING_SPEED = 50.0 * MICROSTEPS; //microsteps/s
 
 const float MAX_ACCEL = 350.0 * MICROSTEPS; //microsteps/s2
@@ -53,14 +52,19 @@ const float Z_STAGE_SPEED = 1400.0 * MICROSTEPS; //microsteps/s
 const float Z_HOMING_SPEED = 150 * MICROSTEPS; //microsteps/s
 const float Z_ACCEL = 500.0 * MICROSTEPS; //microsteps/s2
 
+const float MAX_MIX_SPEED = 500.0 * MICROSTEPS; //microsteps/s
+
 // Parameters needed to convert distances (mm) to motor steps
 const float PULLEY_RADIUS = 6.34; //mm
 const float ROD_PITCH = 2.0; //mm
 
-// Parameters for Mixer (Servo)
+// Parameters for Mixer (Stepper)
+const float stepperOffset = 0.05; // revs
+const float stepperFindHome = -0.25; // revs
+
+// Parameters for Tensioner (Servo)
 const int servoHome = 90;
-const int servoStart = 20; // +Home
-const int servoEnd = 60; // +Home
+const int tensionShift = -30;
 
 // Parameters for pipette rack
 const float tension_rotations = 0.15;
@@ -71,10 +75,10 @@ const float release_height = 8.0; //mm
 AccelStepper X_MOTOR(AccelStepper::DRIVER, X_STEP, X_DIR); 
 AccelStepper Y_MOTOR(AccelStepper::DRIVER, Y_STEP, Y_DIR);
 AccelStepper Z_MOTOR(AccelStepper::DRIVER, Z_STEP, Z_DIR); 
-AccelStepper E_MOTOR(AccelStepper::DRIVER, E_STEP, E_DIR);
+AccelStepper M_MOTOR(AccelStepper::DRIVER, M_STEP, M_DIR);
 
 // Create servo instance
-Servo mixer;
+Servo tensioner;
 
 // Gantry (CNC) Home Positions (mm), values taken from CAD model and adjusted
 const float pad_thickness = 1.0; //mm 
@@ -90,11 +94,11 @@ const float jointLimit[2][3] = {
 };
 
 // Overshoot value used during Homing, any gantry drift +- this value will be corrected (in theory!)
-const float drift = 2; //mm
+const float drift = 4; //mm
 
 // Joint direction coefficients: 1 or -1, for desired motor directions
 // X = 0, Y = 1, Z = 2
-const float motorDir[4] = {1, 1, -1, 1};
+const float motorDir[4] = {1, 1, -1, -1};
 
 // Maximum time in Loop before idle mode (s)
 const unsigned long HomeTime = 90;
@@ -106,7 +110,8 @@ float z = 0;
 
 float vol = 0;
 int count = 0;
-int servoDelay = 0;
+float displacement = 0;
+float mixAccel = MAX_ACCEL;
 
 unsigned long StartTime;
 unsigned long CurrentTime;
@@ -115,6 +120,7 @@ unsigned long ElapsedTime;
 
 long steps;
 String action;
+
 bool homed = false;
 
 void relayOn() {
@@ -158,26 +164,13 @@ void zQuickHome() {
 };
 
 void pinchPipettes() {
-    // Tensioning
-    E_MOTOR.move(revsToSteps(tension_rotations));
-    E_MOTOR.runToPosition();
+    tensioner.write(servoHome + tensionShift);
 
     Serial.println("Pipette rack pinched");
 };
 
-void removePipette() {
-    Z_MOTOR.setMaxSpeed(Z_HOMING_SPEED);
-    Z_MOTOR.move(mmToSteps(release_height, false, 2));
-
-    Z_MOTOR.runToPosition();
-    Z_MOTOR.setMaxSpeed(Z_STAGE_SPEED);
-
-    Serial.println("Active pipette removed");
-};
-
 void releasePipettes() {
-    E_MOTOR.move(revsToSteps(-1 * release_rotations));
-    E_MOTOR.runToPosition();
+    tensioner.write(servoHome);
 
     // Report back to PC
     Serial.println("Pipette rack released");
@@ -324,27 +317,35 @@ void gantryZero() {
     // gantrySoftHome();
 };
 
-void gantryMix(int count, int servoDelay) {
+void gantryMix(int count, float displacement, float mixAccel) {
     int split_counts = ceil(count/2);
+    M_MOTOR.setAcceleration(mixAccel * MICROSTEPS * STEPS_REV);
 
     for (int i=0; i<split_counts; i++) {
-        mixer.write(servoHome + servoStart);
-        delay(servoDelay);
-        mixer.write(servoHome + servoEnd);
-        delay(2*servoDelay);
+        M_MOTOR.moveTo(revsToSteps(stepperOffset));
+        M_MOTOR.runToPosition();
+
+        M_MOTOR.moveTo(revsToSteps(displacement + stepperOffset));
+        M_MOTOR.runToPosition();
+
+        delay(200);
     }
 
     // Report back to PC
-    Serial.println("First half of " + String(count) + " mixing counts complete");
+    Serial.println("Mixing in progress");
 
     for (int i=0; i<split_counts; i++) {
-        mixer.write(servoHome + servoStart);
-        delay(servoDelay);
-        mixer.write(servoHome + servoEnd);
-        delay(2*servoDelay);
+        M_MOTOR.moveTo(revsToSteps(stepperOffset));
+        M_MOTOR.runToPosition();
+
+        M_MOTOR.moveTo(revsToSteps(displacement + stepperOffset));
+        M_MOTOR.runToPosition();
+
+        delay(200);
     }
-    
-    mixer.write(servoHome);
+
+    M_MOTOR.moveTo(0);
+    M_MOTOR.runToPosition();
 };
 
 void setup() {
@@ -358,11 +359,11 @@ void setup() {
   pinMode(Z_STEP, OUTPUT);
   pinMode(Z_DIR, OUTPUT);
 
-  pinMode(E_STEP, OUTPUT);
-  pinMode(E_DIR, OUTPUT);
+  pinMode(M_STEP, OUTPUT);
+  pinMode(M_DIR, OUTPUT);
 
   pinMode(SERVO_PIN, OUTPUT);
-  mixer.attach(SERVO_PIN);
+  tensioner.attach(SERVO_PIN);
   
   pinMode(RELAY_PIN, OUTPUT);
 
@@ -371,8 +372,8 @@ void setup() {
   Y_MOTOR.setAcceleration(MAX_ACCEL);
   Z_MOTOR.setAcceleration(Z_ACCEL);
 
-  E_MOTOR.setMaxSpeed(TENSION_SPEED);
-  E_MOTOR.setAcceleration(MAX_ACCEL);
+  M_MOTOR.setMaxSpeed(MAX_MIX_SPEED);
+  M_MOTOR.setAcceleration(MAX_ACCEL);
 
   X_MOTOR.setMaxSpeed(STAGE_SPEED);
   Y_MOTOR.setMaxSpeed(STAGE_SPEED);
@@ -384,9 +385,17 @@ void setup() {
   Z_MOTOR.setCurrentPosition(0);
 
   Serial.begin(9600);
-  mixer.write(servoHome);
+
+  // Home mixing motor
+  relayOn();
+  M_MOTOR.move(revsToSteps(stepperFindHome));
+  M_MOTOR.runToPosition();
+  M_MOTOR.setCurrentPosition(0);
 
   relayOff();
+
+  // Home pipette rack motor
+  tensioner.write(servoHome);
   
   Serial.println("Gantry Kit Ready");
 };
@@ -428,21 +437,22 @@ void loop() {
             
             zQuickHome();
         }
+        else if (action == "gantryZero") {
+            x = Serial.readStringUntil(')').toFloat();
+            
+            gantryZero();
+        }
         else if (action == "mix") {
             count = Serial.readStringUntil(',').toInt();
-            servoDelay = Serial.readStringUntil(')').toInt();
+            displacement = Serial.readStringUntil(',').toFloat();
+            mixAccel = Serial.readStringUntil(')').toFloat();
 
-            gantryMix(count, servoDelay);
+            gantryMix(count, displacement, mixAccel);
         }
         else if (action == "pinch") {
             x = Serial.readStringUntil(')').toFloat();
 
             pinchPipettes();
-        }
-        else if (action == "removePipette") {
-            x = Serial.readStringUntil(')').toFloat();
-
-            removePipette();
         }
         else if (action == "release") {
             x = Serial.readStringUntil(')').toFloat();

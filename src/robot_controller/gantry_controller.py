@@ -71,11 +71,13 @@ class gantry:
             self.get_response()
 
     def softHome(self) -> None:
+        logging.info("Soft homing gantry..")
         if self.sim is False:
             self.ser.write("softHome()".encode())
             self.get_response()
 
     def hardHome(self) -> None:
+        logging.info("Hard homing gantry..")
         if self.sim is False:
             self.ser.write("hardHome()".encode())
             self.get_response()
@@ -86,13 +88,18 @@ class gantry:
             self.ser.write("zQuickHome()".encode())
             self.get_response()
 
-    def mix(self, count: int = 25, delay: int = 100) -> None:
-        logging.info(f"Mixing electrolyte {count} times with a {delay}ms delay.")
+    def gantryZero(self) -> None:
+        logging.info("Safely returning gantry to zero..")
         if self.sim is False:
-            # Move away from mixing chamber first
-            self.move(0, 0, 0)
+            self.ser.write("gantryZero()".encode())
 
-            self.ser.write(f"mix({count}, {delay})".encode())
+    def mix(self, count: int = 36, displacement: float = 0.125, accel: float = 200) -> None:
+        logging.info(f"Mixing electrolyte {count}x times: {displacement}revs at {accel}revs/s2..")
+        # Move away from mixing chamber first
+        self.gantryZero()
+
+        if self.sim is False:
+            self.ser.write(f"mix({count},{displacement},{accel})".encode())
             self.get_response()
 
     def release(self) -> None:
@@ -107,8 +114,5 @@ class gantry:
             self.ser.write("pinch()".encode())
             self.get_response()
 
-            self.ser.write("removePipette()".encode())
-            self.get_response()
-
-        self.release()
         self.zQuickHome()
+        self.release()

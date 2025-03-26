@@ -13,8 +13,8 @@ class pipette:
         self.sim = sim
 
         self.max_dose = 200 # ul
-        self.min_dose = 0.4 # ul
-        self.calibrated_grad = 2.76 # ul/mbar
+        self.min_dose = 1.0 # ul
+        self.calibrated_grad = 2.7 # ul/mbar
 
         self.max_pressure = 160 # mbar
 
@@ -305,55 +305,3 @@ class pipette:
     def dispense(self, check: bool = True) -> None:
         self.pump_off(check)
         self.blow_out_pipette()
-
-    def aspiration_test(self) -> None:
-        # Used for testing only => No logging
-        if self.ser.isOpen() is False:
-                self.ser.open()
-
-        try:
-            charge_pressure = float(input("Enter charge pressure (mbar): "))
-        except Exception as ex:
-            charge_pressure = self.charge_pressure
-            print(ex)
-            print(f"Charge Pressure set to {charge_pressure}mbar.")
-
-        # Charge pipette
-        self.pump_on()
-        self.set_pressure(charge_pressure, check=True)
-        print("Pipette charged.")
-
-        try:
-            aspirate_volume = float(input("Enter Aspirate Volume (uL): "))
-        except Exception as ex:
-            aspirate_volume = 50
-            print(ex)
-            print(f"Aspirate Volume set to {aspirate_volume}uL.")
-
-        try:
-            aspirate_constant = float(input("Enter Aspirate Constant (mbar/uL): "))
-        except Exception as ex:
-            aspirate_constant = 0.4
-            print(ex)
-            print(f"Aspirate Constant set to {aspirate_constant}mbar/uL.")
-
-        try:
-            aspirate_speed = float(input("Enter Aspirate Speed (uL/s): "))
-        except Exception as ex:
-            aspirate_speed = 100
-            print(ex)
-            print(f"Aspirate Speed set to {aspirate_speed}uL/s.")
-
-        # Aspirate pipette
-        self.aspirate(aspirate_volume, aspirate_constant, aspirate_speed, check=True)
-
-        print("Aspiration complete.")
-        print(f"{aspirate_volume}uL extracted.")
-
-        _ = input("Press any key to Dispense")
-
-         # Dispense pipette
-        self.dispense()
-        print("Dispense complete.")
-
-        self.close_ser()
