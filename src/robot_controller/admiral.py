@@ -75,19 +75,19 @@ class squidstat:
             ]
         
         self.modes = {
-            "0. EIS_Potentiostatic \n": self.build_EIS_potentiostatic_experiment,
-            "1. Cyclic_Voltammetry \n": self.build_cyclic_voltammetry_experiment,
-            "2. Constant_Current \n": self.build_constant_current_experiment,
-            "3. Constant_Potential \n": self.build_constant_potential_experiment,
-            "4. Constant_Power \n": self.build_constant_power_experiment,
-            "5. Constant_Resistance \n": self.build_constant_resistance_experiment,
-            "6. DC_Current_Sweep \n": self.build_DC_current_sweep_experiment,
-            "7. DC_Potential_Sweep \n": self.build_DC_potential_sweep_experiment,
-            "8. Differential_Pulse_Voltammetry \n": self.build_diff_pulse_voltammetry_experiment,
-            "9. Normal_Pulse_Voltammetry \n": self.build_normal_pulse_voltammetry_experiment,
-            "10. Square_Wave_Voltammetry \n": self.build_square_wave_experiment,
-            "11. EIS_Galvanostatic \n": self.build_EIS_galvanostatic_experiment,
-            "12. Open_Circuit_Potential \n": self.build_OCP_experiment,
+            "0. EIS_Potentiostatic": self.build_EIS_potentiostatic_experiment,
+            "1. Cyclic_Voltammetry": self.build_cyclic_voltammetry_experiment,
+            "2. Constant_Current": self.build_constant_current_experiment,
+            "3. Constant_Potential": self.build_constant_potential_experiment,
+            "4. Constant_Power": self.build_constant_power_experiment,
+            "5. Constant_Resistance": self.build_constant_resistance_experiment,
+            "6. DC_Current_Sweep": self.build_DC_current_sweep_experiment,
+            "7. DC_Potential_Sweep": self.build_DC_potential_sweep_experiment,
+            "8. Differential_Pulse_Voltammetry": self.build_diff_pulse_voltammetry_experiment,
+            "9. Normal_Pulse_Voltammetry": self.build_normal_pulse_voltammetry_experiment,
+            "10. Square_Wave_Voltammetry": self.build_square_wave_experiment,
+            "11. EIS_Galvanostatic": self.build_EIS_galvanostatic_experiment,
+            "12. Open_Circuit_Potential": self.build_OCP_experiment,
         }
         
         # Create dataframes
