@@ -289,7 +289,7 @@ class squidstat:
     # TODO: Charge transfer resistance (EIS) - other side of Re-Im semi circle
     # TODO: Bruce Vince method (for polymer electrolyte) to determine transference number - complicated!
     # TODO: LSV - Cyclic voltammetry (DC). build_DC_potential_sweep_experiment to find oxidation and reduction points, maximise gap (ESW).
-    # TODO: CV - Pass / Fail based on decomposition in 2nd cycle? Not as easy to pull out single value, could be Meta but not optimised.
+    # TODO: CV - Pass / Fail based on decomposition in 2nd cycle? Not as easy to pull out single value, could be Meta data but not optimised.
 
     # TODO: Open circuit potential of system - stability? Not textbook, but some measure of deviation in readings.
     # TODO: Measure OCP and Impedence - stability? Contamination = non stable readings. To look into acceptable stability ranges.

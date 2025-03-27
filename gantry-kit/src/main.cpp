@@ -46,9 +46,9 @@ const float MICROSTEPS = 4.0;
 const float STAGE_SPEED = 1000.0 * MICROSTEPS; //microsteps/s
 const float HOMING_SPEED = 50.0 * MICROSTEPS; //microsteps/s
 
-const float MAX_ACCEL = 350.0 * MICROSTEPS; //microsteps/s2
+const float MAX_ACCEL = 300.0 * MICROSTEPS; //microsteps/s2
 
-const float Z_STAGE_SPEED = 1400.0 * MICROSTEPS; //microsteps/s
+const float Z_STAGE_SPEED = 1200.0 * MICROSTEPS; //microsteps/s
 const float Z_HOMING_SPEED = 150 * MICROSTEPS; //microsteps/s
 const float Z_ACCEL = 500.0 * MICROSTEPS; //microsteps/s2
 
@@ -64,7 +64,7 @@ const float stepperFindHome = -0.25; // revs
 
 // Parameters for Tensioner (Servo)
 const int servoHome = 90;
-const int tensionShift = -30;
+const int tensionShift = -25;
 
 // Parameters for pipette rack
 const float tension_rotations = 0.15;
@@ -95,6 +95,7 @@ const float jointLimit[2][3] = {
 
 // Overshoot value used during Homing, any gantry drift +- this value will be corrected (in theory!)
 const float drift = 4; //mm
+const float z_drift = 1; //mm
 
 // Joint direction coefficients: 1 or -1, for desired motor directions
 // X = 0, Y = 1, Z = 2
@@ -152,7 +153,7 @@ long mmToSteps(float milli, bool horizontal, int motor) {
 
 void zQuickHome() {
     // To be used during pipette picking and collecting, where z errors may occur
-    Z_MOTOR.moveTo(mmToSteps(drift, false, 2));
+    Z_MOTOR.moveTo(mmToSteps(z_drift, false, 2));
     Z_MOTOR.runToPosition();
 
     Z_MOTOR.move(mmToSteps(home[2], false, 2));
@@ -230,7 +231,7 @@ void gantrySoftHome() {
     // Send to home pads plus small distance to remove any drift
     X_MOTOR.moveTo(mmToSteps(jointLimit[1][0] + drift, true, 0));
     Y_MOTOR.moveTo(mmToSteps(-1 * drift, true, 1));
-    Z_MOTOR.moveTo(mmToSteps(drift, false, 2));
+    Z_MOTOR.moveTo(mmToSteps(z_drift, false, 2));
 
     motorsRun();
 
