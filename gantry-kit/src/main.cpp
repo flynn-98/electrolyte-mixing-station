@@ -64,7 +64,7 @@ const float stepperFindHome = -0.25; // revs
 
 // Parameters for Tensioner (Servo)
 const int servoHome = 90;
-const int tensionShift = -25;
+const int tensionShift = -30;
 
 // Parameters for pipette rack
 const float tension_rotations = 0.15;
