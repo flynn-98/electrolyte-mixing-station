@@ -177,7 +177,7 @@ class squidstat:
         logging.info("Uploading experiment to Squidstat..")
         response = self.handler.uploadExperimentToChannel(self.channel, self.experiment)
         
-        if response.message() != "successful":
+        if response.message() != "Success":
             logging.error("Failed to upload experiment to Squidstat: " + response.message())
             sys.exit()
 
@@ -185,7 +185,7 @@ class squidstat:
         # Internal function, to be run after upload_experiment
         response = self.handler.startUploadedExperiment(self.channel)
 
-        if response.message() != "successful":
+        if response.message() != "Success":
             logging.error("Failed to start experiment: " + response.message())
             sys.exit()
         else:

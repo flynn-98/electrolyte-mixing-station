@@ -38,13 +38,13 @@ Note: Replace *bin* with *Scripts* if using windows.
 
 ## Set up SquidstatPyLibrary
 
-Download latest *.whl* file from [here](https://github.com/Admiral-Instruments/AdmiralSquidstatAPI/tree/main/SquidstatLibrary/windows/pythonWrapper/Release). Move the file to */electrolyte-mixing-station* and run the following command:
+Download latest *.whl* file from [here](https://github.com/Admiral-Instruments/AdmiralSquidstatAPI/tree/main/SquidstatLibrary/mac/pythonWrapper). Move the file to the repository root directory and run the following command:
 
 ```
 .venv/bin/pip install FILE.whl
 ```
 
-You can find documentation for the SquidstatPyLibrary [here](https://admiral-instruments.github.io/AdmiralSquidstatAPI/md_intro_and_examples_9__python_example.html).
+You can find documentation for the SquidstatPyLibrary [here](https://admiral-instruments.github.io/AdmiralSquidstatAPI/).
 
 ## Download ATEN RS232 to USB Driver
 

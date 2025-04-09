@@ -14,7 +14,7 @@ class pipette:
 
         self.max_dose = 200 # ul
         self.min_dose = 1.0 # ul
-        self.calibrated_grad = 2.7 # ul/mbar
+        self.calibrated_grad = 2.76 # ul/mbar
 
         self.max_pressure = 160 # mbar
 
