@@ -1,9 +1,11 @@
 import logging
 import os
 import sys
-import serial
 
 import pandas as pd
+import serial
+import serial.tools
+import serial.tools.list_ports
 from PySide6.QtWidgets import QApplication
 from SquidstatPyLibrary import (
     AisConstantCurrentElement,
@@ -22,8 +24,6 @@ from SquidstatPyLibrary import (
     AisOpenCircuitElement,
     AisSquareWaveVoltammetryElement,
 )
-import serial.tools
-import serial.tools.list_ports
 
 # Suppress FutureWarning messages from Pandas
 logging.basicConfig(level = logging.INFO)
