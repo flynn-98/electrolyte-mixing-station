@@ -44,7 +44,7 @@ Download latest *.whl* file from [here](https://github.com/Admiral-Instruments/A
 .venv/bin/pip install FILE.whl
 ```
 
-You can find documentation for the SquidstatPyLibrary [here](https://admiral-instruments.github.io/AdmiralSquidstatAPI/).
+You can find documentation for the SquidstatPyLibrary [here](https://admiral-instruments.github.io/AdmiralSquidstatAPI/). Note the Mac ARM64 (Apple Silicon) users must complete [further steps](https://admiral-instruments.github.io/AdmiralSquidstatAPI/md__markdown_files_2_setup_python.html#autotoc_md35:~:text=Mac%20ARM64%20(Apple%20Silicon)) to install.
 
 ## Download ATEN RS232 to USB Driver
 
